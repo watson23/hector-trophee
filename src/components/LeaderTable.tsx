@@ -56,7 +56,7 @@ export default function LeaderTable({
         <colgroup>
           <col className="w-8" />
           <col />
-          <col className="w-[4.9rem]" />
+          <col className="w-[4.5rem]" />
           <col className="w-[2.9rem]" />
           <col className="w-10" />
         </colgroup>
@@ -91,7 +91,7 @@ export default function LeaderTable({
                   </td>
                   <td className="py-2.5 pr-2">
                     <div
-                      className={`font-medium truncate flex items-center gap-1.5 ${
+                      className={`font-medium truncate flex items-center gap-1 ${
                         r.leader ? "text-amber-200" : "text-slate-100"
                       }`}
                     >

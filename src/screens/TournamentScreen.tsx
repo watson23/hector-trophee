@@ -5,7 +5,7 @@ import { hectorLowerIsBetter, levelParTotal } from "../lib/hector";
 import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
-import HectorMark, { HectorPairMark } from "../components/HectorMark";
+import HectorMark from "../components/HectorMark";
 import Champions, { isTournamentComplete } from "../components/Champions";
 
 interface Props {
@@ -111,14 +111,10 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
     <div className="pb-4 relative">
       {/* Faint emblem behind the header — decoration, so it must not catch taps.
           Outline rather than filled: at this size a solid falcon reads as a blob. */}
-      {tab === "hector" ? (
-        <HectorPairMark className="absolute -top-2 right-1 w-32 h-32 text-violet-400/[0.09] pointer-events-none" />
-      ) : (
-        <HectorMark
-          outline
-          className="absolute -top-3 right-3 w-28 h-28 text-violet-400/[0.11] pointer-events-none"
-        />
-      )}
+      <HectorMark
+        outline
+        className="absolute -top-3 right-3 w-28 h-28 text-violet-400/[0.11] pointer-events-none"
+      />
       <Header
         title="Tournament"
         subtitle={
@@ -149,7 +145,7 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
               scoreHeader="Points"
               decimals={1}
               totalHoles={totalHoles}
-              leaderMark={<HectorPairMark className="w-4 h-4 shrink-0 text-amber-400" />}
+              leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
             />
           )
         ) : (
@@ -159,7 +155,7 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
             scoreHeader="Points"
             decimals={1}
             totalHoles={4 * holesPerRound}
-            leaderMark={<HectorMark className="w-3.5 h-3.5 shrink-0 text-amber-400" />}
+            leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
           />
         )}
       </div>

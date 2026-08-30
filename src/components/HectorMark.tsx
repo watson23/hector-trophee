@@ -21,6 +21,11 @@ const OFFSET = "translate(96.4092, 31.572)";
  * `outline` strokes the same path instead of filling it, giving a lighter mark with
  * roughly a third less ink. That reads better at large sizes and low opacity, where a
  * filled version turns into a solid blob.
+ *
+ * One falcon serves both competitions. A mirrored pair was tried for the Hector table, on
+ * the reasoning that Hector is the pair event, but two birds at 16px are mush — and the
+ * reasoning was wrong anyway: this statue IS the Hector trophy, the one the winning pair
+ * takes home, so a single falcon already says "pair competition".
  */
 export default function HectorMark({
   className,
@@ -45,37 +50,6 @@ export default function HectorMark({
             ? { fill: "none", stroke: "currentColor", strokeWidth: 6 }
             : { fill: "currentColor" })}
         />
-      </g>
-    </svg>
-  );
-}
-
-/**
- * Two falcons facing each other — the mark for a pair, as opposed to an individual.
- *
- * Just the same path mirrored, so it matches the original exactly rather than being a
- * lookalike. Scaled down and pulled together so the two read as one glyph in a square
- * box, the same shape as HectorMark.
- */
-export function HectorPairMark({ className, title }: Props) {
-  const falcon = (
-    <g transform={OFFSET}>
-      <path d={FALCON} fill="currentColor" fillRule="evenodd" />
-    </g>
-  );
-  return (
-    <svg
-      viewBox="0 0 600 600"
-      className={className}
-      fill="none"
-      role={title ? "img" : "presentation"}
-      aria-hidden={title ? undefined : true}
-      aria-label={title}
-    >
-      {title && <title>{title}</title>}
-      <g transform="translate(300,300) scale(0.55) translate(-300,-300)">
-        <g transform="translate(-130,0)">{falcon}</g>
-        <g transform="translate(730,0) scale(-1,1)">{falcon}</g>
       </g>
     </svg>
   );

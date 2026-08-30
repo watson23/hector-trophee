@@ -241,14 +241,18 @@ preview card (`public/og.png`), never in small chrome where the vector mark is s
 The falcon is hector.golf's own mark, taken from their favicon SVG so it stays sharp at any
 size. `src/components/HectorMark.tsx` draws it as a single evenodd path in `currentColor` —
 no mask, which matters because a mask needs a unique id every time the mark is rendered more
-than once on a page. Two variants come free from the same path, so they match exactly rather than being
-lookalikes: `outline` strokes it instead of filling it (a third less ink, better as a large
-faint watermark), and `HectorPairMark` mirrors it into two falcons facing each other — the
-mark for a pair, as against one falcon for an individual.
+than once on a page. An `outline` variant comes free from the same path — stroked rather than filled, about a
+third less ink, which reads better as a large faint watermark where a solid falcon turns
+into a blob.
+
+One falcon serves both competitions. A mirrored pair was tried for the Hector table, since
+Hector is the pair event, but two birds at 16px are mush — and the premise was wrong anyway:
+this statue *is* the Hector trophy, the one the winning pair takes home, so a single falcon
+already says "pair competition".
 
 It appears on the onboarding screen, as the Trophy tab icon, beside whoever leads each
-leaderboard (pair or single, to match what is being ranked), faintly behind the Tournament
-header, and in the app icons (`public/icons/`, rasterised from the same path).
+leaderboard, faintly behind the Tournament header, and in the app icons (`public/icons/`,
+rasterised from the same path).
 
 ## Course data
 

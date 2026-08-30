@@ -4,7 +4,7 @@ import { courses, teeDotClass, teeLabel } from "../data/courses";
 import type { RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
-import HectorMark, { HectorPairMark } from "../components/HectorMark";
+import HectorMark from "../components/HectorMark";
 import { Empty, Header } from "../components/Chrome";
 
 interface Props {
@@ -113,13 +113,7 @@ export default function RoundScreen({ rounds, results, initialRoundId }: Props) 
                   rows={rows}
                   lowerIsBetter={f.spec.kind !== "stableford"}
                   scoreHeader={f.spec.kind === "stableford" ? "Pts" : "Score"}
-                  leaderMark={
-                    isTeam ? (
-                      <HectorPairMark className="w-4 h-4 shrink-0 text-amber-400" />
-                    ) : (
-                      <HectorMark className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                    )
-                  }
+                  leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
                 />
               </div>
             </section>
