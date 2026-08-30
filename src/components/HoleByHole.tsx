@@ -1,4 +1,5 @@
 import type { Card, Course } from "../types";
+import ScoreMark from "./ScoreMark";
 
 export interface HoleRow {
   label: string;
@@ -16,7 +17,8 @@ export interface HoleRow {
  *
  * The full Scorecard component is the right thing on the Play tab, where it has the whole
  * width. Here it has about 300px inside a table cell, so this is a tighter variant: no
- * metres, no stroke index, and the front and back nines stacked.
+ * metres, no stroke index, and the front and back nines stacked. The score marks
+ * themselves are the same ones the Scorecard uses, one size down.
  */
 export default function HoleByHole({
   course,
@@ -42,17 +44,18 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
   const parSum = holes.reduce((a, i) => a + course.par[i], 0);
 
   return (
-    <table className="w-full table-fixed text-[10px] num">
+    <table className="w-full table-fixed num">
       <colgroup>
         {/* Wide enough for a name like "Kristian H" without truncating. */}
-        <col className="w-16" />
+        <col className="w-[3.6rem]" />
         {holes.map((i) => (
           <col key={i} />
         ))}
         <col className="w-7" />
       </colgroup>
       <tbody>
-        <tr className="text-slate-500">
+        {/* Hole numbers and par sit under the scores in weight, not over them. */}
+        <tr className="text-slate-500 text-[10px]">
           <td className="text-left font-sans">{from === 0 ? "Out" : "In"}</td>
           {holes.map((i) => (
             <td key={i} className="text-center">
@@ -61,7 +64,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
           ))}
           <td className="text-center font-semibold">Σ</td>
         </tr>
-        <tr className="text-slate-600">
+        <tr className="text-slate-600 text-[10px]">
           <td className="text-left font-sans">Par</td>
           {holes.map((i) => (
             <td key={i} className="text-center">
@@ -75,19 +78,23 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
           const sum = played.reduce((a, i) => a + (row.values[i] ?? 0), 0);
           return (
             <tr key={row.label} className="border-t border-slate-800/70">
-              <td className="text-left font-sans text-slate-400 py-0.5 truncate">{row.label}</td>
+              <td className="text-left font-sans text-[11px] text-slate-400 py-0.5 truncate">
+                {row.label}
+              </td>
               {holes.map((i) => (
                 <td key={i} className="text-center py-0.5">
-                  <Cell
+                  <ScoreMark
+                    size="sm"
                     value={row.values[i]}
                     par={course.par[i]}
-                    colourVsPar={row.colourVsPar}
+                    plain={!row.colourVsPar}
+                    emphasis={row.emphasis}
                     strokes={row.strokes?.[i] ?? 0}
                   />
                 </td>
               ))}
               <td
-                className={`text-center py-0.5 font-bold ${row.emphasis ? "text-slate-100" : "text-slate-300"}`}
+                className={`text-center py-0.5 text-[13px] font-bold ${row.emphasis ? "text-slate-100" : "text-slate-300"}`}
               >
                 {played.length ? sum : "—"}
               </td>
@@ -96,42 +103,6 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
         })}
       </tbody>
     </table>
-  );
-}
-
-function Cell({
-  value,
-  par,
-  colourVsPar,
-  strokes,
-}: {
-  value: number | null;
-  par: number;
-  colourVsPar?: boolean;
-  strokes: number;
-}) {
-  if (value === null) return <span className="text-slate-700">·</span>;
-  const diff = value - par;
-  const colour = !colourVsPar
-    ? "text-slate-300"
-    : diff <= -2
-      ? "text-amber-300 font-bold"
-      : diff === -1
-        ? "text-rose-400 font-bold"
-        : diff === 0
-          ? "text-emerald-400"
-          : diff === 1
-            ? "text-sky-400"
-            : "text-sky-600";
-  return (
-    <span className={`relative inline-block ${colour}`}>
-      {value}
-      {strokes > 0 && (
-        <span className="absolute -top-1 -right-1.5 text-[7px] text-violet-400">
-          {strokes > 1 ? strokes : "•"}
-        </span>
-      )}
-    </span>
   );
 }
 

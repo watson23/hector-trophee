@@ -92,7 +92,7 @@ export default function RoundScreen({ rounds, results, cards, initialRoundId }: 
                           t.subjectIds.length > 1
                             ? (t.label.split(" + ")[i] ?? "gross")
                             : "gross",
-                          t.strokes,
+                          t.subjectStrokes?.[i],
                         ),
                       ),
                       {

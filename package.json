@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3016",
+    "dev:demo": "VITE_FIREBASE_PROJECT_ID= vite --port 3017",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 3016",
     "test": "vitest run",

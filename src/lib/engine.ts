@@ -64,7 +64,8 @@ export interface TeamRow {
   contributor?: (string | null)[];
   /** The card ids this row was built from, so the view can show the gross scores. */
   subjectIds: string[];
-  strokes?: number[];
+  /** Handicap strokes per hole for each subject, in the same order as `subjectIds`. */
+  subjectStrokes?: number[][];
 }
 
 export interface FormatResult {
@@ -251,12 +252,9 @@ export function evaluateRound(input: RoundInput): RoundResult {
         const a = byId.get(pair.aId);
         const b = byId.get(pair.bId);
         if (!a || !b) continue;
-        const r = betterBallResult(
-          cards[a.id],
-          cards[b.id],
-          { ...ctxFor(a, course, tee, spec, round), playerId: a.id },
-          { ...ctxFor(b, course, tee, spec, round), playerId: b.id },
-        );
+        const ctxA = { ...ctxFor(a, course, tee, spec, round), playerId: a.id };
+        const ctxB = { ...ctxFor(b, course, tee, spec, round), playerId: b.id };
+        const r = betterBallResult(cards[a.id], cards[b.id], ctxA, ctxB);
         result.teams.push({
           pairId: pair.id,
           label: `${a.name} + ${b.name}`,
@@ -268,6 +266,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
           perHole: r.perHole,
           contributor: r.contributor,
           subjectIds: [a.id, b.id],
+          subjectStrokes: [allocationFor(ctxA).strokes, allocationFor(ctxB).strokes],
         });
         if (spec.hector) {
           const points = hectorContribution({
@@ -309,7 +308,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
           playingHcp: teamHcp,
           perHole: r.perHole,
           subjectIds: [teamCardId(pair.id)],
-          strokes: strokeAllocation(teamHcp, course.si),
+          subjectStrokes: [strokeAllocation(teamHcp, course.si)],
         });
         if (spec.hector) {
           const base = hectorContribution({

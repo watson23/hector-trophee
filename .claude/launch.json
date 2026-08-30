@@ -4,8 +4,20 @@
     {
       "name": "hector-trophee",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3016
+    },
+    {
+      "name": "hector-demo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:demo"
+      ],
+      "port": 3017
     }
   ]
 }
