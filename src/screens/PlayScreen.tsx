@@ -10,9 +10,12 @@ import Scorecard from "../components/Scorecard";
 interface Props {
   event: EventDoc;
   round: Round | null;
+  rounds: Round[];
   cards: Record<string, Card>;
   me: FieldPlayer | null;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
+  onShowRound: (roundId: string) => void;
+  onShowTrophy: () => void;
 }
 
 /** A card being filled in: one per player, or one per pair in a scramble. */
@@ -24,9 +27,20 @@ interface Subject {
   strokes: number[];
 }
 
-export default function PlayScreen({ event, round, cards, me, setHole }: Props) {
+export default function PlayScreen({
+  event,
+  round,
+  rounds,
+  cards,
+  me,
+  setHole,
+  onShowRound,
+  onShowTrophy,
+}: Props) {
   const [hole, setHole_] = useState(1);
   const [view, setView] = useState<"hole" | "card">("hole");
+  // The escape hatch for an organiser who forgot to open the round at tee time.
+  const [scoreAnyway, setScoreAnyway] = useState<string | null>(null);
 
   const course = round ? courses[round.courseId] : null;
 
@@ -90,6 +104,48 @@ export default function PlayScreen({ event, round, cards, me, setHole }: Props) 
       <Empty
         title="No round open"
         body="Nothing is being scored right now. The organiser opens each round in Admin as the flights go out."
+      />
+    );
+  }
+
+  /*
+   * Most of the trip is between rounds, and the question then is never "let me enter
+   * scores" — it's "when do I tee off, and with whom". So an unopened round shows a
+   * waiting screen built around the player's own flight, with score entry one
+   * deliberate tap away rather than the default.
+   */
+  if (round.status !== "open" && scoreAnyway !== round.id) {
+    const complete = rounds.length > 0 && rounds.every((r) => r.status === "final");
+    const lastFinal = [...rounds].reverse().find((r) => r.status === "final");
+    if (complete) {
+      return (
+        <Waiting
+          title="That's a wrap"
+          body="Every round is in and the trophies are decided."
+          actions={
+            <>
+              <button className="btn-primary w-full" onClick={onShowTrophy}>
+                Final standings
+              </button>
+              {lastFinal && (
+                <button className="btn-ghost w-full" onClick={() => onShowRound(lastFinal.id)}>
+                  Round {lastFinal.seq} results
+                </button>
+              )}
+            </>
+          }
+        />
+      );
+    }
+    return (
+      <NextRound
+        round={round}
+        course={course}
+        event={event}
+        me={me}
+        lastFinal={lastFinal ?? null}
+        onShowRound={onShowRound}
+        onScoreAnyway={() => setScoreAnyway(round.id)}
       />
     );
   }
@@ -210,6 +266,135 @@ export default function PlayScreen({ event, round, cards, me, setHole }: Props) 
         </>
       )}
       <p className="sr-only">Tee {teeLabel[round.tee]}, course rating {tee.cr}, slope {tee.slope}.</p>
+    </div>
+  );
+}
+
+function Waiting({
+  title,
+  body,
+  actions,
+}: {
+  title: string;
+  body: string;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className="px-4 pt-8">
+      <div className="card p-6 text-center">
+        <p className="text-lg font-bold">{title}</p>
+        <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{body}</p>
+        {actions && <div className="mt-5 space-y-2">{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
+/** The between-rounds home: what's next, when you tee off, and with whom. */
+function NextRound({
+  round,
+  course,
+  event,
+  me,
+  lastFinal,
+  onShowRound,
+  onScoreAnyway,
+}: {
+  round: Round;
+  course: NonNullable<(typeof courses)[string]>;
+  event: EventDoc;
+  me: FieldPlayer | null;
+  lastFinal: Round | null;
+  onShowRound: (roundId: string) => void;
+  onScoreAnyway: () => void;
+}) {
+  const tee = effectiveTee(round, course);
+  const group = round.groups.find((g) => g.playerIds.includes(me?.id ?? ""));
+  const byId = new Map(event.players.map((p) => [p.id, p]));
+  const flight = (group?.playerIds ?? [])
+    .map((id) => byId.get(id))
+    .filter((p): p is FieldPlayer => Boolean(p));
+  const ch = me ? courseHandicap(hiFor(round, me), tee) : null;
+
+  return (
+    <div className="pb-4">
+      <Header
+        title={`Round ${round.seq} · ${course.shortName}`}
+        subtitle={
+          <span className="flex items-center gap-1.5">
+            {round.day}
+            <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
+            {teeLabel[round.tee]} ·{" "}
+            {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
+          </span>
+        }
+        right={<span className="pill bg-slate-800 text-slate-300 shrink-0">Up next</span>}
+      />
+
+      <div className="px-4 space-y-3">
+        <div className="card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="label">{group ? "Your tee time" : "Tee times"}</div>
+              <div className="text-3xl font-extrabold num mt-1">
+                {group?.teeTime ?? round.teeTimeWindow}
+              </div>
+            </div>
+            {ch !== null && (
+              <div className="text-right">
+                <div className="label">Your CH</div>
+                <div className="text-3xl font-extrabold num mt-1 text-violet-300">{ch}</div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 border-t border-slate-800 pt-3">
+            <div className="label mb-1.5">{group ? "Your flight" : "Flight"}</div>
+            {flight.length > 0 ? (
+              <ul className="space-y-1">
+                {flight.map((p) => (
+                  <li key={p.id} className="flex items-baseline justify-between text-sm">
+                    <span className={p.id === me?.id ? "font-semibold" : "text-slate-300"}>
+                      {p.name}
+                      {p.id === me?.id && (
+                        <span className="ml-1.5 text-[10px] font-semibold text-violet-400">you</span>
+                      )}
+                    </span>
+                    <span className="text-[11px] text-slate-500 num">
+                      HCP {hiFor(round, p).toFixed(1)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Flights for this round haven't been set yet — they'll appear here once the
+                organiser enters them.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {round.provisional && (
+          <p className="text-[11px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
+            Format and tee are provisional — seeded from 2025 until the official 2026 programme
+            lands.
+          </p>
+        )}
+
+        {lastFinal && (
+          <button className="btn-ghost w-full" onClick={() => onShowRound(lastFinal.id)}>
+            Round {lastFinal.seq} results
+          </button>
+        )}
+
+        <p className="text-[11px] text-slate-500 text-center leading-relaxed pt-1">
+          Scoring opens when the organiser opens the round.{" "}
+          <button onClick={onScoreAnyway} className="text-violet-400 underline underline-offset-2">
+            Enter scores anyway
+          </button>
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Card, Round } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import type { RoundResult } from "../lib/engine";
@@ -18,6 +18,10 @@ interface Props {
 
 export default function RoundScreen({ rounds, results, cards, initialRoundId }: Props) {
   const [roundId, setRoundId] = useState<string | null>(initialRoundId ?? rounds[0]?.id ?? null);
+  // Follow a new target from outside — "Round 3 results" on the Play tab lands here.
+  useEffect(() => {
+    if (initialRoundId) setRoundId(initialRoundId);
+  }, [initialRoundId]);
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
   const result = round ? results[round.id] : undefined;
 

@@ -15,6 +15,8 @@ export default function App() {
   const t = useTournament(session.playerId ?? "anon");
   const [tab, setTab] = useState<Tab>("play");
   const [adminOpen, setAdminOpen] = useState(false);
+  // Set when another screen asks the Round tab to open on a specific round.
+  const [roundFocus, setRoundFocus] = useState<string | null>(null);
 
   const me = useMemo(
     () => t.event?.players.find((p) => p.id === session.playerId) ?? null,
@@ -76,11 +78,17 @@ export default function App() {
               <PlayScreen
                 event={t.event}
                 round={activeRound}
+                rounds={t.rounds}
                 cards={activeRound ? (t.cards[activeRound.id] ?? {}) : {}}
                 me={me}
                 setHole={(subjectId, hole, value) =>
                   activeRound && t.setHole(activeRound.id, subjectId, hole, value)
                 }
+                onShowRound={(roundId) => {
+                  setRoundFocus(roundId);
+                  setTab("round");
+                }}
+                onShowTrophy={() => setTab("tournament")}
               />
             )}
             {tab === "round" && (
@@ -88,7 +96,7 @@ export default function App() {
                 rounds={t.rounds}
                 results={t.roundResults}
                 cards={t.cards}
-                initialRoundId={activeRound?.id ?? null}
+                initialRoundId={roundFocus ?? activeRound?.id ?? null}
               />
             )}
             {tab === "tournament" && (
