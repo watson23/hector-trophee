@@ -6,6 +6,7 @@ import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
 import HectorMark, { HectorPairMark } from "../components/HectorMark";
+import Champions, { isTournamentComplete } from "../components/Champions";
 
 interface Props {
   rounds: Round[];
@@ -16,6 +17,7 @@ interface Props {
 /** The two trophies: Hector for the pair, Victor for the individual. */
 export default function TournamentScreen({ rounds, hector, victor }: Props) {
   const [tab, setTab] = useState<"hector" | "victor">("hector");
+  const complete = isTournamentComplete(rounds);
   const holesPerRound = 18;
   const totalHoles = rounds.length * holesPerRound;
 
@@ -117,7 +119,13 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
           className="absolute -top-3 right-3 w-28 h-28 text-violet-400/[0.11] pointer-events-none"
         />
       )}
-      <Header title="Tournament" subtitle="Running totals across all six rounds" />
+      <Header
+        title="Tournament"
+        subtitle={
+          complete ? "Final" : `Running totals across all ${rounds.length} rounds`
+        }
+      />
+      {complete && <Champions rounds={rounds} hector={hector} victor={victor} />}
       <Segmented
         value={tab}
         onChange={setTab}

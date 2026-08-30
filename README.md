@@ -213,6 +213,18 @@ birdie cannot put a team four under).
 > there, only the absolute scale is off. This app follows the rules above, so its totals
 > will not match that page.
 
+## The end of the week
+
+When every round is set to *final*, the Tournament tab leads with a champions card: the
+gold trophy, the Hector-winning pair and their total, and the Victor. Ties at the top are
+named rather than arbitrarily broken. Until then the app shows running totals as usual.
+
+The gold eagle (`public/eagle-gold.png`) is a filled illustration of the same trophy, with
+its grey background masked out by colour so it sits on the dark UI — the enclosed gaps
+between the legs need a colour mask rather than a flood fill from the edges, which cannot
+reach them. It is raster, so it belongs in large decorative places like this and the social
+preview card (`public/og.png`), never in small chrome where the vector mark is sharper.
+
 ## The emblem
 
 The falcon is hector.golf's own mark, taken from their favicon SVG so it stays sharp at any
