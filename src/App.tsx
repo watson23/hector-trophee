@@ -93,6 +93,7 @@ export default function App() {
             )}
             {tab === "round" && (
               <RoundScreen
+                event={t.event}
                 rounds={t.rounds}
                 results={t.roundResults}
                 cards={t.cards}

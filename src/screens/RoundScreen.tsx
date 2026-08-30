@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Card, Round } from "../types";
+import type { Card, EventDoc, Round } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import type { RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
@@ -7,16 +7,18 @@ import { weightLabel } from "../lib/hector";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HectorMark from "../components/HectorMark";
 import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
+import DraftBoard from "../components/DraftBoard";
 import { Empty, Header } from "../components/Chrome";
 
 interface Props {
+  event: EventDoc;
   rounds: Round[];
   results: Record<string, RoundResult>;
   cards: Record<string, Record<string, Card>>;
   initialRoundId: string | null;
 }
 
-export default function RoundScreen({ rounds, results, cards, initialRoundId }: Props) {
+export default function RoundScreen({ event, rounds, results, cards, initialRoundId }: Props) {
   const [roundId, setRoundId] = useState<string | null>(initialRoundId ?? rounds[0]?.id ?? null);
   // Follow a new target from outside — "Round 3 results" on the Play tab lands here.
   useEffect(() => {
@@ -62,12 +64,17 @@ export default function RoundScreen({ rounds, results, cards, initialRoundId }: 
         ))}
       </div>
 
-      {round.seq === 1 && (
-        <p className="mx-4 mt-3 text-[11px] leading-relaxed text-violet-300 bg-violet-950/40 border border-violet-900/60 rounded-xl px-3 py-2">
-          Round 1 is played individually. This Stableford order is the draft order — the winner
-          picks first from the other bucket.
-        </p>
-      )}
+      {/* The draft round: before it's in, a note about what the order will mean; once
+          it's final, the live draft board — until the ten pairs stand. */}
+      {round.formats.some((f) => f.hector?.source === "betterIndividual") &&
+        (round.status === "final" ? (
+          <DraftBoard event={event} result={result} />
+        ) : (
+          <p className="mx-4 mt-3 text-[11px] leading-relaxed text-violet-300 bg-violet-950/40 border border-violet-900/60 rounded-xl px-3 py-2">
+            Round 1 is played individually. This Stableford order is the draft order — the
+            winner picks first from the other bucket.
+          </p>
+        ))}
 
       <div className="mt-4 space-y-6">
         {result?.formats.map((f) => {
