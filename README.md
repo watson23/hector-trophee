@@ -33,14 +33,18 @@ Firestore is the database. Hosting can be either Vercel or Firebase — see belo
 4. **Project settings → Your apps** → add a **Web** app (`</>`), skip Firebase Hosting in that
    wizard → copy the six `firebaseConfig` values.
 5. Locally: `cp .env.example .env.local` and paste them in. Restart `npm run dev`.
-6. **Deploy the security rules** (once, and again whenever `firestore.rules` changes):
+6. **Deploy the security rules** (once, and again whenever `firestore.rules` changes).
+   Firestore in production mode denies everything until you do, so the app will show
+   *"Can't reach the scoring database"* until this runs.
 
    ```bash
-   npm install -g firebase-tools
-   firebase login
-   firebase use --add          # pick the project, alias it "default"
-   firebase deploy --only firestore:rules
+   npx firebase login
+   npm run rules
    ```
+
+   `firebase-tools` is a devDependency and `.firebaserc` already names the project, so
+   there's no global install and no `firebase use --add`. Avoid `npm install -g` here —
+   on a stock macOS setup it fails with `EACCES` on `/usr/local/lib/node_modules`.
 
 The first client to connect seeds `events/HECTOR2026` with the 20 players and the six rounds.
 
@@ -66,6 +70,17 @@ quietly giving every player their own private database.
 
 `firebase.json` is also committed, so `npm run deploy` builds and ships to `<project>.web.app`.
 Both can coexist; they're just two fronts for the same Firestore.
+
+### If npm fights you
+
+This machine has a root-owned npm cache, which makes `npm install` fail with `EACCES` on
+`~/.npm`. Workaround per command:
+
+```bash
+npm install --cache /tmp/.npmcache
+```
+
+Permanent fix (needs your password): `sudo chown -R $(id -u):$(id -g) ~/.npm`
 
 ## Access codes
 
