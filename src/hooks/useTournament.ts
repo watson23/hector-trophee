@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
 import { computeTournament, effectiveTee, evaluateRound, type RoundResult } from "../lib/engine";
-import { getStore, migrateRounds, reconcilePins, type Store, type StoreError } from "../lib/store";
+import {
+  getStore,
+  migrateEvent,
+  migrateRounds,
+  reconcilePins,
+  type Store,
+  type StoreError,
+} from "../lib/store";
 
 export interface TournamentState {
   ready: boolean;
@@ -66,6 +73,7 @@ export function useTournament(identity: string): TournamentState {
     if (!store || !event || pinsReconciled.current) return;
     pinsReconciled.current = true;
     void reconcilePins(store, event);
+    void migrateEvent(store, event);
   }, [store, event]);
 
   // Same problem for round config: seeded once, so a fix in code never reaches an

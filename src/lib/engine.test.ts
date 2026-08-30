@@ -25,6 +25,8 @@ import {
 } from "./engine";
 import { hectorContribution, levelParTotal, stablefordToStrokes } from "./hector";
 import { formatDiff, formatThru, rank } from "./leaderboard";
+import { draftPairs } from "./simulate";
+import type { EventDoc } from "../types";
 
 const radecky = courses.radecky;
 const yellow = radecky.tees.yellow; // CR 72.2, slope 142, par 72
@@ -490,5 +492,50 @@ describe("handicaps frozen per round", () => {
       }).formats[0].players.map((p) => p.value);
 
     expect(score([{ ...jari, hi: 3.4 }, lasse])).not.toEqual(score([jari, lasse]));
+  });
+});
+
+
+describe("the draft", () => {
+  const players: FieldPlayer[] = [
+    { id: "a1", name: "A1", hi: 2, bucket: 1 },
+    { id: "a2", name: "A2", hi: 4, bucket: 1 },
+    { id: "a3", name: "A3", hi: 6, bucket: 1 },
+    { id: "b1", name: "B1", hi: 12, bucket: 2 },
+    { id: "b2", name: "B2", hi: 14, bucket: 2 },
+    { id: "b3", name: "B3", hi: 16, bucket: 2 },
+  ];
+  const base = { id: "E", name: "", venue: "", dates: "", pinHash: "", adminPinHash: "", players };
+  // Round 1 finished in this order.
+  const order = ["b2", "a3", "a1", "b1", "a2", "b3"];
+
+  it("pairs across buckets, best player picking first", () => {
+    const event = { ...base, pairs: [], defendingPair: null } as EventDoc;
+    const pairs = draftPairs(order, event);
+    // B2 won the round and takes the best available from bucket 1, which is A3.
+    expect(pairs[0]).toMatchObject({ aId: "b2", bId: "a3" });
+    expect(pairs).toHaveLength(3);
+    for (const p of pairs) {
+      const a = players.find((x) => x.id === p.aId)!;
+      const b = players.find((x) => x.id === p.bId)!;
+      expect(a.bucket).not.toBe(b.bucket);
+    }
+    expect(new Set(pairs.flatMap((p) => [p.aId, p.bId])).size).toBe(6);
+  });
+
+  it("pairs the defending champions first and leaves them out of the draft", () => {
+    const event = { ...base, pairs: [], defendingPair: ["a3", "b1"] } as EventDoc;
+    const pairs = draftPairs(order, event);
+    expect(pairs[0]).toMatchObject({ aId: "a3", bId: "b1", defending: true });
+    // A3 topped the draft order among the rest, but is spoken for, so B2 takes A1.
+    expect(pairs[1]).toMatchObject({ aId: "b2", bId: "a1" });
+    expect(pairs).toHaveLength(3);
+    expect(new Set(pairs.flatMap((p) => [p.aId, p.bId])).size).toBe(6);
+  });
+
+  it("lets the champions decline and rejoin the draft", () => {
+    const declined = draftPairs(order, { ...base, pairs: [], defendingPair: null } as EventDoc);
+    expect(declined.some((p) => p.defending)).toBe(false);
+    expect(declined[0]).toMatchObject({ aId: "b2", bId: "a3" });
   });
 });

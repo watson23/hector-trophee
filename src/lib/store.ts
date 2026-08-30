@@ -57,6 +57,9 @@ export interface StoreError {
  * without touching code or hand-editing hashes in Firestore. They are UI gates, not
  * secrets — see pin.ts — so shipping them in the client bundle costs nothing.
  */
+/** The 2025 winners, who defend together. */
+export const DEFENDING_PAIR: [string, string] = ["lasse-k", "jari-k"];
+
 export const EVENT_PIN = import.meta.env?.VITE_EVENT_PIN || "HEC26";
 export const ADMIN_PIN = import.meta.env?.VITE_ADMIN_PIN || "1874";
 
@@ -70,6 +73,8 @@ export async function buildDefaultEvent(): Promise<EventDoc> {
     adminPinHash: await hashPin(ADMIN_PIN),
     players: field,
     pairs: [],
+    // Lasse and Jari won in 2025.
+    defendingPair: DEFENDING_PAIR,
   };
 }
 
@@ -97,6 +102,13 @@ export async function reconcilePins(store: Store, event: EventDoc): Promise<void
  * with a third. Anything else the organiser has set is left alone — this looks for that one
  * wrong value, not for "not the default".
  */
+/** Events seeded before the defending-champions rule existed don't know about it. */
+export async function migrateEvent(store: Store, event: EventDoc): Promise<boolean> {
+  if (event.defendingPair !== undefined) return false;
+  await store.saveEvent({ defendingPair: DEFENDING_PAIR });
+  return true;
+}
+
 export async function migrateRounds(store: Store, rounds: Round[]): Promise<number> {
   let fixed = 0;
   for (const round of rounds) {

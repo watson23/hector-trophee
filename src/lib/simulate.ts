@@ -66,11 +66,28 @@ function draftOrder(round: Round, event: EventDoc, cards: { subjectId: string; h
   return [...(stableford?.players ?? [])].sort((a, b) => b.value - a.value).map((p) => p.playerId);
 }
 
-/** The draft: best player picks first, from the opposite bucket. */
+/**
+ * The draft: best player picks first, from the opposite bucket.
+ *
+ * Last year's winners are paired first and sit out — they defend by right, so the draft
+ * runs among everyone else.
+ */
 export function draftPairs(order: string[], event: EventDoc): Pair[] {
   const byId = new Map(event.players.map((p) => [p.id, p]));
   const taken = new Set<string>();
   const pairs: Pair[] = [];
+
+  const defending = event.defendingPair;
+  if (defending && defending.every((id) => byId.has(id))) {
+    pairs.push({
+      id: `pair-defending-${defending[0]}`,
+      aId: defending[0],
+      bId: defending[1],
+      defending: true,
+    });
+    defending.forEach((id) => taken.add(id));
+  }
+
   for (const pickerId of order) {
     if (taken.has(pickerId)) continue;
     const picker = byId.get(pickerId);

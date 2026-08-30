@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-noenv/
+dist-demo/
 .DS_Store
 *.local
 .env

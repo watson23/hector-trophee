@@ -113,6 +113,25 @@ function PairsEditor({
   );
 
   /**
+   * Last year's winners defend together, so they are not drafted. Until that is settled
+   * they sit out of the pool entirely — the draft runs among the other eighteen.
+   */
+  const defending = event.defendingPair;
+  const defenders = (defending ?? []).map((id) => byId.get(id)).filter(Boolean) as FieldPlayer[];
+  const defenceUnsettled = defenders.length === 2 && !defenders.some((d) => paired.has(d.id));
+  const outOfDraft = new Set(defenceUnsettled ? defenders.map((d) => d.id) : []);
+
+  async function lockInDefenders() {
+    if (defenders.length !== 2) return;
+    await saveEvent({
+      pairs: [
+        { id: `pair-defending-${defenders[0].id}`, aId: defenders[0].id, bId: defenders[1].id, defending: true },
+        ...event.pairs,
+      ],
+    });
+  }
+
+  /**
    * The draft order is the round 1 Stableford result, and the winner may come from either
    * bucket — in 2025 it was a 16.5 handicap from bucket 2 who picked first. Ranking here
    * rather than making the organiser work it out also means the app can just say whose
@@ -129,9 +148,10 @@ function PairsEditor({
   }, [draftRound, roundResults]);
 
   const hasResult = order.length > 0;
-  const unpaired = event.players.filter((p) => !paired.has(p.id));
+  const unpaired = event.players.filter((p) => !paired.has(p.id) && !outOfDraft.has(p.id));
   // Whoever is highest in the round 1 order and still without a partner.
-  const nextUp = order.find((p) => !paired.has(p.playerId))?.playerId ?? null;
+  const nextUp =
+    order.find((p) => !paired.has(p.playerId) && !outOfDraft.has(p.playerId))?.playerId ?? null;
   const picker = picking ?? (chooseAny ? null : nextUp);
   const pickerPlayer = picker ? byId.get(picker) : null;
   const choices = pickerPlayer
@@ -164,6 +184,32 @@ function PairsEditor({
         </p>
       )}
 
+      {defenceUnsettled && (
+        <section className="card p-3.5 border-amber-500/30 bg-amber-500/[0.06]">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 mb-1">
+            Defending champions
+          </h2>
+          <p className="text-sm font-semibold text-amber-100">
+            {defenders[0].name} + {defenders[1].name}
+          </p>
+          <p className="text-[11px] text-slate-400 leading-relaxed mt-1 mb-3">
+            Won in 2025, so they defend together and are not in the draft. The other{" "}
+            {event.players.length - 2} pick among themselves.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={lockInDefenders} className="btn-primary flex-1 py-2 text-xs">
+              Pair them
+            </button>
+            <button
+              onClick={() => saveEvent({ defendingPair: null })}
+              className="btn-ghost px-3 py-2 text-xs"
+            >
+              They're not defending
+            </button>
+          </div>
+        </section>
+      )}
+
       <section>
         <h2 className="label mb-2">
           Pairs ({event.pairs.length} of {target})
@@ -179,6 +225,9 @@ function PairsEditor({
                   <span className="text-sm font-medium truncate">
                     {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
                   </span>
+                  {pair.defending && (
+                    <span className="pill bg-amber-950 text-amber-300 shrink-0">defending</span>
+                  )}
                 </div>
                 <button
                   onClick={() => removePair(pair.id)}
@@ -245,7 +294,9 @@ function PairsEditor({
               <p className="text-xs text-slate-400 mb-2">Who is picking?</p>
               <div className="grid grid-cols-2 gap-2">
                 {(hasResult
-                  ? order.filter((o) => !paired.has(o.playerId)).map((o) => byId.get(o.playerId)!)
+                  ? order
+                      .filter((o) => !paired.has(o.playerId) && !outOfDraft.has(o.playerId))
+                      .map((o) => byId.get(o.playerId)!)
                   : unpaired
                 ).map((p) => (
                   <button

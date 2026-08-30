@@ -35,6 +35,8 @@ export interface Pair {
   id: string;
   aId: string;
   bId: string;
+  /** Last year's winners, paired by right rather than drafted. */
+  defending?: boolean;
 }
 
 /** The five game formats used across the six rounds. */
@@ -117,6 +119,14 @@ export interface EventDoc {
   adminPinHash: string;
   players: FieldPlayer[];
   pairs: Pair[];
+  /**
+   * Last year's winning pair, who defend their title together regardless of the draft.
+   *
+   * `undefined` means nobody has said yet; `null` means they declined, which has never
+   * happened but is theirs to decide. Until it is resolved both players sit out of the
+   * draft pool, because the draft runs among everyone else.
+   */
+  defendingPair?: [string, string] | null;
 }
 
 /** A single scorecard. `holes` is a sparse map so per-hole writes merge. */

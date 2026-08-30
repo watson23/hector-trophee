@@ -160,7 +160,12 @@ cannot delete them from a tournament in progress.
 
 ### The draft
 
-Round 1 decides the order, and **the winner can come from either bucket** — in 2025 it was a
+**Last year's winners defend together.** They are paired by right rather than drafted, and
+sit out of the pool — the other eighteen pick among themselves. The Pairs tab offers that
+pairing before the draft starts, with a *"They're not defending"* escape which has never
+been needed but is theirs to take; declining puts them straight back into the pool.
+
+Round 1 decides the order for everyone else, and **the winner can come from either bucket** — in 2025 it was a
 16.5 handicap from bucket 2 who picked first. Once round 1 has scores, the Pairs tab ranks
 the field by Stableford points and names whoever is up next, showing only the opposite
 bucket as their options. "Someone else" overrides that when reality diverges, and before
