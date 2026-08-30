@@ -74,9 +74,30 @@ Event code `HEC26` and admin PIN `1874` by default. Override with `VITE_EVENT_PI
 reconciles the stored hashes on load, so changing a PIN and redeploying takes effect on an
 already-seeded event.
 
-These are **gates, not secrets**. Both PINs are compiled into the client bundle, and
-`firestore.rules` only requires that a client be signed in anonymously. That keeps the open
+> **This repo is public, so those defaults are public too.** Set both to something else in the
+> Vercel environment variables before sharing the link with the group, or anyone who finds the
+> URL can walk in and edit scores.
+
+Even then they are **gates, not secrets**. Whatever you set is compiled into the client bundle,
+and `firestore.rules` only requires that a client be signed in anonymously. That keeps the open
 internet out of the database; it does not stop one of the twenty from poking around in devtools.
+
+## Contributing
+
+```bash
+npm install && npm run dev    # http://localhost:3016, demo mode, no Firebase needed
+npm test                      # the scoring engine
+```
+
+Demo mode means you can develop the entire app — scoring, leaderboards, admin, even live sync
+between two browser tabs — without any cloud credentials. Open two tabs and enter a score in one
+to see it appear in the other.
+
+The scoring rules live in `src/lib/` as pure functions with no React or Firebase imports, and
+that's where changes should go: `handicap.ts`, `formats.ts`, `hector.ts`, `engine.ts`,
+`leaderboard.ts`. Anything touching how a score is computed wants a case in
+`src/lib/engine.test.ts` — the fixtures there are hand-worked from the Radecký scorecard, so
+they'll tell you quickly if an allowance or a stroke index is off by one.
 
 ## Running the week
 
