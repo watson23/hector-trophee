@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
+import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import { defaultGroups } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
@@ -9,6 +10,7 @@ interface Props {
   event: EventDoc;
   rounds: Round[];
   cards: Record<string, Record<string, Card>>;
+  roundResults: Record<string, RoundResult>;
   setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
@@ -21,6 +23,7 @@ export default function AdminScreen({
   event,
   rounds,
   cards,
+  roundResults,
   setCard,
   deleteCard,
   saveEvent,
@@ -52,7 +55,14 @@ export default function AdminScreen({
         ]}
       />
       <div className="mt-4">
-        {tab === "pairs" && <PairsEditor event={event} saveEvent={saveEvent} />}
+        {tab === "pairs" && (
+          <PairsEditor
+            event={event}
+            rounds={rounds}
+            roundResults={roundResults}
+            saveEvent={saveEvent}
+          />
+        )}
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} saveRound={saveRound} />}
         {tab === "rounds" && <RoundsEditor rounds={rounds} saveRound={saveRound} />}
         {tab === "scores" && (
@@ -78,41 +88,80 @@ export default function AdminScreen({
 
 function PairsEditor({
   event,
+  rounds,
+  roundResults,
   saveEvent,
 }: {
   event: EventDoc;
+  rounds: Round[];
+  roundResults: Record<string, RoundResult>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
 }) {
   const [picking, setPicking] = useState<string | null>(null);
+  const [chooseAny, setChooseAny] = useState(false);
 
+  const byId = useMemo(() => new Map(event.players.map((p) => [p.id, p])), [event.players]);
   const paired = useMemo(
     () => new Set(event.pairs.flatMap((p) => [p.aId, p.bId])),
     [event.pairs],
   );
-  const byId = new Map(event.players.map((p) => [p.id, p]));
-  const freeBucket1 = event.players.filter((p) => p.bucket === 1 && !paired.has(p.id));
-  const freeBucket2 = event.players.filter((p) => p.bucket === 2 && !paired.has(p.id));
+
+  /**
+   * The draft order is the round 1 Stableford result, and the winner may come from either
+   * bucket — in 2025 it was a 16.5 handicap from bucket 2 who picked first. Ranking here
+   * rather than making the organiser work it out also means the app can just say whose
+   * turn it is.
+   */
+  const draftRound = rounds.find((r) => r.formats.some((f) => f.hector?.source === "betterIndividual"));
+  const order = useMemo(() => {
+    const stableford = draftRound
+      ? roundResults[draftRound.id]?.formats.find((f) => f.spec.kind === "stableford")
+      : undefined;
+    return [...(stableford?.players ?? [])]
+      .filter((p) => p.thru > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [draftRound, roundResults]);
+
+  const hasResult = order.length > 0;
+  const unpaired = event.players.filter((p) => !paired.has(p.id));
+  // Whoever is highest in the round 1 order and still without a partner.
+  const nextUp = order.find((p) => !paired.has(p.playerId))?.playerId ?? null;
+  const picker = picking ?? (chooseAny ? null : nextUp);
+  const pickerPlayer = picker ? byId.get(picker) : null;
+  const choices = pickerPlayer
+    ? unpaired.filter((p) => p.bucket !== pickerPlayer.bucket && p.id !== pickerPlayer.id)
+    : [];
+  const rankOf = (id: string) => order.findIndex((p) => p.playerId === id) + 1;
+  const pointsOf = (id: string) => order.find((p) => p.playerId === id)?.value;
 
   async function addPair(aId: string, bId: string) {
     await saveEvent({
       pairs: [...event.pairs, { id: `pair-${event.pairs.length + 1}-${aId}`, aId, bId }],
     });
     setPicking(null);
+    setChooseAny(false);
   }
 
   async function removePair(id: string) {
     await saveEvent({ pairs: event.pairs.filter((p) => p.id !== id) });
   }
 
+  const target = Math.floor(event.players.length / 2);
+
   return (
     <div className="px-4 space-y-4">
-      <p className="text-xs text-slate-400 leading-relaxed">
-        Round 1 decides the draft order. Its winner picks first, choosing from the other bucket.
-        Enter each pick here as it happens — everyone's app updates live.
-      </p>
+      {!hasResult && (
+        <p className="text-xs text-amber-400/90 bg-amber-950/30 border border-amber-900/60 rounded-xl px-3 py-2 leading-relaxed">
+          Round 1 hasn't been played yet, so there's no draft order. Pairs don't exist until
+          it has been — you can still enter them by hand below if you're setting up ahead of
+          time.
+        </p>
+      )}
 
       <section>
-        <h2 className="label mb-2">Pairs ({event.pairs.length} of 10)</h2>
+        <h2 className="label mb-2">
+          Pairs ({event.pairs.length} of {target})
+        </h2>
         {event.pairs.length === 0 ? (
           <p className="text-sm text-slate-500 py-3">No pairs yet.</p>
         ) : (
@@ -137,47 +186,92 @@ function PairsEditor({
         )}
       </section>
 
-      {freeBucket1.length > 0 && (
+      {unpaired.length > 1 && (
         <section>
           <h2 className="label mb-2">Next pick</h2>
-          {!picking ? (
-            <div className="grid grid-cols-2 gap-2">
-              {freeBucket1.map((p) => (
+
+          {pickerPlayer ? (
+            <>
+              <div className="card p-3 mb-2 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-violet-300 truncate">
+                    {pickerPlayer.name}
+                  </div>
+                  <div className="text-[11px] text-slate-500 num">
+                    Bucket {pickerPlayer.bucket} · HCP {pickerPlayer.hi.toFixed(1)}
+                    {hasResult && rankOf(pickerPlayer.id) > 0 && (
+                      <> · round 1: {pointsOf(pickerPlayer.id)} pts, #{rankOf(pickerPlayer.id)}</>
+                    )}
+                  </div>
+                </div>
                 <button
-                  key={p.id}
-                  onClick={() => setPicking(p.id)}
-                  className="card px-3 py-2.5 text-left hover:border-violet-600"
+                  onClick={() => {
+                    setPicking(null);
+                    setChooseAny(true);
+                  }}
+                  className="text-xs text-slate-400 underline underline-offset-2 shrink-0"
                 >
-                  <div className="text-sm font-medium truncate">{p.name}</div>
-                  <div className="text-[11px] text-slate-500 num">Bucket 1 · {p.hi.toFixed(1)}</div>
+                  someone else
                 </button>
-              ))}
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm mb-2">
-                <span className="font-semibold text-violet-300">{byId.get(picking)?.name}</span>{" "}
-                picks from bucket 2:
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                picks from bucket {pickerPlayer.bucket === 1 ? 2 : 1}:
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {freeBucket2.map((p) => (
+                {choices.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => addPair(picking, p.id)}
+                    onClick={() => addPair(pickerPlayer.id, p.id)}
                     className="card px-3 py-2.5 text-left hover:border-violet-600"
                   >
                     <div className="text-sm font-medium truncate">{p.name}</div>
-                    <div className="text-[11px] text-slate-500 num">{p.hi.toFixed(1)}</div>
+                    <div className="text-[11px] text-slate-500 num">
+                      {hasResult && rankOf(p.id) > 0
+                        ? `${pointsOf(p.id)} pts · #${rankOf(p.id)}`
+                        : `HCP ${p.hi.toFixed(1)}`}
+                    </div>
                   </button>
                 ))}
               </div>
-              <button
-                onClick={() => setPicking(null)}
-                className="text-xs text-slate-500 mt-3 underline underline-offset-2"
-              >
-                Cancel
-              </button>
-            </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-400 mb-2">Who is picking?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(hasResult
+                  ? order.filter((o) => !paired.has(o.playerId)).map((o) => byId.get(o.playerId)!)
+                  : unpaired
+                ).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setPicking(p.id);
+                      setChooseAny(false);
+                    }}
+                    className="card px-3 py-2.5 text-left hover:border-violet-600"
+                  >
+                    <div className="text-sm font-medium truncate">{p.name}</div>
+                    <div className="text-[11px] text-slate-500 num">
+                      B{p.bucket}
+                      {hasResult && rankOf(p.id) > 0
+                        ? ` · ${pointsOf(p.id)} pts · #${rankOf(p.id)}`
+                        : ` · HCP ${p.hi.toFixed(1)}`}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {nextUp && (
+                <button
+                  onClick={() => {
+                    setChooseAny(false);
+                    setPicking(null);
+                  }}
+                  className="text-xs text-slate-500 mt-3 underline underline-offset-2"
+                >
+                  back to {byId.get(nextUp)?.name}, who is up next
+                </button>
+              )}
+            </>
           )}
         </section>
       )}

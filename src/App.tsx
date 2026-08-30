@@ -62,6 +62,7 @@ export default function App() {
             event={t.event}
             rounds={t.rounds}
             cards={t.cards}
+            roundResults={t.roundResults}
             setCard={t.setCard}
             deleteCard={t.deleteCard}
             saveEvent={t.saveEvent}

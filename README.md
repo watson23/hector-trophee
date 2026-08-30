@@ -134,12 +134,20 @@ every screen.
 | Before Thursday | **Rounds** tab — confirm each round's course, tee and formats against the official programme, and clear the "provisional" flag |
 | Thursday morning | **Flights** tab — assign players to flights for round 1 |
 | Thursday, first tee | **Rounds** tab — set round 1 to *open* |
-| Thursday evening | **Pairs** tab — enter the draft one pick at a time as it happens |
+| Thursday evening | **Pairs** tab — enter the draft one pick at a time as it happens. Once round 1 is scored the app knows the order and tells you who is up, from either bucket |
 | After the draft | **Flights** tab — *Auto-fill two pairs per flight* for rounds 2–6 |
 | Each round | Set the round *open* when the first group tees off, *final* when everyone's in |
 | Any time | **Scores** tab — correct any hole on any card in any round, including finished ones |
 
 Only one round should be open at a time; that's the one on everyone's Play tab.
+
+### The draft
+
+Round 1 decides the order, and **the winner can come from either bucket** — in 2025 it was a
+16.5 handicap from bucket 2 who picked first. Once round 1 has scores, the Pairs tab ranks
+the field by Stableford points and names whoever is up next, showing only the opposite
+bucket as their options. "Someone else" overrides that when reality diverges, and before
+round 1 has been played it says so, since there is no order to work from yet.
 
 ### Fixing a wrong score
 
