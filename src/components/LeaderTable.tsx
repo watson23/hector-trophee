@@ -1,6 +1,5 @@
 import { Fragment, useState, type ReactNode } from "react";
 import { formatDiff, formatThru, rank } from "../lib/leaderboard";
-import HectorMark from "./HectorMark";
 
 export interface LeaderRow {
   key: string;
@@ -21,12 +20,15 @@ export default function LeaderTable({
   scoreHeader,
   decimals = 0,
   totalHoles = 18,
+  leaderMark,
 }: {
   rows: LeaderRow[];
   lowerIsBetter: boolean;
   scoreHeader: string;
   decimals?: number;
   totalHoles?: number;
+  /** Shown beside whoever is leading — a pair of falcons for pairs, one for an individual. */
+  leaderMark?: ReactNode;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const ranked = rank(
@@ -93,9 +95,7 @@ export default function LeaderTable({
                         r.leader ? "text-amber-200" : "text-slate-100"
                       }`}
                     >
-                      {r.leader && (
-                        <HectorMark className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                      )}
+                      {r.leader && leaderMark}
                       <span className="truncate">{r.item.label}</span>
                     </div>
                     {r.item.extra && (

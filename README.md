@@ -210,9 +210,14 @@ four or five. Worth confirming — it's one line in `formats.ts`.
 The falcon is hector.golf's own mark, taken from their favicon SVG so it stays sharp at any
 size. `src/components/HectorMark.tsx` draws it as a single evenodd path in `currentColor` —
 no mask, which matters because a mask needs a unique id every time the mark is rendered more
-than once on a page. It appears on the onboarding screen, as the Trophy tab icon, beside the
-pair leading the Hector table, faintly behind the Tournament header, and in the app icons
-(`public/icons/`, rasterised from the same path).
+than once on a page. Two variants come free from the same path, so they match exactly rather than being
+lookalikes: `outline` strokes it instead of filling it (a third less ink, better as a large
+faint watermark), and `HectorPairMark` mirrors it into two falcons facing each other — the
+mark for a pair, as against one falcon for an individual.
+
+It appears on the onboarding screen, as the Trophy tab icon, beside whoever leads each
+leaderboard (pair or single, to match what is being ranked), faintly behind the Tournament
+header, and in the app icons (`public/icons/`, rasterised from the same path).
 
 ## Course data
 
