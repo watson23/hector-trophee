@@ -185,25 +185,33 @@ Each round then contributes a share, configured per round:
 
 | Round | Format | Weight | Why |
 |-------|--------|--------|-----|
-| R1 | Stableford | 33% | Light, so the draft round can't open a gap that kills the week on day one |
+| R1 | Stableford | **1/3** | Light, so the draft round can't open a gap that kills the week on day one. Exactly a third — the published rules round it to 33%, but only 1/3 reproduces the real 2025 totals |
 | R2 | Better ball | 50% | |
 | R3 | Stroke play | 25% | Applied to **both** players, so ≈50% of one round. Older Hectors counted this round double everything else |
 | R4 | Scramble | 50% | |
 | R5 | Better ball | 50% | |
 | R6 | Scramble | 100% | Heaviest, so the trophy stays live into the final round and one stroke ≈ one point while you play it |
 
-A pair going round in level par every round totals **239.8**, which the app shows under the
-Hector table as a reference. 2025 finished with 222.0 winning, 242.6 last, median 233.2.
+The weights come to 10/3 rounds, so a pair going round in level par every round totals
+exactly **240.0**, which the app shows under the Hector table as a reference. 2025 finished
+with 222.0 winning, 242.6 last, mean 233.26.
+
+### Verified against the real 2025 results
+
+`src/lib/hector2025.fixture.ts` holds the twelve pairs and six rounds from the spreadsheet
+the organiser kept by hand, and `hector2025.test.ts` replays them through this engine. All
+twelve totals reproduce to six decimal places, in the right order, with the published gaps
+of +2.9 and +7.8.
+
+That fixture is the only ground truth for these rules, and it settled two things nothing
+else could: the draft round's weight is exactly 1/3, and the final scramble's birdies are
+counted gross (Lasse and Jari's net −4 round records 1 birdie and 0 eagles, and one net
+birdie cannot put a team four under).
 
 > ⚠️ The leaderboard published at hector.golf is uniformly **108.0 below** these figures —
 > it showed the 2025 winners on 114.0 rather than 222.0. The gaps between pairs are correct
 > there, only the absolute scale is off. This app follows the rules above, so its totals
 > will not match that page.
-
-**One open question:** birdie and eagle bonuses in the final scramble are counted on the
-team's **gross** score, on the grounds that a scramble birdie is the one everyone just
-watched drop. Counting them net would roughly double the tally against a team handicap of
-four or five. Worth confirming — it's one line in `formats.ts`.
 
 ## The emblem
 

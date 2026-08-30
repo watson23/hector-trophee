@@ -16,8 +16,10 @@ import type { FormatKind } from "../types";
  * Each round then contributes a share of that stroke figure, set per round in the round
  * config. The 2025 weights and the reasoning behind them:
  *
- *   R1 Stableford        33%   deliberately light, so the draft round can't open a gap
- *                              so large that the last pair gives up on day one
+ *   R1 Stableford         1/3  deliberately light, so the draft round can't open a gap
+ *                              so large that the last pair gives up on day one. Exactly a
+ *                              third — the published rules round it to 33%, but the 2025
+ *                              sheet computes 1/3, and only 1/3 reproduces its totals
  *   R2 Better ball       50%
  *   R3 Stroke play       25%   applied to BOTH players, so ~50% of a single round —
  *                              this is the fix for older Hectors where an individual
@@ -27,10 +29,11 @@ import type { FormatKind } from "../types";
  *   R6 Scramble         100%   heaviest, so the trophy stays live into the final round,
  *                              and so one stroke ≈ one leaderboard point while playing it
  *
- * A pair going round in level par every round therefore totals about 239.8:
- * 0.33×72 + 0.5×72 + 2×0.25×72 + 0.5×72 + 0.5×72 + 1.0×72.
+ * The weights come to 10/3 rounds, so a pair going round in level par every round totals
+ * exactly 240: (1/3 + 1/2 + 2×1/4 + 1/2 + 1/2 + 1) × 72.
  *
- * For reference, 2025 finished with 222.0 winning, 242.6 last, and a median of 233.2.
+ * 2025 finished with 222.0 winning, 242.6 last, and a mean of 233.26. All twelve of those
+ * pairs are replayed against this code in hector2025.test.ts.
  *
  * ⚠️ Note the leaderboard published at hector.golf is uniformly 108.0 below these
  * figures — it showed the 2025 winners on 114.0 rather than 222.0. The gaps between

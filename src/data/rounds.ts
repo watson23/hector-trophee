@@ -13,6 +13,13 @@ import type { FormatSpec, PlayingGroup, Round } from "../types";
  * course handicap in the app.
  */
 
+/**
+ * The draft round's weight is exactly one third, not the 0.33 the published rules round
+ * it to. The 2025 sheet records Lasse's 42 points as 22.000 Hector strokes — 1/3 × 66.
+ * At 0.33 it would be 21.78, and every total downstream would drift.
+ */
+export const DRAFT_ROUND_WEIGHT = 1 / 3;
+
 const stablefordVictor = (hectorPct?: number): FormatSpec => ({
   id: "stableford",
   kind: "stableford",
@@ -93,7 +100,7 @@ export const defaultRounds: Round[] = [
     status: "upcoming",
     teeTimeWindow: "12:03–12:48",
     groups: defaultGroups("12:03–12:48"),
-    formats: [stablefordVictor(0.33), strokePlayGross],
+    formats: [stablefordVictor(DRAFT_ROUND_WEIGHT), strokePlayGross],
     provisional: true,
   },
   {

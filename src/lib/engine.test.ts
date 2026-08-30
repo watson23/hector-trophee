@@ -213,10 +213,10 @@ describe("evaluateRound", () => {
     expect(lasseRow.value).toBeLessThan(jariRow.value);
 
     // Hector took Jari's 38 points, converted to strokes (2×72 − (38+36) = 70) and
-    // weighted 33%.
+    // weighted by the draft round's one third.
     const detail = result.hector[pair.id].detail[0];
     expect(detail.raw).toBe(38);
-    expect(detail.points).toBeCloseTo(0.33 * 70, 5);
+    expect(detail.points).toBeCloseTo(70 / 3, 5);
 
     // Victor counts both players at 100%
     expect(result.victor[jari.id].points).toBe(38);
@@ -338,7 +338,7 @@ describe("hector points", () => {
     );
   });
 
-  it("puts a level-par pair on 239.8 across the six rounds", () => {
+  it("puts a level-par pair on exactly 240 across the six rounds", () => {
     // 0.33 + 0.5 + (0.25 × both players) + 0.5 + 0.5 + 1.0, all against a par 72
     const weights = defaultRounds.flatMap((r) =>
       r.formats
@@ -348,7 +348,8 @@ describe("hector points", () => {
           countsBothPlayers: f.hector!.source === "bothIndividuals",
         })),
     );
-    expect(levelParTotal(weights, 72)).toBeCloseTo(239.76, 2);
+    // 1/3 + 1/2 + (1/4 × both players) + 1/2 + 1/2 + 1 = 10/3 rounds of par 72.
+    expect(levelParTotal(weights, 72)).toBeCloseTo(240, 6);
   });
 
   it("matches the organiser's per-round breakdown for a level-par pair", () => {
@@ -368,7 +369,7 @@ describe("hector points", () => {
           0,
         ),
     );
-    expect(perRound.map((n) => Math.round(n * 10) / 10)).toEqual([23.8, 36, 36, 36, 36, 72]);
+    expect(perRound.map((n) => Math.round(n * 10) / 10)).toEqual([24, 36, 36, 36, 36, 72]);
   });
 
   it("scores lower-is-better, and birdies help", () => {
