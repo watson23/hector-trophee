@@ -5,6 +5,7 @@ import { hectorLowerIsBetter, levelParTotal } from "../lib/hector";
 import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
+import HectorMark from "../components/HectorMark";
 
 interface Props {
   rounds: Round[];
@@ -105,7 +106,9 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
   }));
 
   return (
-    <div className="pb-4">
+    <div className="pb-4 relative">
+      {/* Faint emblem behind the header — decoration, so it must not catch taps. */}
+      <HectorMark className="absolute -top-3 right-2 w-28 h-28 text-violet-500/[0.07] pointer-events-none" />
       <Header title="Tournament" subtitle="Running totals across all six rounds" />
       <Segmented
         value={tab}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { EventDoc } from "../types";
 import { checkPin } from "../lib/pin";
+import HectorMark from "./HectorMark";
 
 interface Props {
   event: EventDoc;
@@ -30,6 +31,7 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer }: 
   return (
     <div className="min-h-dvh flex flex-col justify-center px-5 py-10 max-w-lg mx-auto">
       <header className="mb-8 text-center">
+        <HectorMark className="w-20 h-20 mx-auto mb-3 text-violet-400" />
         <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-violet-400">
           Hector Trophée
         </div>

@@ -205,6 +205,15 @@ team's **gross** score, on the grounds that a scramble birdie is the one everyon
 watched drop. Counting them net would roughly double the tally against a team handicap of
 four or five. Worth confirming — it's one line in `formats.ts`.
 
+## The emblem
+
+The falcon is hector.golf's own mark, taken from their favicon SVG so it stays sharp at any
+size. `src/components/HectorMark.tsx` draws it as a single evenodd path in `currentColor` —
+no mask, which matters because a mask needs a unique id every time the mark is rendered more
+than once on a page. It appears on the onboarding screen, as the Trophy tab icon, beside the
+pair leading the Hector table, faintly behind the Tournament header, and in the app icons
+(`public/icons/`, rasterised from the same path).
+
 ## Course data
 
 Par, stroke index and per-tee CR/slope for both Konopiště courses are in `src/data/courses.ts`,

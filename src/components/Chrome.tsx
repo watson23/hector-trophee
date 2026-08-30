@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import HectorMark from "./HectorMark";
 
 export type Tab = "play" | "round" | "tournament" | "more";
 
-const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
+const TABS: { id: Tab; label: string; icon: ReactNode | null }[] = [
   {
     id: "play",
     label: "Play",
@@ -15,17 +16,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
     label: "Round",
     icon: <path d="M4 19V9m5 10V5m5 14v-7m5 7V8" strokeLinecap="round" />,
   },
-  {
-    id: "tournament",
-    label: "Trophy",
-    icon: (
-      <path
-        d="M7 4h10v5a5 5 0 0 1-10 0V4ZM7 6H4v1a3 3 0 0 0 3 3m10-4h3v1a3 3 0 0 1-3 3M9 20h6m-3-6v6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    ),
-  },
+  { id: "tournament", label: "Trophy", icon: null },
   {
     id: "more",
     label: "More",
@@ -49,16 +40,20 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
               tab === t.id ? "text-violet-400" : "text-slate-500 hover:text-slate-300"
             }`}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              className="w-6 h-6"
-              aria-hidden="true"
-            >
-              {t.icon}
-            </svg>
+            {t.icon ? (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                className="w-6 h-6"
+                aria-hidden="true"
+              >
+                {t.icon}
+              </svg>
+            ) : (
+              <HectorMark className="w-6 h-6" />
+            )}
             {t.label}
           </button>
         ))}

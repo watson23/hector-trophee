@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icons/*.png"],
+      includeAssets: ["icons/*.png", "icons/*.svg"],
       manifest: {
         name: "Hector Trophée 2026",
         short_name: "Hector",
