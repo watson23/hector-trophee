@@ -22,9 +22,12 @@ service cloud.firestore {
 
       match /cards/{cardId} {
         allow read: if request.auth != null;
-        // A card only ever holds 18 holes of small integers.
-        allow write: if request.auth != null
-                     && request.resource.data.holes.size() <= 18;
+        // A card only ever holds 18 holes. Note this has to be create/update rather than
+        // a blanket write: on a delete `request.resource` is null, so the size() check
+        // would throw and make cards undeletable — which then blocks resetting a round.
+        allow create, update: if request.auth != null
+                              && request.resource.data.holes.size() <= 18;
+        allow delete: if request.auth != null;
       }
     }
 
