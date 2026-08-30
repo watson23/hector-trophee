@@ -17,6 +17,8 @@ export interface TournamentState {
   online: boolean;
   error: StoreError | null;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
 }
@@ -111,6 +113,20 @@ export function useTournament(identity: string): TournamentState {
     [store, identity],
   );
 
+  const setCard = useCallback(
+    async (roundId: string, subjectId: string, holes: Record<string, number>) => {
+      await store?.setCard(roundId, subjectId, holes, identity);
+    },
+    [store, identity],
+  );
+
+  const deleteCard = useCallback(
+    async (roundId: string, subjectId: string) => {
+      await store?.deleteCard(roundId, subjectId);
+    },
+    [store],
+  );
+
   const saveEvent = useCallback(
     async (patch: Partial<EventDoc>) => {
       await store?.saveEvent(patch);
@@ -138,6 +154,8 @@ export function useTournament(identity: string): TournamentState {
     online,
     error,
     setHole,
+    setCard,
+    deleteCard,
     saveEvent,
     saveRound,
   };

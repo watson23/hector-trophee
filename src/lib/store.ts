@@ -26,6 +26,17 @@ export interface Store {
     value: number | null,
     by: string,
   ): Promise<void>;
+  /**
+   * Write a whole card at once, replacing whatever was there.
+   *
+   * Per-hole writes are right when someone is tapping a score in — they merge, so two
+   * phones on the same card never clobber each other. They are the wrong tool for writing
+   * eighteen holes at a time: that is 18 document writes instead of 1, which is slow to
+   * flush and eats the Firestore quota. Use this for bulk work only.
+   */
+  setCard(roundId: string, subjectId: string, holes: Record<string, number>, by: string): Promise<void>;
+  /** Remove a card entirely, rather than clearing eighteen fields one at a time. */
+  deleteCard(roundId: string, subjectId: string): Promise<void>;
   saveEvent(patch: Partial<EventDoc>): Promise<void>;
   saveRound(round: Round): Promise<void>;
   /** Number of writes not yet acknowledged by the server. */
@@ -170,6 +181,30 @@ class LocalStore implements Store {
     if (value === null) delete holes[String(hole)];
     else holes[String(hole)] = value;
     cards[subjectId] = { ...card, holes, updatedAt: Date.now(), updatedBy: by };
+    this.write(`cards_${roundId}`, cards);
+  }
+
+  async setCard(
+    roundId: string,
+    subjectId: string,
+    holes: Record<string, number>,
+    by: string,
+  ): Promise<void> {
+    const cards = this.read<Record<string, Card>>(`cards_${roundId}`, {});
+    cards[subjectId] = {
+      id: cardId(roundId, subjectId),
+      roundId,
+      subjectId,
+      holes,
+      updatedAt: Date.now(),
+      updatedBy: by,
+    };
+    this.write(`cards_${roundId}`, cards);
+  }
+
+  async deleteCard(roundId: string, subjectId: string): Promise<void> {
+    const cards = this.read<Record<string, Card>>(`cards_${roundId}`, {});
+    delete cards[subjectId];
     this.write(`cards_${roundId}`, cards);
   }
 

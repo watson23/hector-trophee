@@ -2,6 +2,7 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import {
   collection,
+  deleteDoc,
   doc,
   initializeFirestore,
   onSnapshot,
@@ -200,6 +201,26 @@ export class FirestoreStore implements Store {
       },
       { merge: true },
     );
+  }
+
+  async setCard(
+    roundId: string,
+    subjectId: string,
+    holes: Record<string, number>,
+    by: string,
+  ): Promise<void> {
+    // One document write for the whole card, not eighteen. No merge: this replaces.
+    await setDoc(doc(this.cardsRef(), cardId(roundId, subjectId)), {
+      roundId,
+      subjectId,
+      holes,
+      updatedAt: Date.now(),
+      updatedBy: by,
+    });
+  }
+
+  async deleteCard(roundId: string, subjectId: string): Promise<void> {
+    await deleteDoc(doc(this.cardsRef(), cardId(roundId, subjectId)));
   }
 
   async saveEvent(patch: Partial<EventDoc>): Promise<void> {

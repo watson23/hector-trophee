@@ -48,6 +48,14 @@ export default function MoreScreen({
         }
       />
 
+      {admin && (
+        <div className="px-4 mb-3">
+          <button onClick={onOpenAdmin} className="btn-primary w-full text-sm py-2.5">
+            ⚙ Open Admin
+          </button>
+        </div>
+      )}
+
       <div className="px-4 flex gap-1.5">
         {(["schedule", "courses", "formats"] as const).map((s) => (
           <button
@@ -72,13 +80,7 @@ export default function MoreScreen({
       </div>
 
       <div className="px-4 mt-6">
-        {admin ? (
-          <button onClick={onOpenAdmin} className="btn-ghost w-full">
-            ⚙ Open Admin
-          </button>
-        ) : (
-          <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
-        )}
+        {!admin && <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />}
         <p className="text-[11px] text-slate-600 mt-3 text-center leading-relaxed">
           {backend === "local"
             ? "Demo mode — no cloud project connected, so scores stay on this device."

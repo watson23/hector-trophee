@@ -9,6 +9,8 @@ interface Props {
   event: EventDoc;
   rounds: Round[];
   cards: Record<string, Record<string, Card>>;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
@@ -19,6 +21,8 @@ export default function AdminScreen({
   event,
   rounds,
   cards,
+  setCard,
+  deleteCard,
   saveEvent,
   saveRound,
   setHole,
@@ -52,7 +56,16 @@ export default function AdminScreen({
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} saveRound={saveRound} />}
         {tab === "rounds" && <RoundsEditor rounds={rounds} saveRound={saveRound} />}
         {tab === "scores" && (
-          <ScoreAdmin event={event} rounds={rounds} cards={cards} setHole={setHole} />
+          <ScoreAdmin
+            event={event}
+            rounds={rounds}
+            cards={cards}
+            setHole={setHole}
+            setCard={setCard}
+            deleteCard={deleteCard}
+            saveEvent={saveEvent}
+            saveRound={saveRound}
+          />
         )}
       </div>
     </div>

@@ -62,6 +62,8 @@ export default function App() {
             event={t.event}
             rounds={t.rounds}
             cards={t.cards}
+            setCard={t.setCard}
+            deleteCard={t.deleteCard}
             saveEvent={t.saveEvent}
             saveRound={t.saveRound}
             setHole={t.setHole}
@@ -108,6 +110,24 @@ export default function App() {
           </>
         )}
       </main>
+
+      {/* Admin lived at the bottom of the More tab behind faint grey text, which was
+          effectively hidden. Once unlocked, it gets a button that follows you around. */}
+      {!adminOpen && session.admin && (
+        <button
+          onClick={() => setAdminOpen(true)}
+          aria-label="Open Admin"
+          className="fixed top-2 right-2 z-40 flex items-center gap-1.5 rounded-full
+                     bg-violet-600/90 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold
+                     shadow-lg backdrop-blur active:bg-violet-700"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.4.64.73.83" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Admin
+        </button>
+      )}
 
       {!adminOpen && <TabBar tab={tab} onChange={setTab} />}
     </div>

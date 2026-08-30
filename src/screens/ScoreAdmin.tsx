@@ -5,12 +5,17 @@ import { effectiveTee, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { generateRoundCards } from "../lib/testdata";
+import { resetTournament, simulateTournament } from "../lib/simulate";
 
 interface Props {
   event: EventDoc;
   rounds: Round[];
   cards: Record<string, Record<string, Card>>;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  deleteCard: (roundId: string, subjectId: string) => Promise<void>;
+  saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
+  saveRound: (round: Round) => Promise<void>;
 }
 
 interface Subject {
@@ -65,7 +70,16 @@ function subjectsFor(round: Round, event: EventDoc): Subject[] {
  * Organiser tools: correct any score in any round, and fill rounds with fake scores
  * while trying the app out.
  */
-export default function ScoreAdmin({ event, rounds, cards, setHole }: Props) {
+export default function ScoreAdmin({
+  event,
+  rounds,
+  cards,
+  setHole,
+  setCard,
+  deleteCard,
+  saveEvent,
+  saveRound,
+}: Props) {
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
   const [subjectId, setSubjectId] = useState<string | null>(null);
@@ -81,25 +95,33 @@ export default function ScoreAdmin({ event, rounds, cards, setHole }: Props) {
   const subject = subjects.find((s) => s.id === subjectId) ?? null;
   const scored = subjects.filter((s) => Object.keys(roundCards[s.id]?.holes ?? {}).length > 0);
 
+  /** Shared wrapper so every long-running tool reports progress and can't double-fire. */
+  async function run(
+    label: string,
+    fn: (deps: Parameters<typeof simulateTournament>[0]) => Promise<void>,
+  ) {
+    setBusy(label);
+    try {
+      await fn({ event, rounds, setCard, deleteCard, saveEvent, saveRound, onProgress: (m) => setBusy(m) });
+    } finally {
+      setBusy(null);
+      setSubjectId(null);
+      setConfirmClear(false);
+    }
+  }
+
   async function fill(holes: number) {
     if (!round || !course) return;
     setBusy(`Filling ${holes} holes…`);
     const generated = generateRoundCards(round, course, effectiveTee(round, course), event, holes);
-    for (const card of generated) {
-      for (const [hole, value] of Object.entries(card.holes)) {
-        setHole(round.id, card.subjectId, Number(hole), value);
-      }
-    }
+    await Promise.all(generated.map((c) => setCard(round.id, c.subjectId, c.holes)));
     setBusy(null);
   }
 
-  function clearRound() {
+  async function clearRound() {
     if (!round) return;
     setBusy("Clearing…");
-    for (const s of subjects) {
-      const holes = roundCards[s.id]?.holes ?? {};
-      for (const hole of Object.keys(holes)) setHole(round.id, s.id, Number(hole), null);
-    }
+    await Promise.all(subjects.map((s) => deleteCard(round.id, s.id)));
     setConfirmClear(false);
     setBusy(null);
   }
@@ -168,7 +190,40 @@ export default function ScoreAdmin({ event, rounds, cards, setHole }: Props) {
       {/* ---------------- test data ---------------- */}
       <section className="border border-amber-900/60 bg-amber-950/20 rounded-2xl p-3.5">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
-          Test data
+          Test data · whole tournament
+        </h2>
+        <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+          Plays all {rounds.length} rounds end to end, including the draft — round 1 is played
+          first and its Stableford order decides who picks whom. No need to enter pairs by hand.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            disabled={Boolean(busy)}
+            onClick={() => run("Simulating…", (d) => simulateTournament(d, 18))}
+            className="btn-ghost py-2 text-xs disabled:opacity-40"
+          >
+            Play whole tournament
+          </button>
+          <button
+            disabled={Boolean(busy)}
+            onClick={() => run("Simulating…", (d) => simulateTournament(d, 7))}
+            className="btn-ghost py-2 text-xs disabled:opacity-40"
+          >
+            …with last round live
+          </button>
+        </div>
+        <button
+          disabled={Boolean(busy)}
+          onClick={() => run("Resetting…", (d) => resetTournament(d, cards))}
+          className="w-full mt-2 rounded-xl py-2 text-xs font-semibold bg-rose-950 text-rose-300
+                     border border-rose-900 disabled:opacity-40"
+        >
+          Reset everything — scores, pairs and flights
+        </button>
+        {busy && <p className="text-xs text-violet-300 mt-2 num">{busy}</p>}
+
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mt-5 mb-1">
+          Just round {round.seq}
         </h2>
         <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
           Fills round {round.seq} with plausible scores for everyone playing it, so the

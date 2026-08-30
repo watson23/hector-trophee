@@ -125,7 +125,9 @@ they'll tell you quickly if an allowance or a stroke index is off by one.
 
 ## Running the week
 
-Everything the organiser does lives behind the admin PIN, under **More → Organiser access**.
+Everything the organiser does lives behind the admin PIN. Unlock it once at the bottom of
+**More → Organiser access**; after that an **Admin** button sits in the top-right corner of
+every screen.
 
 | When | What |
 |------|------|
@@ -148,13 +150,22 @@ everyone immediately, so you can fix a card while the group is still on the cour
 
 ### Test data
 
-The same tab has an amber **Test data** box that fills a round with plausible scores for
-everyone playing it — full 18, or thru 9 or 4 to see a leaderboard mid-round. Scores are
-drawn around what each handicap would realistically shoot rather than at random, so the
-tables behave like real ones.
+**Admin → Scores** has an amber **Test data** box.
 
-It refuses to run on a round that already has scores; clear the round first. That guard is
-deliberate — it's the only thing standing between a stray tap and a real round.
+*Play whole tournament* does the lot in about five seconds: plays round 1, runs the draft
+from its Stableford order (best player picks first, from the other bucket), pairs everyone,
+assigns two pairs per flight, and plays the remaining five rounds. *…with last round live*
+leaves round 6 part-played, so you can see a leaderboard mid-round. *Reset everything*
+clears the scores, the pairs and the flights.
+
+Below that, the same box fills or clears just the round you have selected. That one refuses
+to run on a round which already has scores — clear it first. The guard is deliberate; it is
+the only thing between a stray tap and a real round.
+
+Bulk tools write one document per card, not one per hole. A tournament is 100 writes rather
+than 1800, which is the difference between five seconds and several minutes, and between
+200 simulations a day on the Firestore free tier and about ten. Ordinary scoring still
+writes per hole, because that is what makes two phones on one card merge safely.
 
 Delete `src/lib/testdata.ts` and the Test data section of `src/screens/ScoreAdmin.tsx` before
 the trip if you'd rather not have it there at all.
