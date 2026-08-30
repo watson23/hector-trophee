@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
-import type { RoundResult } from "../lib/engine";
+import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import { defaultGroups } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
 import ScoreAdmin from "./ScoreAdmin";
+import HandicapRefresh from "../components/HandicapRefresh";
 
 interface Props {
   event: EventDoc;
@@ -64,7 +65,12 @@ export default function AdminScreen({
           />
         )}
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} saveRound={saveRound} />}
-        {tab === "rounds" && <RoundsEditor rounds={rounds} saveRound={saveRound} />}
+        {tab === "rounds" && (
+          <>
+            <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
+            <RoundsEditor rounds={rounds} players={event.players} saveRound={saveRound} />
+          </>
+        )}
         {tab === "scores" && (
           <ScoreAdmin
             event={event}
@@ -454,9 +460,11 @@ const STATUSES: RoundStatus[] = ["upcoming", "open", "final"];
 
 function RoundsEditor({
   rounds,
+  players,
   saveRound,
 }: {
   rounds: Round[];
+  players: FieldPlayer[];
   saveRound: (round: Round) => Promise<void>;
 }) {
   return (
@@ -466,7 +474,12 @@ function RoundsEditor({
         Only one round should be open at a time.
       </p>
       {rounds.map((round) => (
-        <RoundEditorCard key={round.id} round={round} saveRound={saveRound} />
+        <RoundEditorCard
+          key={round.id}
+          round={round}
+          players={players}
+          saveRound={saveRound}
+        />
       ))}
     </div>
   );
@@ -474,14 +487,28 @@ function RoundsEditor({
 
 function RoundEditorCard({
   round,
+  players,
   saveRound,
 }: {
   round: Round;
+  players: FieldPlayer[];
   saveRound: (round: Round) => Promise<void>;
 }) {
   const course = courses[round.courseId];
   const tee = course.tees[round.tee];
   const patch = (p: Partial<Round>) => saveRound({ ...round, ...p });
+
+  /**
+   * Opening a round freezes the handicaps it is played off. Handicaps are refreshed each
+   * morning, so without this a later update would rescore a round already in the books.
+   */
+  function setStatus(status: RoundStatus) {
+    if (status === "open" && !round.handicaps) {
+      void saveRound({ ...snapshotHandicaps(round, players), status });
+    } else {
+      void patch({ status });
+    }
+  }
 
   return (
     <div className="card p-3.5 space-y-3">
@@ -505,7 +532,7 @@ function RoundEditorCard({
         {STATUSES.map((s) => (
           <button
             key={s}
-            onClick={() => patch({ status: s })}
+            onClick={() => setStatus(s)}
             className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors ${
               round.status === s
                 ? s === "open"

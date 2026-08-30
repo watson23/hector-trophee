@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
-import { effectiveTee } from "../lib/engine";
+import { effectiveTee, hiFor } from "../lib/engine";
 import { checkPin } from "../lib/pin";
 import { Header } from "../components/Chrome";
 
@@ -95,7 +95,7 @@ function RoundCard({ round, me }: { round: Round; me: FieldPlayer | null }) {
   const course = courses[round.courseId];
   const tee = effectiveTee(round, course);
   const group = round.groups.find((g) => g.playerIds.includes(me?.id ?? ""));
-  const ch = me ? courseHandicap(me.hi, tee) : null;
+  const ch = me ? courseHandicap(hiFor(round, me), tee) : null;
 
   return (
     <div

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
-import { effectiveTee, teamCardId } from "../lib/engine";
+import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { generateRoundCards } from "../lib/testdata";
@@ -40,8 +40,8 @@ function subjectsFor(round: Round, event: EventDoc): Subject[] {
       const b = byId.get(pair.bId);
       if (!a || !b) return [];
       const teamHcp = scrambleTeamHandicap(
-        courseHandicap(a.hi, tee),
-        courseHandicap(b.hi, tee),
+        courseHandicap(hiFor(round, a), tee),
+        courseHandicap(hiFor(round, b), tee),
         scramble.allowance,
       );
       return [
@@ -57,7 +57,7 @@ function subjectsFor(round: Round, event: EventDoc): Subject[] {
 
   return event.players.map((p) => {
     const { playingHcp, strokes } = allocationFor({
-      hi: p.hi,
+      hi: hiFor(round, p),
       course,
       tee,
       allowance: netFormat?.net ? netFormat.allowance : 0,

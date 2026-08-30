@@ -15,7 +15,14 @@ import {
   stablefordResult,
   strokePlayResult,
 } from "./formats";
-import { computeTournament, effectiveTee, evaluateRound, teamCardId } from "./engine";
+import {
+  computeTournament,
+  effectiveTee,
+  evaluateRound,
+  hiFor,
+  snapshotHandicaps,
+  teamCardId,
+} from "./engine";
 import { hectorContribution, levelParTotal, stablefordToStrokes } from "./hector";
 import { formatDiff, formatThru, rank } from "./leaderboard";
 
@@ -427,5 +434,61 @@ describe("tournament totals", () => {
     expect(totals.hector[0].points).toBeCloseTo(59.8, 5);
     expect(totals.hector[0].roundsPlayed).toBe(2);
     expect(totals.victor.find((v) => v.key === "jari-k")!.points).toBe(72);
+  });
+});
+
+
+describe("handicaps frozen per round", () => {
+  const round = defaultRounds[0];
+
+  it("uses the player's current index until a round is opened", () => {
+    expect(hiFor(round, jari)).toBe(1.5);
+  });
+
+  it("uses the snapshot once there is one", () => {
+    const opened = snapshotHandicaps(round, [jari, lasse]);
+    // The player's index moves later in the week; the round must not follow it.
+    expect(hiFor(opened, { ...jari, hi: 3.4 })).toBe(1.5);
+    expect(hiFor(opened, { ...lasse, hi: 16.0 })).toBe(14.8);
+  });
+
+  it("does not rescore a played round when a handicap changes afterwards", () => {
+    const opened = {
+      ...snapshotHandicaps(round, [jari, lasse]),
+      groups: [{ id: "g1", teeTime: "12:03", playerIds: [jari.id, lasse.id] }],
+    };
+    const cards = { [jari.id]: cardAtPar(jari.id), [lasse.id]: cardAtPar(lasse.id) };
+    const score = (players: FieldPlayer[]) =>
+      evaluateRound({
+        round: opened,
+        course: radecky,
+        tee: effectiveTee(opened, radecky),
+        players,
+        pairs: [pair],
+        cards,
+      }).formats[0].players.map((p) => p.value);
+
+    const before = score([jari, lasse]);
+    const after = score([{ ...jari, hi: 3.4 }, { ...lasse, hi: 16.0 }]);
+    expect(after).toEqual(before);
+  });
+
+  it("would rescore without the snapshot, which is the bug it prevents", () => {
+    const unopened = {
+      ...round,
+      groups: [{ id: "g1", teeTime: "12:03", playerIds: [jari.id, lasse.id] }],
+    };
+    const cards = { [jari.id]: cardAtPar(jari.id), [lasse.id]: cardAtPar(lasse.id) };
+    const score = (players: FieldPlayer[]) =>
+      evaluateRound({
+        round: unopened,
+        course: radecky,
+        tee: effectiveTee(unopened, radecky),
+        players,
+        pairs: [pair],
+        cards,
+      }).formats[0].players.map((p) => p.value);
+
+    expect(score([{ ...jari, hi: 3.4 }, lasse])).not.toEqual(score([jari, lasse]));
   });
 });

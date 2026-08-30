@@ -92,6 +92,15 @@ export interface Round {
   crOverride?: number;
   slopeOverride?: number;
   status: RoundStatus;
+  /**
+   * The handicap index each player actually played this round off, captured when the
+   * round opens.
+   *
+   * Handicaps are refreshed daily during the week, and scores are computed from them on
+   * demand — so without a snapshot, Wednesday's new index would silently rescore Monday's
+   * round. Falls back to the player's current index for rounds not yet opened.
+   */
+  handicaps?: Record<string, number>;
   formats: FormatSpec[];
   groups: PlayingGroup[];
   teeTimeWindow: string;

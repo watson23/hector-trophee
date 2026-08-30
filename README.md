@@ -137,9 +137,26 @@ every screen.
 | Thursday evening | **Pairs** tab — enter the draft one pick at a time as it happens. Once round 1 is scored the app knows the order and tells you who is up, from either bucket |
 | After the draft | **Flights** tab — *Auto-fill two pairs per flight* for rounds 2–6 |
 | Each round | Set the round *open* when the first group tees off, *final* when everyone's in |
+| Each morning | **Rounds** tab — *Check for new handicaps*, before the first round of the day |
 | Any time | **Scores** tab — correct any hole on any card in any round, including finished ones |
 
 Only one round should be open at a time; that's the one on everyone's Play tab.
+
+### Handicaps
+
+hector.golf recalculates handicaps every night, so they need refreshing before the first
+round of each day. **Admin → Rounds → Check for new handicaps** reads the event page
+directly — it is served from GitHub Pages with `access-control-allow-origin: *`, so no proxy
+is involved — and shows exactly what would change before writing anything.
+
+**Handicaps are frozen per round.** Opening a round snapshots the index every player is
+playing it off into `round.handicaps`, and the engine scores from that snapshot. Without it,
+Saturday's new handicap would silently rescore Thursday's round, because scores are computed
+from the current index on demand rather than stored. `engine.test.ts` covers both directions:
+that a snapshotted round ignores a later change, and that an unopened one does not.
+
+Players the page omits are left alone rather than dropped, so someone withdrawing upstream
+cannot delete them from a tournament in progress.
 
 ### The draft
 

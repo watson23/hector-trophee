@@ -31,6 +31,7 @@ export default defineConfig({
   ],
   test: {
     globals: true,
+    // Node by default; the handicap parser needs a DOM and opts in per file.
     environment: "node",
   },
 });

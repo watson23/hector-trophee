@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
-import { effectiveTee, teamCardId } from "../lib/engine";
+import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { Empty, Header, Segmented } from "../components/Chrome";
@@ -52,8 +52,8 @@ export default function PlayScreen({ event, round, cards, me, setHole }: Props) 
         const b = byId.get(pair.bId);
         if (!a || !b) continue;
         const teamHcp = scrambleTeamHandicap(
-          courseHandicap(a.hi, tee),
-          courseHandicap(b.hi, tee),
+          courseHandicap(hiFor(round, a), tee),
+          courseHandicap(hiFor(round, b), tee),
           scramble.allowance,
         );
         out.push({
@@ -71,7 +71,7 @@ export default function PlayScreen({ event, round, cards, me, setHole }: Props) 
       .filter((p): p is FieldPlayer => Boolean(p))
       .map((p) => {
         const { playingHcp, strokes } = allocationFor({
-          hi: p.hi,
+          hi: hiFor(round, p),
           course,
           tee,
           allowance: netFormat?.net ? netFormat.allowance : 0,
@@ -79,7 +79,7 @@ export default function PlayScreen({ event, round, cards, me, setHole }: Props) 
         return {
           id: p.id,
           name: p.name,
-          detail: `HCP ${p.hi.toFixed(1)} · playing ${playingHcp}`,
+          detail: `HCP ${hiFor(round, p).toFixed(1)} · playing ${playingHcp}`,
           strokes,
         };
       });

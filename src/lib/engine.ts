@@ -81,6 +81,19 @@ export interface RoundResult {
   victor: Record<string, { points: number; thru: number }>;
 }
 
+/**
+ * The handicap index a player played a given round off — the snapshot taken when the
+ * round opened, or their current index if there is none.
+ */
+export function hiFor(round: Round, player: FieldPlayer): number {
+  return round.handicaps?.[player.id] ?? player.hi;
+}
+
+/** Freeze today's handicaps onto a round, so later updates can't rescore it. */
+export function snapshotHandicaps(round: Round, players: FieldPlayer[]): Round {
+  return { ...round, handicaps: Object.fromEntries(players.map((p) => [p.id, p.hi])) };
+}
+
 /** Resolve the tee actually in play, honouring any admin override of CR/slope. */
 export function effectiveTee(round: Round, course: Course): Tee {
   const base = course.tees[round.tee] ?? Object.values(course.tees)[0];
@@ -91,8 +104,14 @@ export function effectiveTee(round: Round, course: Course): Tee {
   };
 }
 
-function ctxFor(player: FieldPlayer, course: Course, tee: Tee, spec: FormatSpec): PlayerRoundContext {
-  return { hi: player.hi, course, tee, allowance: spec.net ? spec.allowance : 0 };
+function ctxFor(
+  player: FieldPlayer,
+  course: Course,
+  tee: Tee,
+  spec: FormatSpec,
+  round: Round,
+): PlayerRoundContext {
+  return { hi: hiFor(round, player), course, tee, allowance: spec.net ? spec.allowance : 0 };
 }
 
 /** Everyone who is actually playing this round, i.e. assigned to a flight. */
@@ -124,7 +143,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
 
     if (spec.kind === "stableford") {
       for (const p of field) {
-        const r = stablefordResult(cards[p.id], ctxFor(p, course, tee, spec));
+        const r = stablefordResult(cards[p.id], ctxFor(p, course, tee, spec, round));
         result.players.push({
           playerId: p.id,
           name: p.name,
@@ -168,7 +187,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
 
     if (spec.kind === "strokeplay") {
       for (const p of field) {
-        const r = strokePlayResult(cards[p.id], ctxFor(p, course, tee, spec), spec.net);
+        const r = strokePlayResult(cards[p.id], ctxFor(p, course, tee, spec, round), spec.net);
         result.players.push({
           playerId: p.id,
           name: p.name,
@@ -212,8 +231,8 @@ export function evaluateRound(input: RoundInput): RoundResult {
         const r = betterBallResult(
           cards[a.id],
           cards[b.id],
-          { ...ctxFor(a, course, tee, spec), playerId: a.id },
-          { ...ctxFor(b, course, tee, spec), playerId: b.id },
+          { ...ctxFor(a, course, tee, spec, round), playerId: a.id },
+          { ...ctxFor(b, course, tee, spec, round), playerId: b.id },
         );
         result.teams.push({
           pairId: pair.id,
@@ -246,8 +265,8 @@ export function evaluateRound(input: RoundInput): RoundResult {
         const b = byId.get(pair.bId);
         if (!a || !b) continue;
         const teamHcp = scrambleTeamHandicap(
-          courseHandicap(a.hi, tee),
-          courseHandicap(b.hi, tee),
+          courseHandicap(hiFor(round, a), tee),
+          courseHandicap(hiFor(round, b), tee),
           spec.allowance,
           input.scrambleMethod,
         );
