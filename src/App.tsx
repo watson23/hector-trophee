@@ -37,13 +37,18 @@ export default function App() {
   }
 
   if (!session.unlocked || !session.playerId) {
+    // The banner belongs here too: a misconfigured deployment is worth knowing about
+    // before you type the event code, not after.
     return (
-      <Onboarding
-        event={t.event}
-        unlocked={session.unlocked}
-        onUnlock={() => update({ unlocked: true })}
-        onPickPlayer={(playerId) => update({ playerId })}
-      />
+      <div className="min-h-dvh">
+        <SyncBanner online={t.online} pending={t.pending} backend={t.backend} />
+        <Onboarding
+          event={t.event}
+          unlocked={session.unlocked}
+          onUnlock={() => update({ unlocked: true })}
+          onPickPlayer={(playerId) => update({ playerId })}
+        />
+      </div>
     );
   }
 
