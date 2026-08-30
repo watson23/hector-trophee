@@ -56,12 +56,21 @@ The first client to connect seeds `events/HECTOR2026` with the 20 players and th
 
 1. <https://vercel.com/new> → import `watson23/hector-trophee`. Framework preset **Vite** is
    detected; build command and output directory come from `vercel.json`.
-2. **Settings → Environment Variables** — add all six `VITE_FIREBASE_*` values from
-   `.env.example`, for *Production*, *Preview* and *Development*. Vite inlines these at build
-   time, so **changing one needs a redeploy**, not just a restart.
-3. Deploy, then go back to Firebase → **Authentication → Settings → Authorized domains** and add
-   your `*.vercel.app` domain (and any custom domain). Anonymous sign-in fails silently from an
-   unauthorised domain.
+2. **Environment variables.** Easiest is `npx vercel login && bash scripts/push-env.sh`,
+   which copies `.env.local` into all three environments and redeploys. By hand: Settings →
+   Environment Variables, the six `VITE_FIREBASE_*` values, for *Production*, *Preview* and
+   *Development*.
+
+   > **Do not mark any `VITE_*` variable as "Sensitive".** Sensitive values are decryptable
+   > only at runtime, and a Vite build has no runtime — it inlines values at build time. A
+   > Sensitive `VITE_*` variable reaches the bundle as an **empty string**, with no error, and
+   > the app quietly falls back to its defaults. Everything prefixed `VITE_` is public once
+   > built anyway, so Sensitive protects nothing and only breaks the build.
+
+   Vite inlines these at build time, so **changing one needs a redeploy**, not just a restart.
+3. Firebase → **Authentication → Settings → Authorized domains**: adding your `*.vercel.app`
+   domain is only needed if you ever add a redirect-based sign-in (Google, email link).
+   Anonymous sign-in works from any origin, so this app does not need it today.
 
 If the env vars are missing, the deployed app shows a red **"Not connected"** banner rather than
 quietly giving every player their own private database.
