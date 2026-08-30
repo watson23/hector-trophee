@@ -14,6 +14,30 @@ interface Props {
   victor: TournamentTotals["victor"];
 }
 
+/**
+ * Weights are thirds, halves and quarters, so show them as fractions. Rounding 1/3 to
+ * "33%" made the breakdown fail to add up against the figure printed next to it.
+ */
+function weightLabel(pct: number): string {
+  const named: [number, string][] = [
+    [1, "all"],
+    [1 / 2, "½"],
+    [1 / 3, "⅓"],
+    [1 / 4, "¼"],
+    [2 / 3, "⅔"],
+    [3 / 4, "¾"],
+  ];
+  const hit = named.find(([v]) => Math.abs(v - pct) < 1e-9);
+  return hit ? hit[1] : `${Math.round(pct * 1000) / 10}%`;
+}
+
+function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): string {
+  const parts = [];
+  if (birdies) parts.push(`${birdies} birdie${birdies > 1 ? "s" : ""}`);
+  if (eagles) parts.push(`${eagles} eagle${eagles > 1 ? "s" : ""}`);
+  return parts.join(" and ");
+}
+
 /** The two trophies: Hector for the pair, Victor for the individual. */
 export default function TournamentScreen({ rounds, hector, victor }: Props) {
   const [tab, setTab] = useState<"hector" | "victor">("hector");
@@ -54,24 +78,28 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
                 Round {r.seq} · {r.day}
               </div>
               {entry.detail.map((d, i) => (
-                <div
-                  key={`${d.formatId}-${i}`}
-                  className="flex justify-between gap-3 text-xs text-slate-400 num"
-                >
-                  <span className="truncate font-sans">
-                    {d.label}{" "}
-                    <span className="text-slate-600">
-                      ({Math.round(d.pct * 100)}% of{" "}
-                      {d.converted !== undefined
-                        ? `${d.raw} pts = ${d.converted}`
-                        : d.raw}
-                      )
+                <div key={`${d.formatId}-${i}`} className="mt-1.5 first:mt-0">
+                  <div className="flex justify-between gap-3 text-xs">
+                    <span className="truncate text-slate-300">{d.label}</span>
+                    <span className="shrink-0 font-semibold text-slate-100 num">
+                      {d.points >= 0 ? "+" : ""}
+                      {d.points.toFixed(2)}
                     </span>
-                  </span>
-                  <span className="shrink-0 font-semibold text-slate-200">
-                    {d.points >= 0 ? "+" : ""}
-                    {d.points.toFixed(2)}
-                  </span>
+                  </div>
+                  {/*
+                    Spell the arithmetic out. This used to read "(33% of 39 pts = 69)",
+                    which parses as "33% of 39 equals 69" — three different things
+                    smashed together, and the weight was wrong too: it is a third, so
+                    33% doesn't reconcile with the number beside it.
+                  */}
+                  <div className="text-[11px] text-slate-500 leading-relaxed">
+                    {d.converted !== undefined
+                      ? `${weightLabel(d.pct)} of ${d.who ?? "the better player"}'s ${d.raw} pts, which is ${d.converted} strokes`
+                      : `${weightLabel(d.pct)} of ${d.raw} strokes`}
+                    {d.bonus && d.bonus.points > 0 && (
+                      <> · less {d.bonus.points} for {bonusLabel(d.bonus)}</>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

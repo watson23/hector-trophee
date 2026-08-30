@@ -88,6 +88,36 @@ export async function reconcilePins(store: Store, event: EventDoc): Promise<void
   if (Object.keys(patch).length > 0) await store.saveEvent(patch);
 }
 
+/**
+ * Correct rounds seeded before a scoring bug was found.
+ *
+ * Rounds are written to the database once and then owned by the organiser, so a fix to
+ * the defaults in code never reaches an event that already exists. The draft round shipped
+ * weighted 0.33; the real weight is exactly 1/3, and the 2025 spreadsheet only reproduces
+ * with a third. Anything else the organiser has set is left alone — this looks for that one
+ * wrong value, not for "not the default".
+ */
+export async function migrateRounds(store: Store, rounds: Round[]): Promise<number> {
+  let fixed = 0;
+  for (const round of rounds) {
+    let touched = false;
+    const formats = round.formats.map((f) => {
+      const isOldDraftWeight =
+        f.kind === "stableford" &&
+        f.hector?.source === "betterIndividual" &&
+        Math.abs(f.hector.pct - 0.33) < 1e-9;
+      if (!isOldDraftWeight) return f;
+      touched = true;
+      return { ...f, hector: { ...f.hector!, pct: 1 / 3 } };
+    });
+    if (touched) {
+      await store.saveRound({ ...round, formats });
+      fixed += 1;
+    }
+  }
+  return fixed;
+}
+
 export function cardId(roundId: string, subjectId: string): string {
   return `${roundId}__${subjectId}`;
 }

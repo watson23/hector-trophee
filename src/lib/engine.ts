@@ -66,7 +66,11 @@ export interface ContributionDetail {
    * breakdown reads "33% of 38" next to a contribution of 23.1, which doesn't add up.
    */
   converted?: number;
+  /** Whose score counted, when only one of the pair's did. */
+  who?: string;
   pct: number;
+  /** Birdie/eagle bonus already taken off `points`, so the breakdown can show its working. */
+  bonus?: { points: number; birdies: number; eagles: number };
   points: number;
 }
 
@@ -152,6 +156,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
               label: spec.label,
               raw: best.value,
               converted: stablefordToStrokes(best.value, par),
+              who: byId.get(best.playerId)?.name,
               pct: spec.hector.pct,
               points,
             },
@@ -271,9 +276,12 @@ export function evaluateRound(input: RoundInput): RoundResult {
             pair.id,
             {
               formatId: spec.id,
-              label: spec.bonuses ? `${spec.label} (incl. bonuses)` : spec.label,
+              label: spec.label,
               raw: r.strokes,
               pct: spec.hector.pct,
+              ...(spec.bonuses
+                ? { bonus: { points: bonus, birdies: r.birdies, eagles: r.eagles } }
+                : {}),
               points: applyBonuses(base, bonus),
             },
             r.thru,

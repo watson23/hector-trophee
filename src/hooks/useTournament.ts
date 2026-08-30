@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
 import { computeTournament, effectiveTee, evaluateRound, type RoundResult } from "../lib/engine";
-import { getStore, reconcilePins, type Store, type StoreError } from "../lib/store";
+import { getStore, migrateRounds, reconcilePins, type Store, type StoreError } from "../lib/store";
 
 export interface TournamentState {
   ready: boolean;
@@ -67,6 +67,17 @@ export function useTournament(identity: string): TournamentState {
     pinsReconciled.current = true;
     void reconcilePins(store, event);
   }, [store, event]);
+
+  // Same problem for round config: seeded once, so a fix in code never reaches an
+  // event that already exists.
+  const roundsMigrated = useRef(false);
+  useEffect(() => {
+    if (!store || rounds.length === 0 || roundsMigrated.current) return;
+    roundsMigrated.current = true;
+    void migrateRounds(store, rounds).then((n) => {
+      if (n > 0) console.info(`Corrected the draft-round weight on ${n} round(s) to 1/3.`);
+    });
+  }, [store, rounds]);
 
   useEffect(() => {
     const on = () => setOnline(true);
