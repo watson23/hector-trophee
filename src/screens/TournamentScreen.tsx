@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
-import { hectorLowerIsBetter, hectorStrategy, HECTOR_STRATEGY } from "../lib/hector";
+import { hectorLowerIsBetter, levelParTotal } from "../lib/hector";
+import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
 
@@ -16,6 +17,20 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
   const [tab, setTab] = useState<"hector" | "victor">("hector");
   const holesPerRound = 18;
   const totalHoles = rounds.length * holesPerRound;
+
+  // What a pair going round in level par every round would total — a bare "231.4"
+  // means nothing without something to measure it against.
+  const levelPar = levelParTotal(
+    rounds.flatMap((r) =>
+      r.formats
+        .filter((f) => f.hector)
+        .map((f) => ({
+          pct: f.hector!.pct,
+          countsBothPlayers: f.hector!.source === "bothIndividuals",
+        })),
+    ),
+    courses[rounds[0]?.courseId ?? "radecky"]?.par.reduce((a, b) => a + b, 0) ?? 72,
+  );
 
   const hectorRows: LeaderRow[] = hector.map((row) => ({
     key: row.key,
@@ -43,7 +58,11 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
                   <span className="truncate font-sans">
                     {d.label}{" "}
                     <span className="text-slate-600">
-                      ({Math.round(d.pct * 100)}% of {d.raw})
+                      ({Math.round(d.pct * 100)}% of{" "}
+                      {d.converted !== undefined
+                        ? `${d.raw} pts = ${d.converted}`
+                        : d.raw}
+                      )
                     </span>
                   </span>
                   <span className="shrink-0 font-semibold text-slate-200">
@@ -126,12 +145,10 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
 
       {tab === "hector" && (
         <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
-          {hectorLowerIsBetter ? "Lower total wins." : "Higher total wins."} Tap a pair to see how
-          each round contributed. Scoring method:{" "}
-          <span className="text-slate-400">{hectorStrategy.description}</span>{" "}
-          <span className="text-amber-500/80">
-            ({HECTOR_STRATEGY} — provisional until the official Hector formula is confirmed)
-          </span>
+          Lower total wins — it reads like a stroke count, where roughly one stroke is one
+          point. A pair going round in level par every round would finish on{" "}
+          <span className="num text-slate-400">{levelPar.toFixed(1)}</span>. Tap a pair to see
+          what each round contributed.
         </p>
       )}
       {tab === "victor" && (

@@ -169,27 +169,41 @@ the trip if you'd rather not have it there at all.
 - `hector.ts` — the pair competition
 - `victor.ts` is folded into `engine.ts` — Σ Stableford points over the four Stableford rounds
 
-### The Hector formula is provisional
+### How Hector points work
 
-The published wording is "33% of the better individual's score", "50% of the team's score" and so
-on, but it never says what currency those scores are in — and taking it literally does not
-reproduce hector.golf's own numbers. The 2025 winners finished on **114.0** with last place on
-**134.6**, whereas a literal weighted sum of net strokes comes to roughly 190–210 for any
-plausible set of scores.
+The total behaves like a stroke count: **lower is better**, and roughly one stroke is one
+point. Stroke-play formats contribute their net score directly. Stableford is the one that
+has to be converted, since its points run the other way:
 
-The weights sum to 3.33 round-equivalents, and 114.0 / 3.33 ≈ 34.2 — which is exactly
-`net strokes − 36` for a net 70, and `72 − points` for a 38-point Stableford round. So the default
-strategy, `parNormalised`, expresses every round in those terms. It reproduces hector.golf's scale
-and ordering, but it is **inference, not the official rule**.
-
-Two alternatives are written and ready in `src/lib/hector.ts`. Switching is one line:
-
-```ts
-export const HECTOR_STRATEGY: HectorStrategyName = "parNormalised";
+```
+strokes = 2 × par − (points + 36)
 ```
 
-When the real formula is confirmed, change that constant (or write a fourth strategy) and add a
-test that reproduces the 2025 final leaderboard. Nothing else in the app needs to change.
+42 points on a par 72 is `144 − 78 = 66` — the six-under the player actually shot.
+
+Each round then contributes a share, configured per round:
+
+| Round | Format | Weight | Why |
+|-------|--------|--------|-----|
+| R1 | Stableford | 33% | Light, so the draft round can't open a gap that kills the week on day one |
+| R2 | Better ball | 50% | |
+| R3 | Stroke play | 25% | Applied to **both** players, so ≈50% of one round. Older Hectors counted this round double everything else |
+| R4 | Scramble | 50% | |
+| R5 | Better ball | 50% | |
+| R6 | Scramble | 100% | Heaviest, so the trophy stays live into the final round and one stroke ≈ one point while you play it |
+
+A pair going round in level par every round totals **239.8**, which the app shows under the
+Hector table as a reference. 2025 finished with 222.0 winning, 242.6 last, median 233.2.
+
+> ⚠️ The leaderboard published at hector.golf is uniformly **108.0 below** these figures —
+> it showed the 2025 winners on 114.0 rather than 222.0. The gaps between pairs are correct
+> there, only the absolute scale is off. This app follows the rules above, so its totals
+> will not match that page.
+
+**One open question:** birdie and eagle bonuses in the final scramble are counted on the
+team's **gross** score, on the grounds that a scramble birdie is the one everyone just
+watched drop. Counting them net would roughly double the tally against a team handicap of
+four or five. Worth confirming — it's one line in `formats.ts`.
 
 ## Course data
 

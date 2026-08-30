@@ -1,86 +1,80 @@
 import type { FormatKind } from "../types";
 
 /**
- * How a round's raw result turns into Hector points.
+ * Hector points — the pair competition.
  *
- * The published wording ("33% of the better individual's score", "50% of the team's
- * score", "100% of the team's score") does not say what currency those scores are in,
- * and taking it literally does not reproduce hector.golf's own totals: the 2025 winners
- * finished on 114.0 with last place on 134.6, whereas a literal weighted sum of net
- * strokes lands somewhere around 190–210 for any plausible set of scores.
+ * The whole total behaves like a stroke count: **lower is better**, and roughly one
+ * stroke is one point. Stroke-play formats (better ball, scramble, individual stroke
+ * play) contribute their net score directly. Stableford is the one format that has to be
+ * converted, since its points run the other way:
  *
- * `parNormalised` is the one strategy that does reproduce that scale — the six rounds
- * carry weights summing to 3.33, and 114.0 / 3.33 ≈ 34.2, which is exactly
- * (net strokes − 36) for a 70 and (72 − points) for a 38-point Stableford round. It is
- * the default until the official formula is confirmed.
+ *     strokes = 2 × par − (points + 36)
  *
- * Swapping strategies is a one-line change to HECTOR_STRATEGY; nothing else in the app
- * depends on which one is active.
+ * so 42 points on a par 72 becomes 144 − 78 = 66, which is the 6-under the player
+ * actually shot.
+ *
+ * Each round then contributes a share of that stroke figure, set per round in the round
+ * config. The 2025 weights and the reasoning behind them:
+ *
+ *   R1 Stableford        33%   deliberately light, so the draft round can't open a gap
+ *                              so large that the last pair gives up on day one
+ *   R2 Better ball       50%
+ *   R3 Stroke play       25%   applied to BOTH players, so ~50% of a single round —
+ *                              this is the fix for older Hectors where an individual
+ *                              round counted double everything else
+ *   R4 Scramble          50%
+ *   R5 Better ball       50%
+ *   R6 Scramble         100%   heaviest, so the trophy stays live into the final round,
+ *                              and so one stroke ≈ one leaderboard point while playing it
+ *
+ * A pair going round in level par every round therefore totals about 239.8:
+ * 0.33×72 + 0.5×72 + 2×0.25×72 + 0.5×72 + 0.5×72 + 1.0×72.
+ *
+ * For reference, 2025 finished with 222.0 winning, 242.6 last, and a median of 233.2.
+ *
+ * ⚠️ Note the leaderboard published at hector.golf is uniformly 108.0 below these
+ * figures — it showed the 2025 winners on 114.0 rather than 222.0. The gaps between
+ * pairs are right there, only the absolute scale is off. This app follows the rules
+ * above, so its totals will not match that page.
  */
-export type HectorStrategyName = "parNormalised" | "raw" | "stablefordUnified";
 
 export interface HectorInput {
-  /** Stableford points, or net/gross strokes, depending on `kind`. */
+  /** Stableford points, or net strokes, depending on `kind`. */
   value: number;
   kind: FormatKind;
   /** Par for the course, normally 72. */
   par: number;
-  /** The published weight, e.g. 0.33, 0.5, 0.25, 1.0. */
+  /** The round's weight, e.g. 0.33, 0.5, 0.25, 1.0. */
   pct: number;
 }
 
-interface Strategy {
-  name: HectorStrategyName;
-  description: string;
-  lowerIsBetter: boolean;
-  contribution: (input: HectorInput) => number;
+/** Stableford points expressed as strokes against the course par. */
+export function stablefordToStrokes(points: number, par: number): number {
+  return 2 * par - (points + 36);
 }
 
-const strategies: Record<HectorStrategyName, Strategy> = {
-  /** Everything expressed as "shots dropped": (net strokes − par/2), (par − points). */
-  parNormalised: {
-    name: "parNormalised",
-    description: "Weighted shots dropped — reproduces hector.golf's 2025 scale",
-    lowerIsBetter: true,
-    contribution: ({ value, kind, par, pct }) =>
-      kind === "stableford" ? pct * (par - value) : pct * (value - par / 2),
-  },
+/** Lower total wins — the score reads like a stroke count. */
+export const hectorLowerIsBetter = true;
 
-  /** Literal reading: weights applied straight to the published scores. */
-  raw: {
-    name: "raw",
-    description: "Literal weighted scores — Stableford counts against the total",
-    lowerIsBetter: true,
-    contribution: ({ value, kind, pct }) =>
-      kind === "stableford" ? -pct * value : pct * value,
-  },
-
-  /** Everything converted to Stableford-equivalent points; higher wins. */
-  stablefordUnified: {
-    name: "stablefordUnified",
-    description: "Everything as Stableford points — higher total wins",
-    lowerIsBetter: false,
-    contribution: ({ value, kind, par, pct }) =>
-      kind === "stableford" ? pct * value : pct * (36 + par - value),
-  },
-};
-
-/** ← Change this one constant when the official Hector formula is confirmed. */
-export const HECTOR_STRATEGY: HectorStrategyName = "parNormalised";
-
-export const hectorStrategy = strategies[HECTOR_STRATEGY];
-export const hectorLowerIsBetter = hectorStrategy.lowerIsBetter;
-
-export function hectorContribution(input: HectorInput): number {
-  return hectorStrategy.contribution(input);
+export function hectorContribution({ value, kind, par, pct }: HectorInput): number {
+  return pct * (kind === "stableford" ? stablefordToStrokes(value, par) : value);
 }
 
 /**
- * Birdie/eagle bonuses (day 4 scramble) always help the team, so they are subtracted
- * when a lower total wins and added when a higher one does.
+ * Birdie and eagle bonuses in the final scramble. They help the pair, and the total is
+ * a stroke count, so they come off it.
  */
 export function applyBonuses(contribution: number, bonusPoints: number): number {
-  return hectorLowerIsBetter ? contribution - bonusPoints : contribution + bonusPoints;
+  return contribution - bonusPoints;
 }
 
-export const HECTOR_STRATEGIES = strategies;
+/**
+ * What a pair going round in level par every round would total — useful context on the
+ * leaderboard, since a bare "231.4" means nothing without it.
+ */
+export function levelParTotal(
+  weights: { pct: number; countsBothPlayers?: boolean }[],
+  par: number,
+): number {
+  return weights.reduce((sum, w) => sum + w.pct * par * (w.countsBothPlayers ? 2 : 1), 0);
+}

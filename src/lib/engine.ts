@@ -16,7 +16,7 @@ import {
   type PlayerRoundContext,
 } from "./formats";
 import { courseHandicap, scrambleTeamHandicap, type ScrambleMethod } from "./handicap";
-import { applyBonuses, hectorContribution } from "./hector";
+import { applyBonuses, hectorContribution, stablefordToStrokes } from "./hector";
 
 export interface RoundInput {
   round: Round;
@@ -59,8 +59,13 @@ export interface FormatResult {
 export interface ContributionDetail {
   formatId: string;
   label: string;
-  /** The raw score the weight was applied to. */
+  /** The score as played — Stableford points, or net strokes. */
   raw: number;
+  /**
+   * Stableford only: `raw` converted to strokes before weighting. Without this the
+   * breakdown reads "33% of 38" next to a contribution of 23.1, which doesn't add up.
+   */
+  converted?: number;
   pct: number;
   points: number;
 }
@@ -142,7 +147,14 @@ export function evaluateRound(input: RoundInput): RoundResult {
           });
           addHector(
             pair.id,
-            { formatId: spec.id, label: spec.label, raw: best.value, pct: spec.hector.pct, points },
+            {
+              formatId: spec.id,
+              label: spec.label,
+              raw: best.value,
+              converted: stablefordToStrokes(best.value, par),
+              pct: spec.hector.pct,
+              points,
+            },
             Math.max(...rows.map((r) => r.thru)),
           );
         }

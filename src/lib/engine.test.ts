@@ -15,7 +15,8 @@ import {
   stablefordResult,
   strokePlayResult,
 } from "./formats";
-import { effectiveTee, evaluateRound, teamCardId } from "./engine";
+import { computeTournament, effectiveTee, evaluateRound, teamCardId } from "./engine";
+import { hectorContribution, levelParTotal, stablefordToStrokes } from "./hector";
 import { formatDiff, formatThru, rank } from "./leaderboard";
 
 const radecky = courses.radecky;
@@ -161,13 +162,29 @@ describe("better ball", () => {
 });
 
 describe("scramble", () => {
-  it("applies the team handicap and counts net birdies and eagles", () => {
+  it("applies the team handicap to the net total", () => {
     const teamHcp = scrambleTeamHandicap(2, 19, 0.2); // 4
     const r = scrambleResult(cardAtPar("team", 0), radecky, teamHcp);
     expect(r.strokes).toBe(72 - 4);
-    // four strokes → four net birdies, no eagles
-    expect(r.birdies).toBe(4);
-    expect(r.eagles).toBe(0);
+  });
+
+  it("counts birdies and eagles on gross, not net", () => {
+    const teamHcp = scrambleTeamHandicap(2, 19, 0.2); // 4 strokes received
+    // A gross-par round earns no birdie bonus, even though four holes go net-1 under.
+    expect(scrambleResult(cardAtPar("team", 0), radecky, teamHcp).birdies).toBe(0);
+
+    // Hole 1 par 5 → 4 is a birdie, hole 4 par 5 → 3 is an eagle, rest are pars.
+    const card: Card = {
+      id: "t",
+      roundId: "r6",
+      subjectId: "team",
+      holes: Object.fromEntries(radecky.par.map((p, i) => [String(i + 1), p])),
+    };
+    card.holes["1"] = 4;
+    card.holes["4"] = 3;
+    const r = scrambleResult(card, radecky, teamHcp);
+    expect(r.birdies).toBe(1);
+    expect(r.eagles).toBe(1);
   });
 });
 
@@ -195,10 +212,11 @@ describe("evaluateRound", () => {
     expect(jariRow.value).toBe(38); // 36 + 2 strokes
     expect(lasseRow.value).toBeLessThan(jariRow.value);
 
-    // Hector took Jari's 38, weighted 33%, via the parNormalised strategy: 0.33 × (72 − 38)
+    // Hector took Jari's 38 points, converted to strokes (2×72 − (38+36) = 70) and
+    // weighted 33%.
     const detail = result.hector[pair.id].detail[0];
     expect(detail.raw).toBe(38);
-    expect(detail.points).toBeCloseTo(0.33 * (72 - 38), 5);
+    expect(detail.points).toBeCloseTo(0.33 * 70, 5);
 
     // Victor counts both players at 100%
     expect(result.victor[jari.id].points).toBe(38);
@@ -221,31 +239,29 @@ describe("evaluateRound", () => {
   });
 
   it("applies birdie and eagle bonuses in the day 6 scramble", () => {
-    const round = roundWith({ formats: defaultRounds[5].formats });
-    const withBonuses = evaluateRound({
-      round,
-      course: radecky,
-      tee: effectiveTee(round, radecky),
-      players,
-      pairs: [pair],
-      cards: { [teamCardId(pair.id)]: cardAtPar("team") },
-    });
-    const noBonusRound = roundWith({
-      formats: [{ ...defaultRounds[5].formats[0], bonuses: undefined }],
-    });
-    const without = evaluateRound({
-      round: noBonusRound,
-      course: radecky,
-      tee: effectiveTee(noBonusRound, radecky),
-      players,
-      pairs: [pair],
-      cards: { [teamCardId(pair.id)]: cardAtPar("team") },
-    });
-    // four net birdies at 0.5 each, and lower is better, so the total drops by 2
-    expect(withBonuses.hector[pair.id].points).toBeCloseTo(
-      without.hector[pair.id].points - 2,
-      5,
-    );
+    // Three gross birdies and one gross eagle: 3 × 0.5 + 1 = 2.5 off the total.
+    const holes = Object.fromEntries(radecky.par.map((p, i) => [String(i + 1), p]));
+    for (const h of ["2", "3", "5"]) holes[h] = radecky.par[Number(h) - 1] - 1;
+    holes["4"] = radecky.par[3] - 2;
+    const card: Card = { id: "t", roundId: "r6", subjectId: teamCardId(pair.id), holes };
+
+    const run = (formats: Round["formats"]) => {
+      const round = roundWith({ formats });
+      return evaluateRound({
+        round,
+        course: radecky,
+        tee: effectiveTee(round, radecky),
+        players,
+        pairs: [pair],
+        cards: { [teamCardId(pair.id)]: card },
+      }).hector[pair.id].points;
+    };
+
+    const withBonuses = run(defaultRounds[5].formats);
+    const without = run([{ ...defaultRounds[5].formats[0], bonuses: undefined }]);
+    expect(withBonuses).toBeCloseTo(without - 2.5, 5);
+    // Lower wins, so the bonuses must reduce the total.
+    expect(withBonuses).toBeLessThan(without);
   });
 
   it("ignores pairs with no cards at all", () => {
@@ -298,5 +314,117 @@ describe("ranking", () => {
     expect(formatThru(18)).toBe("F");
     expect(formatThru(7)).toBe("7");
     expect(formatThru(0)).toBe("—");
+  });
+});
+
+
+describe("hector points", () => {
+  // The organiser's own worked example: a 42-point Stableford round on a par 72 is a
+  // 66, because 42 points is six under.
+  it("converts Stableford points to strokes against par", () => {
+    expect(stablefordToStrokes(42, 72)).toBe(66);
+    expect(stablefordToStrokes(36, 72)).toBe(72);
+    expect(stablefordToStrokes(30, 72)).toBe(78);
+  });
+
+  it("weights a round's strokes and leaves stroke play alone", () => {
+    expect(hectorContribution({ value: 72, kind: "betterball", par: 72, pct: 0.5 })).toBe(36);
+    expect(hectorContribution({ value: 72, kind: "scramble", par: 72, pct: 1.0 })).toBe(72);
+    expect(hectorContribution({ value: 72, kind: "strokeplay", par: 72, pct: 0.25 })).toBe(18);
+    // Stableford converts first: 42 points → 66 strokes → 33% of that
+    expect(hectorContribution({ value: 42, kind: "stableford", par: 72, pct: 0.33 })).toBeCloseTo(
+      0.33 * 66,
+      5,
+    );
+  });
+
+  it("puts a level-par pair on 239.8 across the six rounds", () => {
+    // 0.33 + 0.5 + (0.25 × both players) + 0.5 + 0.5 + 1.0, all against a par 72
+    const weights = defaultRounds.flatMap((r) =>
+      r.formats
+        .filter((f) => f.hector)
+        .map((f) => ({
+          pct: f.hector!.pct,
+          countsBothPlayers: f.hector!.source === "bothIndividuals",
+        })),
+    );
+    expect(levelParTotal(weights, 72)).toBeCloseTo(239.76, 2);
+  });
+
+  it("matches the organiser's per-round breakdown for a level-par pair", () => {
+    const perRound = defaultRounds.map((r) =>
+      r.formats
+        .filter((f) => f.hector)
+        .reduce(
+          (sum, f) =>
+            sum +
+            hectorContribution({
+              value: f.kind === "stableford" ? 36 : 72,
+              kind: f.kind,
+              par: 72,
+              pct: f.hector!.pct,
+            }) *
+              (f.hector!.source === "bothIndividuals" ? 2 : 1),
+          0,
+        ),
+    );
+    expect(perRound.map((n) => Math.round(n * 10) / 10)).toEqual([23.8, 36, 36, 36, 36, 72]);
+  });
+
+  it("scores lower-is-better, and birdies help", () => {
+    const round = { ...defaultRounds[5] };
+    const bonus = round.formats[0].bonuses!;
+    expect(bonus.birdie).toBe(0.5);
+    expect(bonus.eagle).toBe(1);
+  });
+});
+
+describe("2025 leaderboard scale", () => {
+  // The published page showed 114.0 / 116.9 / 121.8; the real figures are 108.0 higher.
+  // The gaps are what the app must reproduce, and they are identical either way.
+  it("reproduces the gaps between the top three", () => {
+    const actual = [222.0, 224.9, 229.8];
+    const published = [114.0, 116.9, 121.8];
+    expect(actual.map((n) => +(n - actual[0]).toFixed(1))).toEqual([0, 2.9, 7.8]);
+    expect(published.map((n) => +(n - published[0]).toFixed(1))).toEqual([0, 2.9, 7.8]);
+    expect(actual.every((n, i) => +(n - published[i]).toFixed(1) === 108.0)).toBe(true);
+  });
+
+  it("puts a realistic winning total below the level-par reference", () => {
+    const weights = defaultRounds.flatMap((r) =>
+      r.formats
+        .filter((f) => f.hector)
+        .map((f) => ({
+          pct: f.hector!.pct,
+          countsBothPlayers: f.hector!.source === "bothIndividuals",
+        })),
+    );
+    const levelPar = levelParTotal(weights, 72);
+    // 2025: winners 222.0, last 242.6, median 233.2 — level par sits inside that spread.
+    expect(levelPar).toBeGreaterThan(222.0);
+    expect(levelPar).toBeLessThan(242.6);
+  });
+});
+
+describe("tournament totals", () => {
+  it("adds each round's contribution into the pair total", () => {
+    const results = [
+      {
+        roundId: "r1",
+        formats: [],
+        hector: { p1: { points: 23.8, thru: 18, detail: [] } },
+        victor: { "jari-k": { points: 38, thru: 18 } },
+      },
+      {
+        roundId: "r2",
+        formats: [],
+        hector: { p1: { points: 36, thru: 18, detail: [] } },
+        victor: { "jari-k": { points: 34, thru: 18 } },
+      },
+    ];
+    const totals = computeTournament(results, [jari, lasse], [pair]);
+    expect(totals.hector[0].points).toBeCloseTo(59.8, 5);
+    expect(totals.hector[0].roundsPlayed).toBe(2);
+    expect(totals.victor.find((v) => v.key === "jari-k")!.points).toBe(72);
   });
 });

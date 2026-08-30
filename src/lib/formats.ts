@@ -146,8 +146,12 @@ export function betterBallResult(
 
 /**
  * Scramble: one gross card for the pair, one team handicap applied over the 18 holes.
- * Birdies and eagles are counted on the team's NET score, since the day-4 bonus rides
- * on the same net figure the Hector points come from.
+ *
+ * Birdies and eagles are counted on the team's GROSS score — a scramble birdie is the
+ * one everybody round the green just watched drop, not a handicap artefact. With a team
+ * handicap of four or five, counting them net would roughly double the tally and hand
+ * out bonus points nobody saw earned. ⚠️ Worth confirming with the organiser, since the
+ * published rules say only "0.5 points for each Birdie".
  */
 export function scrambleResult(
   card: Card | undefined,
@@ -167,8 +171,8 @@ export function scrambleResult(
     parPlayed += par;
     const net = netScore(gross, strokes[i]);
     total += net;
-    if (net === par - 1) birdies += 1;
-    if (net <= par - 2) eagles += 1;
+    if (gross === par - 1) birdies += 1;
+    if (gross <= par - 2) eagles += 1;
     return net;
   });
   return { strokes: total, toPar: total - parPlayed, thru, perHole, birdies, eagles };
