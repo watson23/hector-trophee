@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
-import { hectorLowerIsBetter, levelParTotal } from "../lib/hector";
+import { hectorLowerIsBetter, levelParTotal, weightLabel } from "../lib/hector";
 import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
@@ -12,23 +12,6 @@ interface Props {
   rounds: Round[];
   hector: TournamentTotals["hector"];
   victor: TournamentTotals["victor"];
-}
-
-/**
- * Weights are thirds, halves and quarters, so show them as fractions. Rounding 1/3 to
- * "33%" made the breakdown fail to add up against the figure printed next to it.
- */
-function weightLabel(pct: number): string {
-  const named: [number, string][] = [
-    [1, "all"],
-    [1 / 2, "½"],
-    [1 / 3, "⅓"],
-    [1 / 4, "¼"],
-    [2 / 3, "⅔"],
-    [3 / 4, "¾"],
-  ];
-  const hit = named.find(([v]) => Math.abs(v - pct) < 1e-9);
-  return hit ? hit[1] : `${Math.round(pct * 1000) / 10}%`;
 }
 
 function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): string {

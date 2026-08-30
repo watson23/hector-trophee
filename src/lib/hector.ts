@@ -51,6 +51,23 @@ export interface HectorInput {
   pct: number;
 }
 
+/**
+ * Weights read as fractions, not percentages. They are thirds, halves and quarters, and
+ * rounding 1/3 to "33%" makes the arithmetic shown beside it fail to add up.
+ */
+export function weightLabel(pct: number): string {
+  const named: [number, string][] = [
+    [1, "all"],
+    [1 / 2, "½"],
+    [1 / 3, "⅓"],
+    [1 / 4, "¼"],
+    [2 / 3, "⅔"],
+    [3 / 4, "¾"],
+  ];
+  const hit = named.find(([v]) => Math.abs(v - pct) < 1e-9);
+  return hit ? hit[1] : `${Math.round(pct * 1000) / 10}%`;
+}
+
 /** Stableford points expressed as strokes against the course par. */
 export function stablefordToStrokes(points: number, par: number): number {
   return 2 * par - (points + 36);

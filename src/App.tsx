@@ -87,6 +87,7 @@ export default function App() {
               <RoundScreen
                 rounds={t.rounds}
                 results={t.roundResults}
+                cards={t.cards}
                 initialRoundId={activeRound?.id ?? null}
               />
             )}

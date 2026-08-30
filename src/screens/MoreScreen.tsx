@@ -3,6 +3,7 @@ import type { EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
+import { weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
 import { Header } from "../components/Chrome";
 
@@ -137,7 +138,7 @@ function RoundCard({ round, me }: { round: Round; me: FieldPlayer | null }) {
             {f.net && <span className="text-slate-600 num">{Math.round(f.allowance * 100)}%</span>}
             {f.hector && (
               <span className="pill bg-violet-950/70 text-violet-300 text-[10px]">
-                H {Math.round(f.hector.pct * 100)}%
+                H {weightLabel(f.hector.pct)}
               </span>
             )}
             {f.victor && (

@@ -8,6 +8,7 @@ import type {
   Tee,
 } from "../types";
 import {
+  allocationFor,
   betterBallResult,
   holesPlayed,
   scrambleResult,
@@ -15,7 +16,12 @@ import {
   strokePlayResult,
   type PlayerRoundContext,
 } from "./formats";
-import { courseHandicap, scrambleTeamHandicap, type ScrambleMethod } from "./handicap";
+import {
+  courseHandicap,
+  scrambleTeamHandicap,
+  strokeAllocation,
+  type ScrambleMethod,
+} from "./handicap";
 import { applyBonuses, hectorContribution, stablefordToStrokes } from "./hector";
 
 export interface RoundInput {
@@ -37,6 +43,10 @@ export interface PlayerRow {
   toPar?: number;
   thru: number;
   playingHcp: number;
+  /** What this format scored on each hole, for the hole-by-hole view. */
+  perHole: (number | null)[];
+  /** Handicap strokes received per hole, so the card can mark them. */
+  strokes: number[];
 }
 
 export interface TeamRow {
@@ -48,6 +58,13 @@ export interface TeamRow {
   birdies: number;
   eagles: number;
   playingHcp?: number;
+  /** The team's score on each hole. */
+  perHole: (number | null)[];
+  /** Better ball only: whose ball counted, per hole. */
+  contributor?: (string | null)[];
+  /** The card ids this row was built from, so the view can show the gross scores. */
+  subjectIds: string[];
+  strokes?: number[];
 }
 
 export interface FormatResult {
@@ -143,13 +160,16 @@ export function evaluateRound(input: RoundInput): RoundResult {
 
     if (spec.kind === "stableford") {
       for (const p of field) {
-        const r = stablefordResult(cards[p.id], ctxFor(p, course, tee, spec, round));
+        const ctx = ctxFor(p, course, tee, spec, round);
+        const r = stablefordResult(cards[p.id], ctx);
         result.players.push({
           playerId: p.id,
           name: p.name,
           value: r.points,
           thru: r.thru,
           playingHcp: r.playingHcp,
+          perHole: r.perHole,
+          strokes: allocationFor(ctx).strokes,
         });
         if (spec.victor) {
           const v = (victor[p.id] ??= { points: 0, thru: 0 });
@@ -187,7 +207,8 @@ export function evaluateRound(input: RoundInput): RoundResult {
 
     if (spec.kind === "strokeplay") {
       for (const p of field) {
-        const r = strokePlayResult(cards[p.id], ctxFor(p, course, tee, spec, round), spec.net);
+        const ctx = ctxFor(p, course, tee, spec, round);
+        const r = strokePlayResult(cards[p.id], ctx, spec.net);
         result.players.push({
           playerId: p.id,
           name: p.name,
@@ -195,6 +216,8 @@ export function evaluateRound(input: RoundInput): RoundResult {
           toPar: r.toPar,
           thru: r.thru,
           playingHcp: r.playingHcp,
+          perHole: r.perHole,
+          strokes: spec.net ? allocationFor(ctx).strokes : course.par.map(() => 0),
         });
       }
       if (spec.hector?.source === "bothIndividuals") {
@@ -242,6 +265,9 @@ export function evaluateRound(input: RoundInput): RoundResult {
           thru: r.thru,
           birdies: r.birdies,
           eagles: r.eagles,
+          perHole: r.perHole,
+          contributor: r.contributor,
+          subjectIds: [a.id, b.id],
         });
         if (spec.hector) {
           const points = hectorContribution({
@@ -281,6 +307,9 @@ export function evaluateRound(input: RoundInput): RoundResult {
           birdies: r.birdies,
           eagles: r.eagles,
           playingHcp: teamHcp,
+          perHole: r.perHole,
+          subjectIds: [teamCardId(pair.id)],
+          strokes: strokeAllocation(teamHcp, course.si),
         });
         if (spec.hector) {
           const base = hectorContribution({

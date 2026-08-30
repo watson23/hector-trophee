@@ -171,6 +171,15 @@ the field by Stableford points and names whoever is up next, showing only the op
 bucket as their options. "Someone else" overrides that when reality diverges, and before
 round 1 has been played it says so, since there is no order to work from yet.
 
+### Seeing how everyone played
+
+On the **Round** tab, tapping any row expands it into that player's card for the round:
+gross coloured against par with a dot on each hole where a handicap stroke was received,
+and the format's own scoring underneath — Stableford points, or net strokes.
+
+Team rows expand into both players' gross cards plus the ball the team actually counted, so
+you can see which of the two carried each hole in a better ball.
+
 ### Fixing a wrong score
 
 **Admin → Scores** reaches every card in every round, not just your own flight and not just

@@ -1,19 +1,22 @@
 import { useState } from "react";
-import type { Round } from "../types";
+import type { Card, Round } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import type { RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
+import { weightLabel } from "../lib/hector";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HectorMark from "../components/HectorMark";
+import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
 import { Empty, Header } from "../components/Chrome";
 
 interface Props {
   rounds: Round[];
   results: Record<string, RoundResult>;
+  cards: Record<string, Record<string, Card>>;
   initialRoundId: string | null;
 }
 
-export default function RoundScreen({ rounds, results, initialRoundId }: Props) {
+export default function RoundScreen({ rounds, results, cards, initialRoundId }: Props) {
   const [roundId, setRoundId] = useState<string | null>(initialRoundId ?? rounds[0]?.id ?? null);
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
   const result = round ? results[round.id] : undefined;
@@ -21,6 +24,7 @@ export default function RoundScreen({ rounds, results, initialRoundId }: Props) 
   if (!round) return <Empty title="No rounds" body="The schedule hasn't been set up yet." />;
 
   const course = courses[round.courseId];
+  const roundCards = cards[round.id] ?? {};
 
   return (
     <div className="pb-4">
@@ -78,6 +82,33 @@ export default function RoundScreen({ rounds, results, initialRoundId }: Props) 
                       : undefined,
                 thru: t.thru,
                 played: t.thru > 0,
+                detail: course && (
+                  <HoleByHole
+                    course={course}
+                    rows={[
+                      ...t.subjectIds.map((id, i) =>
+                        grossRow(
+                          roundCards[id],
+                          t.subjectIds.length > 1
+                            ? (t.label.split(" + ")[i] ?? "gross")
+                            : "gross",
+                          t.strokes,
+                        ),
+                      ),
+                      {
+                        label: f.spec.kind === "scramble" ? "net" : "team",
+                        values: t.perHole,
+                        colourVsPar: true,
+                        emphasis: true,
+                      },
+                    ]}
+                    footer={
+                      t.contributor
+                        ? "Each hole takes the lower net ball of the two."
+                        : undefined
+                    }
+                  />
+                ),
               }))
             : f.players.map((p) => ({
                 key: p.playerId,
@@ -91,6 +122,24 @@ export default function RoundScreen({ rounds, results, initialRoundId }: Props) 
                 extra: f.spec.net ? `playing HCP ${p.playingHcp}` : undefined,
                 thru: p.thru,
                 played: p.thru > 0,
+                detail: course && (
+                  <HoleByHole
+                    course={course}
+                    rows={[
+                      grossRow(roundCards[p.playerId], "gross", p.strokes),
+                      ...(f.spec.kind === "stableford" || f.spec.net
+                        ? ([
+                            {
+                              label: f.spec.kind === "stableford" ? "pts" : "net",
+                              values: p.perHole,
+                              colourVsPar: f.spec.kind !== "stableford",
+                              emphasis: true,
+                            },
+                          ] as HoleRow[])
+                        : []),
+                    ]}
+                  />
+                ),
               }));
 
           return (
@@ -100,7 +149,7 @@ export default function RoundScreen({ rounds, results, initialRoundId }: Props) 
                 <div className="flex gap-1 shrink-0">
                   {f.spec.hector && (
                     <span className="pill bg-violet-950 text-violet-300">
-                      Hector {Math.round(f.spec.hector.pct * 100)}%
+                      Hector {weightLabel(f.spec.hector.pct)}
                     </span>
                   )}
                   {f.spec.victor && (
