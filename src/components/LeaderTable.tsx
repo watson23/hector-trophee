@@ -9,7 +9,13 @@ export interface LeaderRow {
   /** What's rendered in the score column, if different from `value`. */
   display?: string;
   extra?: string;
+  /** Tone for the extra line — "warn" renders it amber, for things that need noticing. */
+  extraTone?: "warn";
   thru: number;
+  /** Overrides the plain hole count in the Thru column, e.g. "R6·7" or "R3 ✓". */
+  thruLabel?: string;
+  /** Positions gained (+) or lost (−) against a baseline, shown as ▲2 / ▼1. */
+  movement?: number;
   played: boolean;
   detail?: ReactNode;
 }
@@ -21,6 +27,7 @@ export default function LeaderTable({
   decimals = 0,
   totalHoles = 18,
   leaderMark,
+  wideThru = false,
 }: {
   rows: LeaderRow[];
   lowerIsBetter: boolean;
@@ -29,6 +36,8 @@ export default function LeaderTable({
   totalHoles?: number;
   /** Shown beside whoever is leading — a pair of falcons for pairs, one for an individual. */
   leaderMark?: ReactNode;
+  /** Tournament tables carry round-aware Thru labels ("R6·7"), which need a wider column. */
+  wideThru?: boolean;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const ranked = rank(
@@ -56,9 +65,9 @@ export default function LeaderTable({
         <colgroup>
           <col className="w-8" />
           <col />
-          <col className="w-[4.5rem]" />
+          <col className={wideThru ? "w-[4rem]" : "w-[4.5rem]"} />
           <col className="w-[2.9rem]" />
-          <col className="w-10" />
+          <col className={wideThru ? "w-12" : "w-10"} />
         </colgroup>
         <thead>
           {/* No tracking on these: the last two headers are narrow and letter-spacing runs "DIFF" into "THRU". */}
@@ -97,9 +106,25 @@ export default function LeaderTable({
                     >
                       {r.leader && leaderMark}
                       <span className="truncate">{r.item.label}</span>
+                      {r.item.movement !== undefined && r.item.movement !== 0 && (
+                        <span
+                          className={`shrink-0 num text-[10px] font-bold ${
+                            r.item.movement > 0 ? "text-emerald-400" : "text-rose-400"
+                          }`}
+                        >
+                          {r.item.movement > 0 ? "▲" : "▼"}
+                          {Math.abs(r.item.movement)}
+                        </span>
+                      )}
                     </div>
                     {r.item.extra && (
-                      <div className="text-[11px] text-slate-500 num truncate">{r.item.extra}</div>
+                      <div
+                        className={`text-[11px] num truncate ${
+                          r.item.extraTone === "warn" ? "text-amber-500/90" : "text-slate-500"
+                        }`}
+                      >
+                        {r.item.extra}
+                      </div>
                     )}
                   </td>
                   <td className="text-right px-1.5 num font-bold tabular-nums whitespace-nowrap">
@@ -110,8 +135,8 @@ export default function LeaderTable({
                   <td className="text-right px-0.5 num text-[11px] text-slate-400 whitespace-nowrap">
                     {r.item.played ? formatDiff(r.diff, Math.max(decimals, 1)) : "—"}
                   </td>
-                  <td className="text-right pl-1.5 pr-2.5 num text-[11px] text-slate-400">
-                    {formatThru(r.item.thru, totalHoles)}
+                  <td className="text-right pl-1.5 pr-2.5 num text-[11px] text-slate-400 whitespace-nowrap">
+                    {r.item.thruLabel ?? formatThru(r.item.thru, totalHoles)}
                   </td>
                 </tr>
                 {isOpen && r.item.detail && (

@@ -2,6 +2,7 @@ import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
 import { hectorLowerIsBetter } from "../lib/hector";
 import { rank } from "../lib/leaderboard";
+import { PREVIOUS } from "../data/history";
 
 interface Props {
   rounds: Round[];
@@ -69,6 +70,12 @@ export default function Champions({ rounds, hector, victor }: Props) {
           </span>
         </p>
       )}
+      {/* Lineage: a trophy means more with the year before under it. */}
+      <p className="mt-1.5 text-[11px] text-slate-500 num">
+        {hectorTied.length === 1 && pair.label === PREVIOUS.hector.label
+          ? `Title defended · won ${PREVIOUS.year} on ${PREVIOUS.hector.points.toFixed(1)}`
+          : `${PREVIOUS.year} · ${PREVIOUS.hector.label} · ${PREVIOUS.hector.points.toFixed(1)}`}
+      </p>
 
       <div className="mt-4 pt-4 border-t border-amber-500/15">
         <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">

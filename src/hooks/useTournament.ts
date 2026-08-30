@@ -20,6 +20,8 @@ export interface TournamentState {
   roundResults: Record<string, RoundResult>;
   hector: ReturnType<typeof computeTournament>["hector"];
   victor: ReturnType<typeof computeTournament>["victor"];
+  /** Positions gained (+) / lost (−) per pair against the standings before the open round. */
+  hectorMovement: Record<string, number>;
   pending: number;
   online: boolean;
   error: StoreError | null;
@@ -125,6 +127,48 @@ export function useTournament(identity: string): TournamentState {
     );
   }, [event, rounds, roundResults]);
 
+  /**
+   * Where each pair stood before the round now being played, as positions gained/lost —
+   * so the Hector table can show who's climbing while a round is live. Derived, not
+   * stored: the baseline is simply the tournament scored without the open round's cards.
+   */
+  const hectorMovement = useMemo<Record<string, number>>(() => {
+    if (!event) return {};
+    const open = rounds.find(
+      (r) => r.status === "open" && r.formats.some((f) => f.hector),
+    );
+    const course = open ? courses[open.courseId] : null;
+    if (!open || !course) return {};
+    const withoutOpen = rounds
+      .map((r) =>
+        r.id === open.id
+          ? evaluateRound({
+              round: open,
+              course,
+              tee: effectiveTee(open, course),
+              players: event.players,
+              pairs: event.pairs,
+              cards: {},
+            })
+          : roundResults[r.id],
+      )
+      .filter(Boolean);
+    const before = computeTournament(withoutOpen, event.players, event.pairs).hector;
+    const position = (list: typeof before) => {
+      const played = list.filter((r) => r.roundsPlayed > 0);
+      const sorted = [...played].sort((a, b) => a.points - b.points);
+      return new Map(sorted.map((r, i) => [r.key, i + 1]));
+    };
+    const was = position(before);
+    const now = position(totals.hector);
+    const out: Record<string, number> = {};
+    for (const [key, pos] of now) {
+      const prev = was.get(key);
+      if (prev !== undefined) out[key] = prev - pos;
+    }
+    return out;
+  }, [event, rounds, roundResults, totals.hector]);
+
   const setHole = useCallback(
     (roundId: string, subjectId: string, hole: number, value: number | null) => {
       void store?.setHole(roundId, subjectId, hole, value, identity);
@@ -169,6 +213,7 @@ export function useTournament(identity: string): TournamentState {
     roundResults,
     hector: totals.hector,
     victor: totals.victor,
+    hectorMovement,
     pending,
     online,
     error,

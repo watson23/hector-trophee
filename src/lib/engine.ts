@@ -357,8 +357,8 @@ export interface TournamentRow<T> {
 }
 
 export interface TournamentTotals {
-  hector: TournamentRow<{ points: number; detail: ContributionDetail[] }>[];
-  victor: TournamentRow<{ points: number }>[];
+  hector: TournamentRow<{ points: number; thru: number; detail: ContributionDetail[] }>[];
+  victor: TournamentRow<{ points: number; thru: number }>[];
   rounds: RoundResult[];
 }
 
@@ -373,7 +373,7 @@ export function computeTournament(
   const hector = pairs.map((pair) => {
     const a = byId.get(pair.aId);
     const b = byId.get(pair.bId);
-    const row: TournamentRow<{ points: number; detail: ContributionDetail[] }> = {
+    const row: TournamentRow<{ points: number; thru: number; detail: ContributionDetail[] }> = {
       key: pair.id,
       label: `${a?.name ?? "?"} + ${b?.name ?? "?"}`,
       points: 0,
@@ -385,7 +385,7 @@ export function computeTournament(
       const entry = rr.hector[pair.id];
       if (!entry || entry.thru === 0) continue;
       row.points += entry.points;
-      row.perRound[rr.roundId] = { points: entry.points, detail: entry.detail };
+      row.perRound[rr.roundId] = { points: entry.points, thru: entry.thru, detail: entry.detail };
       row.roundsPlayed += 1;
       row.thru += entry.thru;
     }
@@ -393,7 +393,7 @@ export function computeTournament(
   });
 
   const victor = players.map((p) => {
-    const row: TournamentRow<{ points: number }> = {
+    const row: TournamentRow<{ points: number; thru: number }> = {
       key: p.id,
       label: p.name,
       points: 0,
@@ -405,7 +405,7 @@ export function computeTournament(
       const entry = rr.victor[p.id];
       if (!entry || entry.thru === 0) continue;
       row.points += entry.points;
-      row.perRound[rr.roundId] = { points: entry.points };
+      row.perRound[rr.roundId] = { points: entry.points, thru: entry.thru };
       row.roundsPlayed += 1;
       row.thru += entry.thru;
     }

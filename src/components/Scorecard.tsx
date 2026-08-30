@@ -110,7 +110,7 @@ function Nine({
             ))}
             <td className="text-center py-0.5 font-semibold">{parSum}</td>
           </tr>
-          <tr className="text-slate-600 text-[10px] border-b border-slate-800">
+          <tr className="text-slate-500/90 text-[10px] border-b border-slate-800">
             <td className="px-2 py-0.5 font-sans">SI</td>
             {holes.map((i) => (
               <td key={i} className="text-center py-0.5">

@@ -64,7 +64,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
           ))}
           <td className="text-center font-semibold">Σ</td>
         </tr>
-        <tr className="text-slate-600 text-[10px]">
+        <tr className="text-slate-500/90 text-[10px]">
           <td className="text-left font-sans">Par</td>
           {holes.map((i) => (
             <td key={i} className="text-center">

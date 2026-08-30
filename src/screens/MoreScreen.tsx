@@ -3,9 +3,10 @@ import type { EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
-import { weightLabel } from "../lib/hector";
+import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
 import { Header } from "../components/Chrome";
+import { PREVIOUS } from "../data/history";
 
 interface Props {
   event: EventDoc;
@@ -39,23 +40,18 @@ export default function MoreScreen({
           me && (
             <button
               onClick={onSwitchPlayer}
-              className="shrink-0 text-right group"
+              className="shrink-0 text-right rounded-xl border border-slate-800 bg-slate-900
+                         px-2.5 py-1.5 active:bg-slate-800"
               aria-label="Change player"
             >
-              <div className="text-sm font-semibold group-hover:text-violet-400">{me.name}</div>
-              <div className="text-[11px] text-slate-500 num">HCP {me.hi.toFixed(1)}</div>
+              <div className="text-sm font-semibold leading-tight">{me.name}</div>
+              <div className="text-[11px] text-slate-500 num leading-tight">
+                HCP {me.hi.toFixed(1)} · <span className="text-violet-400 font-sans">switch ↺</span>
+              </div>
             </button>
           )
         }
       />
-
-      {admin && (
-        <div className="px-4 mb-3">
-          <button onClick={onOpenAdmin} className="btn-primary w-full text-sm py-2.5">
-            ⚙ Open Admin
-          </button>
-        </div>
-      )}
 
       <div className="px-4 flex gap-1.5">
         {(["schedule", "courses", "formats"] as const).map((s) => (
@@ -77,11 +73,20 @@ export default function MoreScreen({
         {section === "schedule" && rounds.map((r) => <RoundCard key={r.id} round={r} me={me} />)}
         {section === "courses" &&
           Object.values(courses).map((c) => <CourseCard key={c.id} courseId={c.id} />)}
-        {section === "formats" && <Formats />}
+        {section === "formats" && <Formats rounds={rounds} />}
       </div>
 
       <div className="px-4 mt-6">
-        {!admin && <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />}
+        {/* One quiet entry here; the floating pill is the one that follows the organiser
+            around. A full-width primary button at the top of More was the biggest thing
+            on the screen for the one person who least needs reminding it exists. */}
+        {admin ? (
+          <button onClick={onOpenAdmin} className="btn-ghost w-full text-sm py-2.5">
+            ⚙ Open Admin
+          </button>
+        ) : (
+          <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
+        )}
         <p className="text-[11px] text-slate-600 mt-3 text-center leading-relaxed">
           {backend === "local"
             ? "Demo mode — no cloud project connected, so scores stay on this device."
@@ -124,6 +129,7 @@ function RoundCard({ round, me }: { round: Round; me: FieldPlayer | null }) {
           </div>
         </div>
         <div className="text-right shrink-0">
+          <div className="text-[10px] text-slate-500">{group ? "your tee" : "tee times"}</div>
           <div className="text-sm num font-semibold text-slate-300">
             {group?.teeTime ?? round.teeTimeWindow}
           </div>
@@ -244,8 +250,39 @@ function CourseCard({ courseId }: { courseId: string }) {
   );
 }
 
-function Formats() {
-  const items = [
+/**
+ * The rules reference — the page that settles the terrace argument. Everything here is
+ * derived from the live round configs rather than hardcoded, so an admin edit to a
+ * format or weight shows up in the rules too.
+ */
+function Formats({ rounds }: { rounds: Round[] }) {
+  const par = 72;
+  const level = levelParTotal(
+    rounds.flatMap((r) =>
+      r.formats
+        .filter((f) => f.hector)
+        .map((f) => ({
+          pct: f.hector!.pct,
+          countsBothPlayers: f.hector!.source === "bothIndividuals",
+        })),
+    ),
+    par,
+  );
+  const hectorRounds = rounds.flatMap((r) =>
+    r.formats.filter((f) => f.hector).map((f) => ({ round: r, f })),
+  );
+  const bonusRounds = hectorRounds.filter(
+    ({ f }) => f.bonuses && (f.bonuses.birdie || f.bonuses.eagle),
+  );
+  const victorRounds = rounds.filter((r) => r.formats.some((f) => f.victor));
+
+  const sourceLabel: Record<string, string> = {
+    betterIndividual: "the better player's round",
+    team: "the pair's score",
+    bothIndividuals: "each player's round, both counted",
+  };
+
+  const formats = [
     {
       title: "Stableford NET",
       body: "Points per hole against your net score: 2 for a net par, 3 for a birdie, 1 for a bogey, 0 for anything worse. This is what the Victor trophy is scored on, and it decides the draft order after round 1.",
@@ -262,20 +299,75 @@ function Formats() {
       title: "Scramble Stroke Play NET",
       body: "One ball for the pair — everyone plays from the best shot. One card, one team handicap at 20% allowance.",
     },
-    {
-      title: "Hector points",
-      body: "The pair competition. Each round contributes a weighted share of the pair's result, as listed on the round card.",
-    },
-    {
-      title: "Victor points",
-      body: "The individual competition: your Stableford NET points from the four Stableford rounds, added up.",
-    },
   ];
+
   return (
     <div className="space-y-2.5">
-      {items.map((i) => (
+      {/* The pair competition first: it is the main event, and the one nobody can
+          rescore in their head without the rules in front of them. */}
+      <div className="card p-3.5">
+        <h3 className="font-semibold text-sm text-violet-300">The Hector · pairs</h3>
+        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+          A <strong className="text-slate-300 font-semibold">stroke total — lower wins</strong>.
+          Each round adds a weighted share of the pair's result:
+        </p>
+        <ul className="mt-2 space-y-1">
+          {hectorRounds.map(({ round, f }) => (
+            <li key={`${round.id}-${f.id}`} className="text-[11px] text-slate-400 flex gap-1.5">
+              <span className="num font-bold text-violet-400 shrink-0 w-5">R{round.seq}</span>
+              <span>
+                <span className="num font-semibold text-slate-300">{weightLabel(f.hector!.pct)}</span>{" "}
+                of {sourceLabel[f.hector!.source] ?? "the score"} —{" "}
+                {f.label.replace(/ Stroke Play/, "")}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-slate-400 mt-2.5 leading-relaxed">
+          Stableford rounds convert to strokes first:{" "}
+          <span className="num text-slate-300">strokes = 2 × par − (points + 36)</span> — so 39
+          points on a par-72 course counts as 69 strokes.
+        </p>
+        {bonusRounds.map(({ round, f }) => (
+          <p key={round.id} className="text-xs text-amber-400/90 mt-2 leading-relaxed">
+            Round {round.seq} pays bonuses on <em>gross</em> scores:
+            {f.bonuses!.birdie ? ` every birdie takes ${f.bonuses!.birdie.toFixed(1)} off the total` : ""}
+            {f.bonuses!.eagle ? `, an eagle ${f.bonuses!.eagle.toFixed(1)}` : ""}.
+          </p>
+        ))}
+        <p className="text-xs text-slate-500 mt-2.5 leading-relaxed">
+          For scale: a pair at level par all week finishes on{" "}
+          <span className="num text-slate-400">{level.toFixed(1)}</span>. The {PREVIOUS.year}{" "}
+          title was won on{" "}
+          <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span> by{" "}
+          {PREVIOUS.hector.label}.
+        </p>
+      </div>
+
+      <div className="card p-3.5">
+        <h3 className="font-semibold text-sm text-violet-300">The draft</h3>
+        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+          Round 1 is played individually; its Stableford order is the pick order on Thursday
+          night. Best round picks first, from the opposite bucket, and so on until ten pairs
+          stand. One exception: last year's winners defend their title together by right, so
+          they are paired before the draft starts and sit it out.
+        </p>
+      </div>
+
+      <div className="card p-3.5">
+        <h3 className="font-semibold text-sm text-amber-300">The Victor · individual</h3>
+        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+          Your Stableford NET points from the {victorRounds.length} Stableford rounds
+          {victorRounds.length > 0 && (
+            <> ({victorRounds.map((r) => `R${r.seq}`).join(" + ")})</>
+          )}
+          , added up. Highest wins.
+        </p>
+      </div>
+
+      {formats.map((i) => (
         <div key={i.title} className="card p-3.5">
-          <h3 className="font-semibold text-sm text-violet-300">{i.title}</h3>
+          <h3 className="font-semibold text-sm text-slate-200">{i.title}</h3>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">{i.body}</p>
         </div>
       ))}

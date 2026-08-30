@@ -7,11 +7,39 @@ import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
 import HectorMark from "../components/HectorMark";
 import Champions, { isTournamentComplete } from "../components/Champions";
+import { PREVIOUS } from "../data/history";
 
 interface Props {
   rounds: Round[];
   hector: TournamentTotals["hector"];
   victor: TournamentTotals["victor"];
+  /** Positions gained/lost against the standings before the open round. */
+  movement: Record<string, number>;
+}
+
+/**
+ * Round-aware Thru for a tournament table. A raw hole count ("97") means nothing
+ * across six rounds; what a reader wants is where a row is right now: mid-round
+ * ("R6·7"), between rounds ("R3 ✓"), or done ("F").
+ */
+function tournamentThru(
+  rounds: Round[],
+  perRound: Record<string, { thru: number }>,
+  counted: number,
+): string {
+  const played = rounds.filter((r) => perRound[r.id]);
+  if (played.length === 0) return "—";
+  const live = played.find((r) => perRound[r.id].thru < 18);
+  if (live) return `R${live.seq}·${perRound[live.id].thru}`;
+  if (played.length >= counted) return "F";
+  return `R${played[played.length - 1].seq} ✓`;
+}
+
+/** The rounds that have actually begun for anyone, from the data rather than status. */
+function begunRounds(rows: { perRound: Record<string, unknown> }[]): Set<string> {
+  const begun = new Set<string>();
+  rows.forEach((r) => Object.keys(r.perRound).forEach((id) => begun.add(id)));
+  return begun;
 }
 
 function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): string {
@@ -22,11 +50,13 @@ function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): s
 }
 
 /** The two trophies: Hector for the pair, Victor for the individual. */
-export default function TournamentScreen({ rounds, hector, victor }: Props) {
+export default function TournamentScreen({ rounds, hector, victor, movement }: Props) {
   const [tab, setTab] = useState<"hector" | "victor">("hector");
   const complete = isTournamentComplete(rounds);
-  const holesPerRound = 18;
-  const totalHoles = rounds.length * holesPerRound;
+  const hectorRoundCount = rounds.filter((r) => r.formats.some((f) => f.hector)).length;
+  const victorRoundCount = rounds.filter((r) => r.formats.some((f) => f.victor)).length;
+  const hectorBegun = begunRounds(hector);
+  const victorBegun = begunRounds(victor);
 
   // What a pair going round in level par every round would total — a bare "231.4"
   // means nothing without something to measure it against.
@@ -47,8 +77,15 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
     label: row.label,
     value: row.points,
     display: row.points.toFixed(1),
-    extra: `${row.roundsPlayed} of ${rounds.length} rounds`,
+    // Only worth a line when this pair is missing a round others have played.
+    extra:
+      row.roundsPlayed > 0 && row.roundsPlayed < hectorBegun.size
+        ? `${row.roundsPlayed} of ${hectorBegun.size} rounds`
+        : undefined,
+    extraTone: "warn" as const,
     thru: row.thru,
+    thruLabel: tournamentThru(rounds, row.perRound, hectorRoundCount),
+    movement: movement[row.key],
     played: row.roundsPlayed > 0,
     detail: (
       <div className="space-y-2">
@@ -97,8 +134,17 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
     label: row.label,
     value: row.points,
     display: row.points.toFixed(1),
-    extra: `${row.roundsPlayed} Stableford round${row.roundsPlayed === 1 ? "" : "s"}`,
+    extra:
+      row.roundsPlayed > 0 && row.roundsPlayed < victorBegun.size
+        ? `${row.roundsPlayed} of ${victorBegun.size} Stableford rounds`
+        : undefined,
+    extraTone: "warn" as const,
     thru: row.thru,
+    thruLabel: tournamentThru(
+      rounds.filter((r) => r.formats.some((f) => f.victor)),
+      row.perRound,
+      victorRoundCount,
+    ),
     played: row.roundsPlayed > 0,
     detail: (
       <div className="space-y-1">
@@ -150,14 +196,21 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
               entered in Admin.
             </p>
           ) : (
-            <LeaderTable
-              rows={hectorRows}
-              lowerIsBetter={hectorLowerIsBetter}
-              scoreHeader="Points"
-              decimals={1}
-              totalHoles={totalHoles}
-              leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
-            />
+            <>
+              <p className="text-[11px] leading-relaxed text-slate-500 mb-2">
+                A stroke total — <span className="text-slate-300 font-medium">lower wins</span>.
+                Level par all week is{" "}
+                <span className="num text-slate-400">{levelPar.toFixed(1)}</span>.
+              </p>
+              <LeaderTable
+                rows={hectorRows}
+                lowerIsBetter={hectorLowerIsBetter}
+                scoreHeader="Strokes"
+                decimals={1}
+                wideThru
+                leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+              />
+            </>
           )
         ) : (
           <LeaderTable
@@ -165,7 +218,7 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
             lowerIsBetter={false}
             scoreHeader="Points"
             decimals={1}
-            totalHoles={4 * holesPerRound}
+            wideThru
             leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
           />
         )}
@@ -173,10 +226,8 @@ export default function TournamentScreen({ rounds, hector, victor }: Props) {
 
       {tab === "hector" && (
         <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
-          Lower total wins — it reads like a stroke count, where roughly one stroke is one
-          point. A pair going round in level par every round would finish on{" "}
-          <span className="num text-slate-400">{levelPar.toFixed(1)}</span>. Tap a pair to see
-          what each round contributed.
+          Tap a pair to see what each round contributed. For scale: the {PREVIOUS.year} title
+          was won on <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span>.
         </p>
       )}
       {tab === "victor" && (

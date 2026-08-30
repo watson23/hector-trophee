@@ -92,7 +92,7 @@ export default function App() {
               />
             )}
             {tab === "tournament" && (
-              <TournamentScreen rounds={t.rounds} hector={t.hector} victor={t.victor} />
+              <TournamentScreen rounds={t.rounds} hector={t.hector} victor={t.victor} movement={t.hectorMovement} />
             )}
             {tab === "more" && (
               <MoreScreen
@@ -114,12 +114,15 @@ export default function App() {
       </main>
 
       {/* Admin lived at the bottom of the More tab behind faint grey text, which was
-          effectively hidden. Once unlocked, it gets a button that follows you around. */}
+          effectively hidden. Once unlocked, it gets a button that follows you around —
+          bottom-right, above the tab bar, where it covers nothing: fixed top-right it sat
+          on the sync banner's text and on the identity block of the More header. */}
       {!adminOpen && session.admin && (
         <button
           onClick={() => setAdminOpen(true)}
           aria-label="Open Admin"
-          className="fixed top-2 right-2 z-40 flex items-center gap-1.5 rounded-full
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 76px)" }}
+          className="fixed right-3 z-40 flex items-center gap-1.5 rounded-full
                      bg-violet-600/90 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold
                      shadow-lg backdrop-blur active:bg-violet-700"
         >
