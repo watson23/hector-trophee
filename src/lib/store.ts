@@ -30,6 +30,15 @@ export interface Store {
   saveRound(round: Round): Promise<void>;
   /** Number of writes not yet acknowledged by the server. */
   subscribePending(cb: (count: number) => void): Unsubscribe;
+  /** Backend errors worth showing the user, e.g. the rules rejecting a read. */
+  subscribeError(cb: (error: StoreError | null) => void): Unsubscribe;
+}
+
+export interface StoreError {
+  code: string;
+  message: string;
+  /** What the organiser can actually do about it. */
+  hint: string;
 }
 
 /**
@@ -181,6 +190,11 @@ class LocalStore implements Store {
     cb(0);
     return () => {};
   }
+
+  subscribeError(cb: (error: StoreError | null) => void): Unsubscribe {
+    cb(null);
+    return () => {};
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -191,16 +205,19 @@ export function hasFirebaseConfig(): boolean {
   return Boolean(import.meta.env?.VITE_FIREBASE_PROJECT_ID);
 }
 
-let instance: Store | null = null;
+let instancePromise: Promise<Store> | null = null;
 
-/** Firestore when configured, otherwise the local cross-tab backend. */
-export async function getStore(): Promise<Store> {
-  if (instance) return instance;
-  if (hasFirebaseConfig()) {
-    const { FirestoreStore } = await import("./firestore");
-    instance = await FirestoreStore.create();
-  } else {
-    instance = new LocalStore();
-  }
-  return instance;
+/**
+ * Firestore when configured, otherwise the local cross-tab backend.
+ *
+ * The in-flight promise is memoised, not just the resolved value: two concurrent callers
+ * (React StrictMode invokes effects twice in development) would both get past a
+ * resolved-instance check while the first was still awaiting, and call
+ * initializeFirestore() twice — which throws failed-precondition.
+ */
+export function getStore(): Promise<Store> {
+  instancePromise ??= hasFirebaseConfig()
+    ? import("./firestore").then((m) => m.FirestoreStore.create())
+    : Promise.resolve(new LocalStore());
+  return instancePromise;
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "./hooks/useSession";
 import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
@@ -8,6 +8,7 @@ import RoundScreen from "./screens/RoundScreen";
 import TournamentScreen from "./screens/TournamentScreen";
 import MoreScreen from "./screens/MoreScreen";
 import AdminScreen from "./screens/AdminScreen";
+import type { StoreError } from "./lib/store";
 
 export default function App() {
   const { session, update, reset } = useSession();
@@ -31,9 +32,8 @@ export default function App() {
   }, [t.rounds]);
 
   if (!t.ready || !t.event) {
-    return (
-      <div className="min-h-dvh grid place-items-center text-slate-600 text-sm">Loading…</div>
-    );
+    // A silent forever-spinner is the worst failure on a golf course, so say what's wrong.
+    return <Connecting error={t.error} />;
   }
 
   if (!session.unlocked || !session.playerId) {
@@ -103,6 +103,46 @@ export default function App() {
       </main>
 
       {!adminOpen && <TabBar tab={tab} onChange={setTab} />}
+    </div>
+  );
+}
+
+/**
+ * Startup screen. Shows a spinner briefly, then admits that something is wrong —
+ * with the specific fix when the backend told us what it was.
+ */
+function Connecting({ error }: { error: StoreError | null }) {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setSlow(true), 6000);
+    return () => clearTimeout(id);
+  }, []);
+
+  if (!error && !slow) {
+    return (
+      <div className="min-h-dvh grid place-items-center text-slate-600 text-sm">Loading…</div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh grid place-items-center px-6">
+      <div className="card p-5 max-w-sm text-center">
+        <h1 className="font-semibold text-slate-100">
+          {error ? "Can't reach the scoring database" : "Still connecting…"}
+        </h1>
+        <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+          {error ? error.message : "This is taking longer than it should."}
+        </p>
+        <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+          {error ? error.hint : "Check your signal, then try again."}
+        </p>
+        {error && (
+          <p className="text-[10px] text-slate-600 mt-3 num">{error.code}</p>
+        )}
+        <button className="btn-ghost w-full mt-4 text-sm" onClick={() => location.reload()}>
+          Try again
+        </button>
+      </div>
     </div>
   );
 }

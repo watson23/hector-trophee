@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
 import { computeTournament, effectiveTee, evaluateRound, type RoundResult } from "../lib/engine";
-import { getStore, reconcilePins, type Store } from "../lib/store";
+import { getStore, reconcilePins, type Store, type StoreError } from "../lib/store";
 
 export interface TournamentState {
   ready: boolean;
@@ -15,6 +15,7 @@ export interface TournamentState {
   victor: ReturnType<typeof computeTournament>["victor"];
   pending: number;
   online: boolean;
+  error: StoreError | null;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
@@ -30,6 +31,7 @@ export function useTournament(identity: string): TournamentState {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [cards, setCards] = useState<Record<string, Record<string, Card>>>({});
   const [pending, setPending] = useState(0);
+  const [error, setError] = useState<StoreError | null>(null);
   const [online, setOnline] = useState(
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
@@ -51,6 +53,7 @@ export function useTournament(identity: string): TournamentState {
       store.subscribeRounds(setRounds),
       store.subscribeCards(setCards),
       store.subscribePending(setPending),
+      store.subscribeError(setError),
     ];
     return () => unsubs.forEach((u) => u());
   }, [store]);
@@ -133,6 +136,7 @@ export function useTournament(identity: string): TournamentState {
     victor: totals.victor,
     pending,
     online,
+    error,
     setHole,
     saveEvent,
     saveRound,
