@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { hector2025, PAR_2025 as PAR, type Hector2025Row } from "./hector2025.fixture";
 import { applyBonuses, hectorContribution, stablefordToStrokes } from "./hector";
-import { DRAFT_ROUND_WEIGHT } from "../data/rounds";
+import { DRAFT_ROUND_WEIGHT, defaultRounds } from "../data/rounds";
 import { rank } from "./leaderboard";
+import { courses } from "../data/courses";
+import { effectiveTee, evaluateRound, teamCardId } from "./engine";
+import type { Card, FieldPlayer, Pair, Round } from "../types";
 
 /**
  * The 2025 event, replayed through the scoring engine.
@@ -117,5 +120,77 @@ describe("Hector Trophée 2025, replayed", () => {
     const withBonus = hectorTotal(row);
     const withoutBonus = hectorTotal({ ...row, r6Birdies: 0, r6Eagles: 0 });
     expect(withBonus).toBeCloseTo(withoutBonus - 2, 6);
+  });
+});
+
+
+describe("final-round bonuses, end to end", () => {
+  const radecky = courses.radecky;
+  const jari: FieldPlayer = { id: "jari-k", name: "Jari K", hi: 1.5, bucket: 1 };
+  const lasse: FieldPlayer = { id: "lasse-k", name: "Lasse K", hi: 14.8, bucket: 2 };
+  const pair: Pair = { id: "p1", aId: jari.id, bId: lasse.id };
+
+  /**
+   * Reproduces Lasse and Jari's real 2025 final round — net −4 with one birdie — but
+   * driven from hole scores through the whole engine, rather than by calling
+   * applyBonuses directly as the replay above does.
+   *
+   * Their course handicaps off Radecký yellow are 2 and 19, so the scramble team
+   * handicap is 20% of 21, rounded: 4. A gross-par 72 round therefore nets 68, and the
+   * card below reaches 72 gross with exactly one birdie and one bogey.
+   */
+  function scrambleRound(formats: Round["formats"]): Round {
+    return {
+      ...defaultRounds[5],
+      courseId: "radecky",
+      tee: "yellow",
+      formats,
+      groups: [{ id: "g1", teeTime: "09:03", playerIds: [jari.id, lasse.id] }],
+    };
+  }
+
+  const holes = Object.fromEntries(radecky.par.map((p, i) => [String(i + 1), p]));
+  holes["2"] = radecky.par[1] - 1; // birdie
+  holes["3"] = radecky.par[2] + 1; // bogey, so gross stays at par
+  const card: Card = { id: "c", roundId: "r6", subjectId: teamCardId(pair.id), holes };
+
+  function run(formats: Round["formats"]) {
+    const round = scrambleRound(formats);
+    return evaluateRound({
+      round,
+      course: radecky,
+      tee: effectiveTee(round, radecky),
+      players: [jari, lasse],
+      pairs: [pair],
+      cards: { [teamCardId(pair.id)]: card },
+    });
+  }
+
+  it("scores a gross-par scramble as net 68 with one gross birdie", () => {
+    const team = run(defaultRounds[5].formats).formats[0].teams[0];
+    expect(team.playingHcp).toBe(4);
+    expect(team.value).toBe(68);
+    expect(team.toPar).toBe(-4);
+    expect(team.birdies).toBe(1);
+    expect(team.eagles).toBe(0);
+  });
+
+  it("lands on 67.5, the contribution the 2025 sheet records for that round", () => {
+    // The sheet's running total goes 154.5 to 222.0 over the final round.
+    const points = run(defaultRounds[5].formats).hector[pair.id].points;
+    expect(points).toBeCloseTo(67.5, 6);
+    expect(points).toBeCloseTo(222.0 - 154.5, 6);
+  });
+
+  it("would be 68 without the birdie bonus", () => {
+    const without = run([{ ...defaultRounds[5].formats[0], bonuses: undefined }]);
+    expect(without.hector[pair.id].points).toBeCloseTo(68, 6);
+  });
+
+  it("applies bonuses only to the final round, as the sheet does", () => {
+    // Round 4 is also a scramble, but carries no Bonus columns in the spreadsheet.
+    expect(defaultRounds[3].formats[0].kind).toBe("scramble");
+    expect(defaultRounds[3].formats[0].bonuses).toBeUndefined();
+    expect(defaultRounds[5].formats[0].bonuses).toEqual({ birdie: 0.5, eagle: 1 });
   });
 });
