@@ -25,6 +25,8 @@ interface Subject {
   detail: string;
   /** Strokes received on each hole under the round's main net format. */
   strokes: number[];
+  /** This card belongs to the person holding the phone (or their pair). */
+  mine?: boolean;
 }
 
 export default function PlayScreen({
@@ -75,6 +77,7 @@ export default function PlayScreen({
           name: `${a.name} + ${b.name}`,
           detail: `Team playing HCP ${teamHcp}`,
           strokes: strokeAllocation(teamHcp, course.si),
+          mine: pair.aId === me.id || pair.bId === me.id,
         });
       }
       return out;
@@ -95,6 +98,7 @@ export default function PlayScreen({
           name: p.name,
           detail: `HCP ${hiFor(round, p).toFixed(1)} · playing ${playingHcp}`,
           strokes,
+          mine: p.id === me.id,
         };
       });
   }, [round, course, me, event]);
@@ -268,6 +272,24 @@ export default function PlayScreen({
       <p className="sr-only">Tee {teeLabel[round.tee]}, course rating {tee.cr}, slope {tee.slope}.</p>
     </div>
   );
+}
+
+/** The scorecard's colour for each result, so entry and card speak the same language. */
+function quickTint(diff: number): string {
+  if (diff <= -2) return "text-amber-300";
+  if (diff === -1) return "text-rose-400";
+  if (diff === 0) return "text-slate-100";
+  if (diff === 1) return "text-sky-300";
+  return "text-slate-300";
+}
+
+/** Result names under the quick-row numbers — nobody counts buttons from the left. */
+function quickTag(diff: number): string {
+  if (diff <= -2) return "eagle";
+  if (diff === -1) return "birdie";
+  if (diff === 0) return "par";
+  if (diff === 1) return "bogey";
+  return `+${diff}`;
 }
 
 function Waiting({
@@ -459,7 +481,14 @@ function SubjectRow({
     <div className="card p-3">
       <div className="flex items-baseline justify-between gap-2 mb-2.5">
         <div className="min-w-0">
-          <div className="font-semibold text-sm truncate">{subject.name}</div>
+          <div className="font-semibold text-sm truncate">
+            {subject.name}
+            {subject.mine && (
+              <span className="ml-1.5 text-[10px] font-semibold text-violet-400 align-middle">
+                you
+              </span>
+            )}
+          </div>
           <div className="text-[11px] text-slate-500 truncate num">{subject.detail}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -481,21 +510,38 @@ function SubjectRow({
       </div>
 
       <div className="flex gap-1.5">
-        {quick.map((n) => (
-          <button
-            key={n}
-            onClick={() => onScore(value === n ? null : n)}
-            className={`flex-1 h-12 rounded-xl font-bold num text-base transition-colors ${
-              value === n
-                ? "bg-violet-600 text-white"
-                : n === par
-                  ? "bg-slate-800 text-slate-200 ring-1 ring-slate-700"
-                  : "bg-slate-800/60 text-slate-300 hover:bg-slate-700"
-            }`}
-          >
-            {n}
-          </button>
-        ))}
+        {quick.map((n) => {
+          const diff = n - par;
+          return (
+            <button
+              key={n}
+              onClick={() => onScore(value === n ? null : n)}
+              className={`flex-1 h-12 rounded-xl transition-colors flex flex-col items-center
+                          justify-center leading-none gap-0.5 ${
+                value === n
+                  ? "bg-violet-600"
+                  : n === par
+                    ? "bg-slate-800 ring-1 ring-slate-600"
+                    : "bg-slate-800/60 hover:bg-slate-700"
+              }`}
+            >
+              <span
+                className={`font-bold num text-base ${
+                  value === n ? "text-white" : quickTint(diff)
+                }`}
+              >
+                {n}
+              </span>
+              <span
+                className={`text-[8px] font-medium tracking-wide ${
+                  value === n ? "text-violet-200" : "text-slate-500"
+                }`}
+              >
+                {quickTag(diff)}
+              </span>
+            </button>
+          );
+        })}
         <button
           onClick={() => setShowOther((v) => !v)}
           aria-label="Enter another score"

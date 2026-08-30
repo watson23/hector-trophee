@@ -105,6 +105,7 @@ function PairsEditor({
 }) {
   const [picking, setPicking] = useState<string | null>(null);
   const [chooseAny, setChooseAny] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   const byId = useMemo(() => new Map(event.players.map((p) => [p.id, p])), [event.players]);
   const paired = useMemo(
@@ -229,12 +230,34 @@ function PairsEditor({
                     <span className="pill bg-amber-950 text-amber-300 shrink-0">defending</span>
                   )}
                 </div>
-                <button
-                  onClick={() => removePair(pair.id)}
-                  className="text-xs text-rose-400 hover:text-rose-300 shrink-0 px-2"
-                >
-                  Remove
-                </button>
+                {/* Two taps, like clearing a round: pairs drive the scoring for rounds
+                    2–6, so a stray thumb must not dissolve one mid-tournament. */}
+                {confirmRemove === pair.id ? (
+                  <span className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => {
+                        removePair(pair.id);
+                        setConfirmRemove(null);
+                      }}
+                      className="text-xs font-semibold text-white bg-rose-600 rounded-lg px-2 py-1"
+                    >
+                      Yes, remove
+                    </button>
+                    <button
+                      onClick={() => setConfirmRemove(null)}
+                      className="text-xs text-slate-400 px-1.5 py-1"
+                    >
+                      Cancel
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setConfirmRemove(pair.id)}
+                    className="text-xs text-rose-400 hover:text-rose-300 shrink-0 px-2"
+                  >
+                    Remove
+                  </button>
+                )}
               </li>
             ))}
           </ol>

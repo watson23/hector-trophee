@@ -15,6 +15,9 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer }: 
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  // A beat of confirmation before the choice sticks: twenty names, and a mis-tap here
+  // means scoring the week under someone else's identity.
+  const [picked, setPicked] = useState<string | null>(null);
 
   async function submitPin(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +65,30 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer }: 
             {checking ? "Checking…" : "Continue"}
           </button>
         </form>
+      ) : picked ? (
+        (() => {
+          const p = event.players.find((x) => x.id === picked)!;
+          return (
+            <div className="card p-5 text-center space-y-4">
+              <div>
+                <p className="text-slate-400 text-sm">You're</p>
+                <p className="text-2xl font-extrabold mt-0.5">{p.name}</p>
+                <p className="text-slate-500 text-sm num mt-0.5">
+                  HCP {p.hi.toFixed(1)} · Bucket {p.bucket}
+                </p>
+              </div>
+              <button className="btn-primary w-full" onClick={() => onPickPlayer(p.id)}>
+                That's me
+              </button>
+              <button
+                className="w-full text-sm text-slate-400 py-1"
+                onClick={() => setPicked(null)}
+              >
+                No, go back
+              </button>
+            </div>
+          );
+        })()
       ) : (
         <div className="space-y-5">
           <p className="text-center text-slate-300 text-sm">Who are you?</p>
@@ -74,7 +101,7 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer }: 
                   .map((p) => (
                     <button
                       key={p.id}
-                      onClick={() => onPickPlayer(p.id)}
+                      onClick={() => setPicked(p.id)}
                       className="card px-3 py-3 text-left hover:border-violet-600 hover:bg-slate-800
                                  active:bg-slate-800 transition-colors"
                     >
