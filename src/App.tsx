@@ -61,8 +61,10 @@ export default function App() {
           <AdminScreen
             event={t.event}
             rounds={t.rounds}
+            cards={t.cards}
             saveEvent={t.saveEvent}
             saveRound={t.saveRound}
+            setHole={t.setHole}
             onClose={() => setAdminOpen(false)}
           />
         ) : (

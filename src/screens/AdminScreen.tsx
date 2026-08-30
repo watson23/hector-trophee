@@ -1,19 +1,30 @@
 import { useMemo, useState } from "react";
-import type { EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
+import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import { defaultGroups } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
+import ScoreAdmin from "./ScoreAdmin";
 
 interface Props {
   event: EventDoc;
   rounds: Round[];
+  cards: Record<string, Record<string, Card>>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
+  setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   onClose: () => void;
 }
 
-export default function AdminScreen({ event, rounds, saveEvent, saveRound, onClose }: Props) {
-  const [tab, setTab] = useState<"pairs" | "groups" | "rounds">("pairs");
+export default function AdminScreen({
+  event,
+  rounds,
+  cards,
+  saveEvent,
+  saveRound,
+  setHole,
+  onClose,
+}: Props) {
+  const [tab, setTab] = useState<"pairs" | "groups" | "rounds" | "scores">("pairs");
 
   return (
     <div className="pb-4">
@@ -33,12 +44,16 @@ export default function AdminScreen({ event, rounds, saveEvent, saveRound, onClo
           { id: "pairs", label: "Pairs" },
           { id: "groups", label: "Flights" },
           { id: "rounds", label: "Rounds" },
+          { id: "scores", label: "Scores" },
         ]}
       />
       <div className="mt-4">
         {tab === "pairs" && <PairsEditor event={event} saveEvent={saveEvent} />}
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} saveRound={saveRound} />}
         {tab === "rounds" && <RoundsEditor rounds={rounds} saveRound={saveRound} />}
+        {tab === "scores" && (
+          <ScoreAdmin event={event} rounds={rounds} cards={cards} setHole={setHole} />
+        )}
       </div>
     </div>
   );

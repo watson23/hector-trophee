@@ -135,8 +135,29 @@ Everything the organiser does lives behind the admin PIN, under **More → Organ
 | Thursday evening | **Pairs** tab — enter the draft one pick at a time as it happens |
 | After the draft | **Flights** tab — *Auto-fill two pairs per flight* for rounds 2–6 |
 | Each round | Set the round *open* when the first group tees off, *final* when everyone's in |
+| Any time | **Scores** tab — correct any hole on any card in any round, including finished ones |
 
 Only one round should be open at a time; that's the one on everyone's Play tab.
+
+### Fixing a wrong score
+
+**Admin → Scores** reaches every card in every round, not just your own flight and not just
+the open round. Pick the round, pick the player or pair, tap the hole, tap the score. Writes
+merge per hole, so correcting hole 7 can't disturb the other seventeen — and it syncs to
+everyone immediately, so you can fix a card while the group is still on the course.
+
+### Test data
+
+The same tab has an amber **Test data** box that fills a round with plausible scores for
+everyone playing it — full 18, or thru 9 or 4 to see a leaderboard mid-round. Scores are
+drawn around what each handicap would realistically shoot rather than at random, so the
+tables behave like real ones.
+
+It refuses to run on a round that already has scores; clear the round first. That guard is
+deliberate — it's the only thing standing between a stray tap and a real round.
+
+Delete `src/lib/testdata.ts` and the Test data section of `src/screens/ScoreAdmin.tsx` before
+the trip if you'd rather not have it there at all.
 
 ## Scoring
 
