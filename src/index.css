@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Violet accent carried over from hector.golf so the app feels like part of the event. */
+    --brand: 139 92 246;
+    --brand-light: 196 181 253;
+    --brand-dark: 49 10 101;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    /* Keep content clear of the notch and the home indicator. */
+    padding-top: env(safe-area-inset-top);
+    overscroll-behavior-y: none;
+  }
+
+  /* Numerals everywhere in the app are tabular, so columns line up. */
+  .num {
+    font-family: Inconsolata, ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-slate-900 rounded-2xl border border-slate-800;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  .btn {
+    @apply rounded-xl px-4 py-3 font-semibold transition-colors active:scale-[0.98];
+  }
+
+  .btn-primary {
+    @apply btn bg-violet-600 text-white hover:bg-violet-500 active:bg-violet-700
+           disabled:bg-slate-800 disabled:text-slate-600;
+  }
+
+  .btn-ghost {
+    @apply btn bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700;
+  }
+
+  .input {
+    @apply bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white
+           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500
+           focus:border-transparent;
+  }
+
+  .label {
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-400;
+  }
+}
+
+/* Dark scrollbars, so the leaderboard tables don't flash white gutters. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: theme("colors.slate.900");
+}
+::-webkit-scrollbar-thumb {
+  background: theme("colors.slate.700");
+  border-radius: 4px;
+}
