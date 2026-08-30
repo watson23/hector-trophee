@@ -32,8 +32,13 @@ export interface Store {
   subscribePending(cb: (count: number) => void): Unsubscribe;
 }
 
-export const DEFAULT_EVENT_PIN = "HEC26";
-export const DEFAULT_ADMIN_PIN = "1874";
+/**
+ * PINs come from the environment so they can be changed in Vercel or .env.local
+ * without touching code or hand-editing hashes in Firestore. They are UI gates, not
+ * secrets — see pin.ts — so shipping them in the client bundle costs nothing.
+ */
+export const EVENT_PIN = import.meta.env?.VITE_EVENT_PIN || "HEC26";
+export const ADMIN_PIN = import.meta.env?.VITE_ADMIN_PIN || "1874";
 
 export async function buildDefaultEvent(): Promise<EventDoc> {
   return {
@@ -41,11 +46,26 @@ export async function buildDefaultEvent(): Promise<EventDoc> {
     name: "Hector Trophée 2026",
     venue: "Golf & Spa Resort Konopiště, Czechia",
     dates: "September 24–27, 2026",
-    pinHash: await hashPin(DEFAULT_EVENT_PIN),
-    adminPinHash: await hashPin(DEFAULT_ADMIN_PIN),
+    pinHash: await hashPin(EVENT_PIN),
+    adminPinHash: await hashPin(ADMIN_PIN),
     players: field,
     pairs: [],
   };
+}
+
+/**
+ * Keep the stored hashes in step with the configured PINs.
+ *
+ * The event document is seeded once, so without this a changed VITE_EVENT_PIN would
+ * silently do nothing — the surprising behaviour being that you set a new PIN, deploy,
+ * and the old one still works.
+ */
+export async function reconcilePins(store: Store, event: EventDoc): Promise<void> {
+  const [pinHash, adminPinHash] = await Promise.all([hashPin(EVENT_PIN), hashPin(ADMIN_PIN)]);
+  const patch: Partial<EventDoc> = {};
+  if (event.pinHash !== pinHash) patch.pinHash = pinHash;
+  if (event.adminPinHash !== adminPinHash) patch.adminPinHash = adminPinHash;
+  if (Object.keys(patch).length > 0) await store.saveEvent(patch);
 }
 
 export function cardId(roundId: string, subjectId: string): string {

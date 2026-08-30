@@ -81,6 +81,21 @@ export function SyncBanner({
   backend: "firestore" | "local" | null;
 }) {
   if (backend === "local") {
+    // On localhost this is the intended fallback. On a real domain it means the deploy is
+    // missing its Firebase env vars, and every player would silently get their own private
+    // database — worth shouting about rather than a quiet grey note.
+    const deployed =
+      typeof location !== "undefined" &&
+      !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+    if (deployed) {
+      return (
+        <div className="bg-rose-950 border-b border-rose-800 text-rose-200 text-xs px-4 py-2 text-center leading-relaxed">
+          <strong className="font-semibold">Not connected.</strong> This deployment is missing its
+          Firebase settings, so scores are saved only on this phone and nobody else can see them.
+          Don't score a round on it yet.
+        </div>
+      );
+    }
     return (
       <div className="bg-amber-950/60 border-b border-amber-900 text-amber-300 text-xs px-4 py-1.5 text-center">
         Demo mode — scores stay on this device and sync between tabs only

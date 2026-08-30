@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
 import { computeTournament, effectiveTee, evaluateRound, type RoundResult } from "../lib/engine";
-import { getStore, type Store } from "../lib/store";
+import { getStore, reconcilePins, type Store } from "../lib/store";
 
 export interface TournamentState {
   ready: boolean;
@@ -54,6 +54,14 @@ export function useTournament(identity: string): TournamentState {
     ];
     return () => unsubs.forEach((u) => u());
   }, [store]);
+
+  // Make a changed VITE_EVENT_PIN / VITE_ADMIN_PIN take effect on an already-seeded event.
+  const pinsReconciled = useRef(false);
+  useEffect(() => {
+    if (!store || !event || pinsReconciled.current) return;
+    pinsReconciled.current = true;
+    void reconcilePins(store, event);
+  }, [store, event]);
 
   useEffect(() => {
     const on = () => setOnline(true);

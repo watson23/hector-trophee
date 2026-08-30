@@ -4,7 +4,7 @@ Live scoring for the Konopiště trip, 24–27 September 2026. Twenty players, t
 rounds, five game formats, five flights entering scores at the same time on their own phones.
 
 Built as an installable PWA: Vite + React + TypeScript + Tailwind, Firestore for sync,
-Firebase Hosting.
+deployable to Vercel or Firebase Hosting.
 
 ```bash
 npm install
@@ -19,19 +19,64 @@ With no Firebase config the app runs against a localStorage backend that broadca
 browser tabs. Everything works — scoring, leaderboards, admin — but scores stay on the device.
 A banner says so. This is what you get straight after `npm install`.
 
-Default PINs in demo mode: event `HEC26`, admin `1874`.
+Default PINs: event `HEC26`, admin `1874` — see **Access codes** below.
 
-## Connecting Firestore
+## Setting up Firebase
 
-1. Create a Firebase project (any name; the app writes to a single `events/HECTOR2026` document).
-2. Firestore Database → create in production mode, region `eur3` (Europe).
-3. Authentication → Sign-in method → enable **Anonymous**.
-4. Project settings → Your apps → add a **Web** app → copy the config values.
-5. `cp .env.example .env.local` and fill them in.
-6. `npx firebase login && npx firebase use --add`, then `npm run deploy`.
+Firestore is the database. Hosting can be either Vercel or Firebase — see below.
 
-The first client to connect seeds the event, the 20 players and the six rounds. `firestore.rules`
-restricts writes to signed-in clients; the two PINs are UI gates, not enforced server-side.
+1. **Create the project** at <https://console.firebase.google.com> — any name, e.g. `hector-trophee`.
+   Google Analytics not needed.
+2. **Firestore Database** → *Create database* → **production mode** → location **`eur3`**
+   (Europe, closest to Czechia).
+3. **Authentication** → *Get started* → Sign-in method → enable **Anonymous**.
+4. **Project settings → Your apps** → add a **Web** app (`</>`), skip Firebase Hosting in that
+   wizard → copy the six `firebaseConfig` values.
+5. Locally: `cp .env.example .env.local` and paste them in. Restart `npm run dev`.
+6. **Deploy the security rules** (once, and again whenever `firestore.rules` changes):
+
+   ```bash
+   npm install -g firebase-tools
+   firebase login
+   firebase use --add          # pick the project, alias it "default"
+   firebase deploy --only firestore:rules
+   ```
+
+The first client to connect seeds `events/HECTOR2026` with the 20 players and the six rounds.
+
+## Deploying
+
+### Vercel (recommended)
+
+`vercel.json` is committed, so it's just:
+
+1. <https://vercel.com/new> → import `watson23/hector-trophee`. Framework preset **Vite** is
+   detected; build command and output directory come from `vercel.json`.
+2. **Settings → Environment Variables** — add all six `VITE_FIREBASE_*` values from
+   `.env.example`, for *Production*, *Preview* and *Development*. Vite inlines these at build
+   time, so **changing one needs a redeploy**, not just a restart.
+3. Deploy, then go back to Firebase → **Authentication → Settings → Authorized domains** and add
+   your `*.vercel.app` domain (and any custom domain). Anonymous sign-in fails silently from an
+   unauthorised domain.
+
+If the env vars are missing, the deployed app shows a red **"Not connected"** banner rather than
+quietly giving every player their own private database.
+
+### Firebase Hosting
+
+`firebase.json` is also committed, so `npm run deploy` builds and ships to `<project>.web.app`.
+Both can coexist; they're just two fronts for the same Firestore.
+
+## Access codes
+
+Event code `HEC26` and admin PIN `1874` by default. Override with `VITE_EVENT_PIN` and
+`VITE_ADMIN_PIN` — locally in `.env.local`, on Vercel as environment variables. The app
+reconciles the stored hashes on load, so changing a PIN and redeploying takes effect on an
+already-seeded event.
+
+These are **gates, not secrets**. Both PINs are compiled into the client bundle, and
+`firestore.rules` only requires that a client be signed in anonymously. That keeps the open
+internet out of the database; it does not stop one of the twenty from poking around in devtools.
 
 ## Running the week
 
