@@ -12,6 +12,10 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* Reserve the scrollbar's width even when the page fits the viewport. Without this,
+       anything that makes the page taller (the "Next hole" button appearing) summons a
+       scrollbar, shrinks the content area, and nudges the whole centered view left. */
+    scrollbar-gutter: stable;
   }
 
   body {

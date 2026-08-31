@@ -268,9 +268,15 @@ export default function PlayScreen({
             ))}
           </div>
 
-          {allScored && hole < 18 && (
+          {/* Always in the layout, enabled once the flight is scored — appearing out of
+              nowhere made everything below it jump on the last score of each hole. */}
+          {hole < 18 && (
             <div className="px-4 mt-4">
-              <button className="btn-primary w-full" onClick={() => setHole_((h) => h + 1)}>
+              <button
+                className="btn-primary w-full"
+                disabled={!allScored}
+                onClick={() => setHole_((h) => h + 1)}
+              >
                 Next hole →
               </button>
             </div>
