@@ -106,7 +106,8 @@ export default function RoundScreen({
                 key: t.pairId,
                 label: t.label,
                 value: t.thru > 0 ? t.toPar : 0,
-                display: `${t.value} (${formatToPar(t.toPar)})`,
+                // To par leads, strokes follow — the ranking metric is the headline.
+                display: `${formatToPar(t.toPar)} (${t.value})`,
                 extra:
                   t.playingHcp !== undefined
                     ? `team HCP ${t.playingHcp}${t.birdies ? ` · ${t.birdies} birdie${t.birdies > 1 ? "s" : ""}` : ""}`
@@ -151,7 +152,7 @@ export default function RoundScreen({
                 display:
                   f.spec.kind === "stableford"
                     ? String(p.value)
-                    : `${p.value} (${formatToPar(p.toPar ?? 0)})`,
+                    : `${formatToPar(p.toPar ?? 0)} (${p.value})`,
                 extra: f.spec.net ? `playing HCP ${p.playingHcp}` : undefined,
                 thru: p.thru,
                 played: p.thru > 0,

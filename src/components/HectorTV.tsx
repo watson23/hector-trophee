@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { EventDoc, FieldPlayer, Round } from "../types";
 import type { RoundResult, TournamentTotals } from "../lib/engine";
-import { rank } from "../lib/leaderboard";
+import { formatToPar, rank } from "../lib/leaderboard";
 import { hectorLowerIsBetter } from "../lib/hector";
 import HectorMark from "./HectorMark";
 
@@ -172,24 +172,31 @@ export function FollowStrip({
           !format && pair
             ? result?.formats.find((f) => f.teams.some((t) => t.pairId === pair.id))
             : undefined;
+        // Stroke formats rank and read to par, same as every table — raw strokes
+        // mid-round would punish a favourite simply for being further along.
         const ranked = format
           ? rank(
               format.players,
-              (p) => p.value,
+              (p) => (format.spec.kind === "stableford" ? p.value : (p.toPar ?? 0)),
               format.spec.kind !== "stableford",
               (p) => p.thru > 0,
             ).find((r) => r.item.playerId === id)
           : teamFormat && pair
             ? rank(
                 teamFormat.teams,
-                (t) => t.value,
+                (t) => t.toPar,
                 true,
                 (t) => t.thru > 0,
               ).find((r) => r.item.pairId === pair.id)
             : undefined;
         const row = ranked?.item;
         const spec = format?.spec ?? teamFormat?.spec;
-        const unit = spec?.kind === "stableford" ? "pts" : "";
+        const scoreText =
+          row && spec
+            ? spec.kind === "stableford"
+              ? `${row.value} pts`
+              : formatToPar(row.toPar ?? 0)
+            : "";
 
         // Not out yet: show when they tee off instead of a blank line.
         const group = round?.groups.find((g) => g.playerIds.includes(id));
@@ -207,10 +214,7 @@ export function FollowStrip({
               {row && row.thru > 0 ? (
                 <>
                   thru <span className="text-slate-200 font-semibold">{row.thru >= 18 ? "F" : row.thru}</span> ·{" "}
-                  <span className="text-slate-200 font-semibold">
-                    {row.value}
-                    {unit && ` ${unit}`}
-                  </span>
+                  <span className="text-slate-200 font-semibold">{scoreText}</span>
                   {ranked && ranked.position > 0 && spec && (
                     <>
                       {" "}
