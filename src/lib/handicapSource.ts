@@ -35,21 +35,28 @@ export interface BucketMove {
   to: 1 | 2;
 }
 
+/**
+ * Regex rather than DOM on purpose: this is the one parser, shared with the serverless
+ * cron (api/refresh-handicaps.ts), which has no DOMParser. The live page is
+ * Astro-generated — elements carry data-astro-cid-* attributes with whitespace between
+ * everything — so every gap tolerates attributes and space. The one hard rule stands:
+ * when the page changes shape, return nothing rather than guess.
+ */
 export function parseHandicaps(html: string): FetchedHandicap[] {
-  const doc = new DOMParser().parseFromString(html, "text/html");
   const out: FetchedHandicap[] = [];
-  doc.querySelectorAll(".bucket").forEach((bucketEl) => {
-    // "Bucket 1" / "Bucket 2" — the class also carries it, but the heading is what shows.
-    const bucket = /2/.test(bucketEl.querySelector("h3")?.textContent ?? "") ? 2 : 1;
-    bucketEl.querySelectorAll("tr").forEach((tr) => {
-      const link = tr.querySelector<HTMLAnchorElement>("td.name a");
-      const raw = tr.querySelector("td.handicap")?.textContent ?? "";
-      const id = link?.getAttribute("href")?.split("/").filter(Boolean).pop();
-      const hi = Number(raw.replace(/[()\s]/g, ""));
-      if (!id || !link?.textContent || Number.isNaN(hi)) return;
-      out.push({ id, name: link.textContent.trim(), hi, bucket: bucket as 1 | 2 });
-    });
-  });
+  // `bucket\b` so "buckets", the wrapper div, doesn't start a chunk.
+  for (const chunk of html.split(/<div class="bucket\b/).slice(1)) {
+    const bucket = /^[^">]*bucket2/.test(chunk) ? 2 : 1;
+    const rows = chunk.matchAll(
+      /<td class="name"[^>]*>\s*<a href="([^"]+)"[^>]*>([\s\S]*?)<\/a>\s*<\/td>\s*<td class="handicap"[^>]*>\s*\(([-\d.,]+)\)\s*<\/td>/g,
+    );
+    for (const m of rows) {
+      const id = m[1].split("/").filter(Boolean).pop();
+      const name = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      const hi = Number(m[3].replace(",", "."));
+      if (id && name && !Number.isNaN(hi)) out.push({ id, name, hi, bucket });
+    }
+  }
   return out;
 }
 

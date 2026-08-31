@@ -51,10 +51,7 @@ export interface HectorInput {
   pct: number;
 }
 
-/**
- * Weights read as fractions, not percentages. They are thirds, halves and quarters, and
- * rounding 1/3 to "33%" makes the arithmetic shown beside it fail to add up.
- */
+/** The weight the way this group talks about it: "50%", "33%", "25%". */
 export function weightLabel(pct: number): string {
   // Percentages, not fraction glyphs: ½, ⅓ and ¼ are nearly indistinguishable at pill
   // size, and "50% / 33% / 25%" is how these weights have always been communicated in

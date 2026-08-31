@@ -39,7 +39,7 @@ export interface Pair {
   defending?: boolean;
 }
 
-/** The five game formats used across the six rounds. */
+/** The format kinds used across the six rounds (stroke play covers both NET and SCR). */
 export type FormatKind =
   | "stableford"
   | "strokeplay"

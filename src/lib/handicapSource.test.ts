@@ -1,9 +1,12 @@
-// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { applyHandicaps, diffHandicaps, parseHandicaps } from "./handicapSource";
 import type { FieldPlayer } from "../types";
 
-/** The shape hector.golf actually serves, trimmed to three players. */
+/**
+ * The shape hector.golf actually serves, trimmed to three players. This fixture pins
+ * the page structure for BOTH consumers of the parser — the Admin refresh button and
+ * the 07:00 cron import the same function.
+ */
 const HTML = `
 <div class="field">
   <div class="buckets">

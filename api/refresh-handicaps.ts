@@ -16,11 +16,9 @@
  * handicap snapshot, so this can never rescore anything played — same guarantee as
  * the manual refresh.
  *
- * Standalone on purpose: src/lib/handicapSource.ts parses with the browser's
- * DOMParser and reads import.meta.env, neither of which exists in a serverless
- * function. The parser here mirrors its one hard rule — when the page changes
- * shape, return nothing rather than guess — and the jsdom test on the src parser
- * pins the page structure they both assume.
+ * The page parser is shared with the app (src/lib/handicapSource.ts) — regex-based
+ * precisely so it runs without a DOM here — and its fixture test pins the page
+ * structure for both consumers at once.
  */
 import { getApps, getApp, initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
@@ -34,17 +32,11 @@ import {
   writeBatch,
   type Firestore,
 } from "firebase/firestore";
+import { HECTOR_EVENT_URL, parseHandicaps } from "../src/lib/handicapSource";
 
-const EVENT_URL = "https://hector.golf/events/hector/HECTOR2026/";
 const EVENTS = ["HECTOR2026", "HECTOR2026-test"];
 /** The Sunday of the trip; the morning after, the cron becomes a no-op. */
 const LAST_RUN = Date.UTC(2026, 8, 27, 23, 59);
-
-interface Fetched {
-  id: string;
-  hi: number;
-  bucket: 1 | 2;
-}
 
 /** Copy the live event wholesale to `events/HECTOR2026@<date>`. */
 async function backupEvent(db: Firestore): Promise<string> {
@@ -67,29 +59,6 @@ async function backupEvent(db: Firestore): Promise<string> {
   }
   await batch.commit();
   return `${backupId} · ${1 + roundsSnap.size + cardsSnap.size} docs`;
-}
-
-/**
- * `.bucket` blocks, each with `td.name a[href]` + `td.handicap` rows. The live page is
- * Astro-generated: elements carry data-astro-cid-* attributes and there's whitespace
- * between everything, so every gap tolerates attributes and space. Verified against
- * the real page, and the same structural assumptions are pinned by the jsdom test on
- * the browser parser.
- */
-function parseHandicaps(html: string): Fetched[] {
-  const out: Fetched[] = [];
-  for (const chunk of html.split(/<div class="bucket\b/).slice(1)) {
-    const bucket = /^[^">]*bucket2/.test(chunk) ? 2 : 1;
-    const rows = chunk.matchAll(
-      /<td class="name"[^>]*>\s*<a href="([^"]+)"[^>]*>[\s\S]*?<\/a>\s*<\/td>\s*<td class="handicap"[^>]*>\s*\(([-\d.,]+)\)\s*<\/td>/g,
-    );
-    for (const m of rows) {
-      const id = m[1].split("/").filter(Boolean).pop();
-      const hi = Number(m[2].replace(",", "."));
-      if (id && !Number.isNaN(hi)) out.push({ id, hi, bucket: bucket as 1 | 2 });
-    }
-  }
-  return out;
 }
 
 export default async function handler(
@@ -128,7 +97,7 @@ export default async function handler(
     backup = `failed: ${err instanceof Error ? err.message : String(err)}`;
   }
 
-  const page = await fetch(EVENT_URL, { cache: "no-store" });
+  const page = await fetch(HECTOR_EVENT_URL, { cache: "no-store" });
   if (!page.ok) {
     return res.status(502).json({ error: `hector.golf returned ${page.status}`, backup });
   }
