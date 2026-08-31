@@ -124,7 +124,7 @@ export default function TournamentScreen({
                   */}
                   <div className="text-[11px] text-slate-500 leading-relaxed">
                     {d.converted !== undefined
-                      ? `${weightLabel(d.pct)} of ${d.who ?? "the better player"}'s ${d.raw} pts, which is ${d.converted} strokes`
+                      ? `${weightLabel(d.pct)} of ${d.who ?? "the better player"}'s ${d.raw} pts, which equals ${d.converted} strokes`
                       : `${weightLabel(d.pct)} of ${d.raw} strokes`}
                     {d.bonus && d.bonus.points > 0 && (
                       <> · less {d.bonus.points} for {bonusLabel(d.bonus)}</>
