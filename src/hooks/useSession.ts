@@ -29,13 +29,21 @@ export function useSession() {
   const update = useCallback((patch: Partial<Session>) => {
     setSession((prev) => {
       const next = { ...prev, ...patch };
-      localStorage.setItem(KEY, JSON.stringify(next));
+      try {
+        localStorage.setItem(KEY, JSON.stringify(next));
+      } catch {
+        /* private mode or full storage — the session still works, in memory */
+      }
       return next;
     });
   }, []);
 
   const reset = useCallback(() => {
-    localStorage.removeItem(KEY);
+    try {
+      localStorage.removeItem(KEY);
+    } catch {
+      /* same as above */
+    }
     setSession({ playerId: null, unlocked: false, admin: false });
   }, []);
 

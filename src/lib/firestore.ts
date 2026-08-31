@@ -176,6 +176,11 @@ export class FirestoreStore implements Store {
       this.eventRef(),
       (snap) => {
         if (!snap.exists()) {
+          // Seed only on the server's word. The persistent cache answers first, and a
+          // fresh install that opens offline gets an empty cached snapshot — seeding
+          // from that would queue a default event that overwrites the real one (pairs
+          // and all) when signal returns. The server snapshot follows and decides.
+          if (snap.metadata.fromCache) return;
           void buildDefaultEvent().then((e) => setDoc(this.eventRef(), e));
           return;
         }
@@ -191,6 +196,9 @@ export class FirestoreStore implements Store {
       this.roundsRef(),
       (snap) => {
         if (snap.empty) {
+          // Same guard as the event doc: an empty cached snapshot is not evidence
+          // that the rounds don't exist.
+          if (snap.metadata.fromCache) return;
           void Promise.all(defaultRounds.map((r) => setDoc(doc(this.roundsRef(), r.id), r)));
           return;
         }
@@ -244,7 +252,7 @@ export class FirestoreStore implements Store {
         updatedBy: by,
       },
       { merge: true },
-    );
+    ).catch(this.reportWriteError);
   }
 
   async setCard(
@@ -260,17 +268,19 @@ export class FirestoreStore implements Store {
       holes,
       updatedAt: Date.now(),
       updatedBy: by,
-    });
+    }).catch(this.reportWriteError);
   }
 
   async deleteCard(roundId: string, subjectId: string): Promise<void> {
-    await deleteDoc(doc(this.cardsRef(), cardId(roundId, subjectId)));
+    await deleteDoc(doc(this.cardsRef(), cardId(roundId, subjectId))).catch(
+      this.reportWriteError,
+    );
   }
 
   /**
    * Firestore throws on `undefined` field values — and the UI's idiom for "no
    * override" is exactly that (`crOverride: undefined`). The JSON round-trip drops
-   * undefined the same way the local backend always has. Both saves also report
+   * undefined the same way the local backend always has. Every write also reports
    * failures to the error channel instead of letting a void'd promise swallow them,
    * which is how "changing the course does nothing" stayed invisible.
    */

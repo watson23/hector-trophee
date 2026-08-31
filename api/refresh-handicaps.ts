@@ -93,28 +93,33 @@ export default async function handler(
 
   const report: Record<string, unknown> = {};
   for (const eventId of EVENTS) {
-    const ref = doc(db, "events", eventId);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      report[eventId] = "no such event";
-      continue;
+    // Per-event, so the live event failing can't skip the test event or vice versa.
+    try {
+      const ref = doc(db, "events", eventId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        report[eventId] = "no such event";
+        continue;
+      }
+      const players = (snap.data().players ?? []) as {
+        id: string;
+        name: string;
+        hi: number;
+        bucket: 1 | 2;
+      }[];
+      const changes: string[] = [];
+      const next = players.map((p) => {
+        const f = byId.get(p.id);
+        if (!f) return p; // withdrawn upstream ≠ deleted here, same as the manual refresh
+        if (Math.abs(f.hi - p.hi) > 1e-9) changes.push(`${p.name} ${p.hi} → ${f.hi}`);
+        if (f.bucket !== p.bucket) changes.push(`${p.name} moves to bucket ${f.bucket}`);
+        return { ...p, hi: f.hi, bucket: f.bucket };
+      });
+      if (changes.length > 0) await setDoc(ref, { players: next }, { merge: true });
+      report[eventId] = changes.length > 0 ? changes : "up to date";
+    } catch (err) {
+      report[eventId] = `failed: ${err instanceof Error ? err.message : String(err)}`;
     }
-    const players = (snap.data().players ?? []) as {
-      id: string;
-      name: string;
-      hi: number;
-      bucket: 1 | 2;
-    }[];
-    const changes: string[] = [];
-    const next = players.map((p) => {
-      const f = byId.get(p.id);
-      if (!f) return p; // withdrawn upstream ≠ deleted here, same as the manual refresh
-      if (Math.abs(f.hi - p.hi) > 1e-9) changes.push(`${p.name} ${p.hi} → ${f.hi}`);
-      if (f.bucket !== p.bucket) changes.push(`${p.name} moves to bucket ${f.bucket}`);
-      return { ...p, hi: f.hi, bucket: f.bucket };
-    });
-    if (changes.length > 0) await setDoc(ref, { players: next }, { merge: true });
-    report[eventId] = changes.length > 0 ? changes : "up to date";
   }
 
   return res.status(200).json({ status: "ok", parsed: fetched.length, report });

@@ -152,17 +152,23 @@ export default function ScoreAdmin({
   async function fill(holes: number) {
     if (!round || !course) return;
     setBusy(`Filling ${holes} holes…`);
-    const generated = generateRoundCards(round, course, effectiveTee(round, course), event, holes);
-    await Promise.all(generated.map((c) => setCard(round.id, c.subjectId, c.holes)));
-    setBusy(null);
+    try {
+      const generated = generateRoundCards(round, course, effectiveTee(round, course), event, holes);
+      await Promise.all(generated.map((c) => setCard(round.id, c.subjectId, c.holes)));
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function clearRound() {
     if (!round) return;
     setBusy("Clearing…");
-    await Promise.all(subjects.map((s) => deleteCard(round.id, s.id)));
-    setConfirmClear(false);
-    setBusy(null);
+    try {
+      await Promise.all(subjects.map((s) => deleteCard(round.id, s.id)));
+    } finally {
+      setConfirmClear(false);
+      setBusy(null);
+    }
   }
 
   return (

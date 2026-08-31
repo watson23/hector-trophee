@@ -173,7 +173,9 @@ export function useTournament(identity: string, eventId: string): TournamentStat
 
   const setHole = useCallback(
     (roundId: string, subjectId: string, hole: number, value: number | null) => {
-      void store?.setHole(roundId, subjectId, hole, value, identity);
+      // Fire-and-forget by contract. The store has already put the failure on the
+      // error channel; the rethrow only needs swallowing so it doesn't surface twice.
+      void store?.setHole(roundId, subjectId, hole, value, identity).catch(() => {});
     },
     [store, identity],
   );
