@@ -2,6 +2,14 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- app.hector.golf is the one canonical origin: sessions, preferences and PWA
+         installs live per-origin, so letting two working URLs circulate would split
+         the field across two identity worlds. The old URL still works — it just
+         lands here. Exact-hostname match, so previews and localhost are untouched. -->
+    <script>
+      if (location.hostname === "hector-trophee.vercel.app")
+        location.replace("https://app.hector.golf" + location.pathname + location.search + location.hash);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
     <meta name="theme-color" content="#0a0a0c" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,7 +21,7 @@
     <meta name="description" content="Live scoring for Hector Trophée 2026, Konopiště." />
     <meta property="og:title" content="Hector Trophée 2026" />
     <meta property="og:description" content="Live scoring · Konopiště · 24–27 September" />
-    <meta property="og:image" content="https://hector-trophee.vercel.app/og.png" />
+    <meta property="og:image" content="https://app.hector.golf/og.png" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
