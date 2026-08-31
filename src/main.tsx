@@ -16,9 +16,15 @@ import "./index.css";
 const updateSW = registerSW({
   immediate: true,
   onRegisteredSW(_url, registration) {
-    if (registration) {
-      setInterval(() => void registration.update(), 15 * 60 * 1000);
-    }
+    if (!registration) return;
+    // Every five minutes while the app is up — the check is a ~1 KB request that
+    // usually answers 304, so frequency is nearly free.
+    setInterval(() => void registration.update(), 5 * 60 * 1000);
+    // And the moment the app comes back to the foreground: a phone pocketed during a
+    // deploy is updating by the time its owner has finished unlocking it.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") void registration.update();
+    });
   },
 });
 void updateSW;
