@@ -718,8 +718,8 @@ function TeeTimeDraw({
         Tee time draw
       </h2>
       <p className="text-[11px] text-slate-400 leading-relaxed">
-        One name at a time, like on the bus. The drawn player calls a tee time; tap it to
-        lock them in, then draw the next.{" "}
+        One name at a time. The drawn player calls a tee time; tap it to lock them in,
+        then draw the next.{" "}
         <span className="num">{remaining.length}</span> still in the hat.
       </p>
 
