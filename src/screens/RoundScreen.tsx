@@ -1,7 +1,14 @@
+import { useMemo } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
-import type { Card, EventDoc, FormatKind, Round } from "../types";
+import type { Card, EventDoc, FormatKind, FormatSpec, Round } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
-import type { RoundResult } from "../lib/engine";
+import {
+  effectiveTee,
+  roundParticipants,
+  type FormatResult,
+  type RoundResult,
+} from "../lib/engine";
+import { strokePlayResult } from "../lib/formats";
 import { formatToPar, formatToParFine } from "../lib/leaderboard";
 import { weightLabel } from "../lib/hector";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
@@ -55,13 +62,59 @@ export default function RoundScreen({
     betterball: "Better Ball",
     scramble: "Scramble",
   };
+  /*
+   * A synthetic Scratch board for rounds that play off individual cards but don't
+   * configure a gross format (R1 already has one; scramble days have no individual
+   * cards to rank). Same cards, same engine functions, zero handicap — the eternal
+   * "yes but what did you actually shoot" table.
+   */
+  const scratchBoard = useMemo<FormatResult | null>(() => {
+    if (!round) return null;
+    const course = courses[round.courseId];
+    if (!course) return null;
+    if (round.formats.some((f) => f.teamCard)) return null;
+    if (round.formats.some((f) => f.kind === "strokeplay" && !f.net)) return null;
+    const spec: FormatSpec = {
+      id: "scratch",
+      kind: "strokeplay",
+      label: "Stroke Play SCR",
+      net: false,
+      allowance: 0,
+      teamCard: false,
+    };
+    const roundCards = cards[round.id] ?? {};
+    const tee = effectiveTee(round, course);
+    return {
+      spec,
+      teams: [],
+      players: roundParticipants(round, event.players).map((pl) => {
+        const r = strokePlayResult(roundCards[pl.id], { hi: 0, course, tee, allowance: 0 }, false);
+        return {
+          playerId: pl.id,
+          name: pl.name,
+          value: r.strokes,
+          toPar: r.toPar,
+          thru: r.thru,
+          playingHcp: 0,
+          perHole: r.perHole,
+          strokes: course.par.map(() => 0),
+        };
+      }),
+    };
+  }, [round, cards, event.players]);
+
   const pairSpec = round?.formats.find((f) => f.hector && f.hector.source !== "team");
   const hasPairBoard = Boolean(
     pairSpec?.hector && result && Object.keys(result.hector).length > 0,
   );
   const boards = round
     ? [
-        ...round.formats.map((f) => ({ id: f.id, label: kindLabel[f.kind] })),
+        ...round.formats.map((f) => ({
+          id: f.id,
+          // A configured gross format IS the scratch board — name it what it is.
+          label: f.kind === "strokeplay" && !f.net ? "Scratch" : kindLabel[f.kind],
+        })),
+        ...(scratchBoard ? [{ id: "scratch", label: "Scratch" }] : []),
         ...(hasPairBoard ? [{ id: "pairs", label: "Pairs" }] : []),
       ]
     : [];
@@ -135,7 +188,7 @@ export default function RoundScreen({
       )}
 
       <div className="mt-4 space-y-6">
-        {result?.formats.map((f) => {
+        {[...(result?.formats ?? []), ...(scratchBoard ? [scratchBoard] : [])].map((f) => {
           if (f.spec.id !== board) return null;
           const isTeam = f.teams.length > 0;
           const rows: LeaderRow[] = isTeam
