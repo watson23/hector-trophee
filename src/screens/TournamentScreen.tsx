@@ -218,7 +218,7 @@ export default function TournamentScreen({
                 scoreHeader="Strokes"
                 decimals={1}
                 wideThru
-                leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+                leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                 highlightKeys={highlightPairs}
               />
             </>
@@ -230,7 +230,7 @@ export default function TournamentScreen({
             scoreHeader="Points"
             decimals={1}
             wideThru
-            leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+            leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
             highlightKeys={highlightPlayers}
           />
         )}

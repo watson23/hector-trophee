@@ -57,11 +57,12 @@ export default function LeaderTable({
   }
 
   return (
-    <div className="card overflow-hidden">
+    <div className="overflow-hidden">
       {/*
-        table-fixed matters here: an expanded detail row spans all five columns, and with
-        auto layout its content widens the whole table past the card, clipping the score
-        and thru columns.
+        De-boxed on purpose: leaderboards read as broadcast graphics — full-bleed rows
+        and hairlines — while cards are reserved for things that are objects. table-fixed
+        matters here: an expanded detail row spans all five columns, and with auto layout
+        its content would widen the whole table, clipping the score and thru columns.
       */}
       <table className="w-full table-fixed text-sm">
         {/* Widths are tuned so a pair name like "Sami H + Kristian H" fits on a 375px screen. */}
@@ -74,7 +75,7 @@ export default function LeaderTable({
         </colgroup>
         <thead>
           {/* No tracking on these: the last two headers are narrow and letter-spacing runs "DIFF" into "THRU". */}
-          <tr className="bg-slate-800 text-slate-400 text-[10px] uppercase">
+          <tr className="text-slate-500 text-[10px] uppercase">
             <th className="text-left pl-2.5 py-2 font-semibold">#</th>
             <th className="text-left py-2 font-semibold">Name</th>
             <th className="text-right py-2 font-semibold px-1.5">{scoreHeader}</th>
@@ -93,12 +94,16 @@ export default function LeaderTable({
                 <tr
                   onClick={() => expandable && setOpen(isOpen ? null : r.item.key)}
                   className={`border-t border-slate-800 ${expandable ? "cursor-pointer active:bg-slate-800/60" : ""} ${
-                    r.leader ? "bg-amber-400/5" : fav ? "bg-violet-500/10 shadow-[inset_2px_0_0_theme(colors.violet.500)]" : ""
+                    r.leader
+                      ? "shadow-[inset_3px_0_0_theme(colors.gold.400)]"
+                      : fav
+                        ? "bg-violet-500/10 shadow-[inset_2px_0_0_theme(colors.violet.500)]"
+                        : ""
                   }`}
                 >
                   <td
                     className={`pl-2.5 py-2.5 num text-xs font-semibold ${
-                      r.leader ? "text-amber-400" : "text-slate-500"
+                      r.leader ? "text-gold-400" : "text-slate-500"
                     }`}
                   >
                     {r.label}
@@ -106,7 +111,7 @@ export default function LeaderTable({
                   <td className="py-2.5 pr-2">
                     <div
                       className={`font-medium truncate flex items-center gap-1 ${
-                        r.leader ? "text-amber-200" : "text-slate-100"
+                        r.leader ? "text-gold-300" : "text-slate-100"
                       }`}
                     >
                       {r.leader && leaderMark}
@@ -135,7 +140,7 @@ export default function LeaderTable({
                       </div>
                     )}
                   </td>
-                  <td className="text-right px-1.5 num font-bold tabular-nums whitespace-nowrap">
+                  <td className="text-right px-1.5 score text-[17px] whitespace-nowrap">
                     {r.item.played
                       ? (r.item.display ?? r.item.value.toFixed(decimals))
                       : "—"}

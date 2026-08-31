@@ -183,7 +183,7 @@ export default function RoundScreen({
                   rows={rows}
                   lowerIsBetter={f.spec.kind !== "stableford"}
                   scoreHeader={f.spec.kind === "stableford" ? "Pts" : "Score"}
-                  leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+                  leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                 />
               </div>

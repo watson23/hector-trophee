@@ -278,7 +278,7 @@ function HoleEntry({
             <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
               Hole
             </div>
-            <div className="text-4xl font-extrabold num leading-none mt-0.5">{hole}</div>
+            <div className="score text-5xl leading-none mt-0.5">{hole}</div>
             <div className="flex items-center justify-center gap-2 mt-2 text-xs">
               <span className="pill bg-violet-950 text-violet-300 num">Par {par}</span>
               <span className="pill bg-slate-800 text-slate-300 num">SI {si}</span>
@@ -424,14 +424,14 @@ function NextRound({
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="label">{group ? "Your tee time" : "Tee times"}</div>
-              <div className="text-3xl font-extrabold num mt-1">
+              <div className="score text-4xl mt-1">
                 {group?.teeTime ?? round.teeTimeWindow}
               </div>
             </div>
             {ch !== null && (
               <div className="text-right">
                 <div className="label">Your CH</div>
-                <div className="text-3xl font-extrabold num mt-1 text-violet-300">{ch}</div>
+                <div className="score text-4xl mt-1 text-violet-300">{ch}</div>
               </div>
             )}
           </div>
