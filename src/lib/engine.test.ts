@@ -26,6 +26,8 @@ import {
 import { hectorContribution, levelParTotal, stablefordToStrokes } from "./hector";
 import { formatDiff, formatThru, rank } from "./leaderboard";
 import { draftPairs } from "./simulate";
+import { generateRoundCards } from "./testdata";
+import { field } from "../data/field";
 import type { EventDoc } from "../types";
 
 const radecky = courses.radecky;
@@ -422,18 +424,19 @@ describe("tournament totals", () => {
       {
         roundId: "r1",
         formats: [],
-        hector: { p1: { points: 23.8, thru: 18, detail: [] } },
+        hector: { p1: { points: 23.8, toPar: -0.2, thru: 18, detail: [] } },
         victor: { "jari-k": { points: 38, thru: 18 } },
       },
       {
         roundId: "r2",
         formats: [],
-        hector: { p1: { points: 36, thru: 18, detail: [] } },
+        hector: { p1: { points: 36, toPar: 0, thru: 18, detail: [] } },
         victor: { "jari-k": { points: 34, thru: 18 } },
       },
     ];
     const totals = computeTournament(results, [jari, lasse], [pair]);
     expect(totals.hector[0].points).toBeCloseTo(59.8, 5);
+    expect(totals.hector[0].toPar).toBeCloseTo(-0.2, 5);
     expect(totals.hector[0].roundsPlayed).toBe(2);
     expect(totals.victor.find((v) => v.key === "jari-k")!.points).toBe(72);
   });
@@ -537,5 +540,90 @@ describe("the draft", () => {
     const declined = draftPairs(order, { ...base, pairs: [], defendingPair: null } as EventDoc);
     expect(declined.some((p) => p.defending)).toBe(false);
     expect(declined[0]).toMatchObject({ aId: "b2", bId: "a3" });
+  });
+});
+
+describe("hector to par", () => {
+  /** Cards for the first `holes` holes only, every hole at `over` above par. */
+  function partialCard(subjectId: string, holes: number, over = 0): Card {
+    const h: Record<string, number> = {};
+    for (let i = 0; i < holes; i++) h[String(i + 1)] = radecky.par[i] + over;
+    return { id: `x__${subjectId}`, roundId: "x", subjectId, holes: h };
+  }
+
+  function evaluate(round: Round, cards: Record<string, Card>) {
+    return evaluateRound({
+      round,
+      course: radecky,
+      tee: effectiveTee(round, radecky),
+      players: [jari, lasse],
+      pairs: [pair],
+      cards,
+    });
+  }
+
+  it("weights a partial better-ball round hole by hole", () => {
+    // Nine holes in: the pair's to-par so far carries the round's 50% weight —
+    // a bogey in a 50% round costs exactly +0.5.
+    const round = { ...defaultRounds[1], courseId: "radecky" };
+    const result = evaluate(round, {
+      [jari.id]: partialCard(jari.id, 9, 1),
+      [lasse.id]: partialCard(lasse.id, 9, 1),
+    });
+    const team = result.formats[0].teams[0];
+    expect(result.hector[pair.id].toPar).toBeCloseTo(0.5 * team.toPar, 6);
+  });
+
+  it("scores a partial Stableford round against the two-point par", () => {
+    // Gross par for nine holes: net birdies where strokes fall, so points exceed
+    // 2·thru and the weighted to-par goes under.
+    const round = { ...defaultRounds[0], courseId: "radecky" };
+    const result = evaluate(round, { [jari.id]: partialCard(jari.id, 9) });
+    const row = result.formats[0].players.find((p) => p.playerId === jari.id)!;
+    expect(result.hector[pair.id].toPar).toBeCloseTo((1 / 3) * (2 * 9 - row.value), 6);
+  });
+
+  it("takes scramble bonuses off the to-par figure too", () => {
+    const round = { ...defaultRounds[5], courseId: "radecky" };
+    const card = partialCard(teamCardId(pair.id), 18);
+    card.holes["1"] = radecky.par[0] - 1; // one gross birdie → −0.5 bonus
+    const result = evaluate(round, { [teamCardId(pair.id)]: card });
+    const team = result.formats[0].teams[0];
+    expect(result.hector[pair.id].toPar).toBeCloseTo(1.0 * team.toPar - 0.5, 6);
+  });
+
+  it("equals the official total minus 240.0 for any completed tournament", () => {
+    // The invariant that makes to-par safe to rank on: it is not a second scoring
+    // system, just the same one with level par removed hole by hole. Random full
+    // cards for the whole week must land every pair on exactly points − 240.
+    const pairs: Pair[] = Array.from({ length: 10 }, (_, i) => ({
+      id: `p${i}`,
+      aId: field[i].id,
+      bId: field[19 - i].id,
+    }));
+    const event = { players: field, pairs } as EventDoc;
+    const results = defaultRounds.map((r) => {
+      const course = courses[r.courseId];
+      const generated = generateRoundCards(r, course, effectiveTee(r, course), event, 18);
+      const cards = Object.fromEntries(
+        generated.map((c) => [
+          c.subjectId,
+          { id: c.subjectId, roundId: r.id, subjectId: c.subjectId, holes: c.holes },
+        ]),
+      );
+      return evaluateRound({
+        round: r,
+        course,
+        tee: effectiveTee(r, course),
+        players: field,
+        pairs,
+        cards,
+      });
+    });
+    const totals = computeTournament(results, field, pairs);
+    for (const row of totals.hector) {
+      expect(row.roundsPlayed).toBe(6);
+      expect(row.toPar).toBeCloseTo(row.points - 240, 6);
+    }
   });
 });

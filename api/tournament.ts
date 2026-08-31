@@ -88,9 +88,12 @@ export default async function handler(
   const byId = new Map(event.players.map((p) => [p.id, p]));
   const round2 = (n: number) => Math.round(n * 100) / 100;
 
+  // Ranked by weighted to-par, exactly like the app's table — mid-round an
+  // accumulating stroke total would rank early flights last for having played more.
+  // At week's end toPar === points − levelPar, so the final order is identical.
   const hector = rank(
     totals.hector,
-    (r) => r.points,
+    (r) => r.toPar,
     true,
     (r) => r.roundsPlayed > 0,
   ).map((r) => ({
@@ -99,6 +102,7 @@ export default async function handler(
     pairId: r.item.key,
     players: r.item.label,
     points: round2(r.item.points),
+    toPar: round2(r.item.toPar),
     diffToLeader: r.diff === null ? null : round2(r.diff),
     thru: r.item.thru,
     roundsPlayed: r.item.roundsPlayed,

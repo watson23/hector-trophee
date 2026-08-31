@@ -17,9 +17,11 @@ interface Props {
  * week. This is the moment it has been counting towards.
  */
 export default function Champions({ rounds, hector, victor }: Props) {
+  // Ranked to par, in agreement with the table — identical to ranking the stroke
+  // totals when every pair has played every round, and fairer if one hasn't.
   const hectorRanked = rank(
     hector,
-    (r) => r.points,
+    (r) => r.toPar,
     hectorLowerIsBetter,
     (r) => r.roundsPlayed > 0,
   );

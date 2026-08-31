@@ -2,6 +2,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
 import { hectorLowerIsBetter, levelParTotal, weightLabel } from "../lib/hector";
+import { formatToParFine } from "../lib/leaderboard";
 import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
@@ -84,8 +85,12 @@ export default function TournamentScreen({
   const hectorRows: LeaderRow[] = hector.map((row) => ({
     key: row.key,
     label: row.label,
-    value: row.points,
-    display: row.points.toFixed(1),
+    // Ranked and shown TO PAR: an accumulating stroke total made the early flights
+    // plummet down the live table simply for having played more holes. Weighted
+    // to-par compares pairs at any stage; once the week is over it equals the
+    // official total minus 240.0 exactly, so the order never disagrees with it.
+    value: row.toPar,
+    display: formatToParFine(row.toPar),
     // Only worth a line when this pair is missing a round others have played.
     extra:
       row.roundsPlayed > 0 && row.roundsPlayed < hectorBegun.size
@@ -98,6 +103,11 @@ export default function TournamentScreen({
     played: row.roundsPlayed > 0,
     detail: (
       <div className="space-y-2">
+        {/* The official figure lives here: the breakdown below explains it. */}
+        <div className="flex justify-between gap-3 text-xs border-b border-slate-800 pb-2">
+          <span className="text-slate-400">Stroke total</span>
+          <span className="num font-semibold text-slate-200">{row.points.toFixed(1)}</span>
+        </div>
         {rounds.map((r) => {
           const entry = row.perRound[r.id];
           if (!entry) return null;
@@ -208,14 +218,15 @@ export default function TournamentScreen({
           ) : (
             <>
               <p className="text-[11px] leading-relaxed text-slate-500 mb-2">
-                A stroke total — <span className="text-slate-300 font-medium">lower wins</span>.
-                Level par all week is{" "}
-                <span className="num text-slate-400">{levelPar.toFixed(1)}</span>.
+                Scored to par — <span className="text-slate-300 font-medium">lower wins</span>,
+                and pairs mid-round compare fairly: each hole lands with its round's weight,
+                so a bogey in a 50% round costs +0.5. E is a level-par week of{" "}
+                <span className="num text-slate-400">{levelPar.toFixed(1)}</span> strokes.
               </p>
               <LeaderTable
                 rows={hectorRows}
                 lowerIsBetter={hectorLowerIsBetter}
-                scoreHeader="Strokes"
+                scoreHeader="To par"
                 decimals={1}
                 wideThru
                 leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
@@ -239,7 +250,9 @@ export default function TournamentScreen({
       {tab === "hector" && (
         <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
           Tap a pair to see what each round contributed. For scale: the {PREVIOUS.year} title
-          was won on <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span>.
+          was won on <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span>{" "}
+          strokes — that is,{" "}
+          <span className="num text-slate-400">{formatToParFine(PREVIOUS.hector.points - 240)}</span>.
         </p>
       )}
       {tab === "victor" && (

@@ -89,3 +89,10 @@ export function formatToPar(toPar: number): string {
   if (toPar === 0) return "E";
   return toPar > 0 ? `+${toPar}` : `−${Math.abs(toPar)}`;
 }
+
+/** "+3.3", "E", "−12.5" — a weighted to-par figure, one decimal by default. */
+export function formatToParFine(toPar: number, decimals = 1): string {
+  const v = Math.round(toPar * 10 ** decimals) / 10 ** decimals;
+  if (v === 0) return "E";
+  return v > 0 ? `+${v.toFixed(decimals)}` : `−${Math.abs(v).toFixed(decimals)}`;
+}

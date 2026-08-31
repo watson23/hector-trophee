@@ -488,6 +488,12 @@ function Formats({ rounds }: { rounds: Round[] }) {
             </li>
           ))}
         </ul>
+        <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+          Standings show <strong className="text-slate-300 font-semibold">to par</strong>, so
+          pairs mid-round compare fairly — each hole lands with its round's weight, and a
+          bogey in a 50% round costs +0.5. The stroke total sits behind each pair's
+          breakdown.
+        </p>
         <p className="text-xs text-slate-400 mt-2.5 leading-relaxed">
           Stableford rounds convert to strokes first:{" "}
           <span className="num text-slate-300">strokes = 2 × par − (points + 36)</span> — so 39

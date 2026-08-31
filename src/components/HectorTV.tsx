@@ -151,7 +151,7 @@ export function FollowStrip({
   const byId = new Map(event.players.map((p) => [p.id, p]));
   const hectorRanked = rank(
     hector,
-    (r) => r.points,
+    (r) => r.toPar,
     hectorLowerIsBetter,
     (r) => r.roundsPlayed > 0,
   );

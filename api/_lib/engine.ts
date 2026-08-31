@@ -90,12 +90,23 @@ export interface ContributionDetail {
   /** Birdie/eagle bonus already taken off `points`, so the breakdown can show its working. */
   bonus?: { points: number; birdies: number; eagles: number };
   points: number;
+  /**
+   * The same contribution measured against par for the holes actually played — each
+   * hole lands with its round's weight, so a bogey in a 50% round costs +0.5. This is
+   * what makes pairs at different stages of a round comparable live; when a round is
+   * complete it equals `points` minus the weighted par, so the tournament to-par sum
+   * lands exactly on total − 240.0.
+   */
+  toPar: number;
 }
 
 export interface RoundResult {
   roundId: string;
   formats: FormatResult[];
-  hector: Record<string, { points: number; thru: number; detail: ContributionDetail[] }>;
+  hector: Record<
+    string,
+    { points: number; toPar: number; thru: number; detail: ContributionDetail[] }
+  >;
   victor: Record<string, { points: number; thru: number }>;
 }
 
@@ -150,8 +161,9 @@ export function evaluateRound(input: RoundInput): RoundResult {
   const formats: FormatResult[] = [];
 
   const addHector = (pairId: string, detail: ContributionDetail, thru: number) => {
-    const entry = (hector[pairId] ??= { points: 0, thru: 0, detail: [] });
+    const entry = (hector[pairId] ??= { points: 0, toPar: 0, thru: 0, detail: [] });
     entry.points += detail.points;
+    entry.toPar += detail.toPar;
     entry.detail.push(detail);
     entry.thru = Math.max(entry.thru, thru);
   };
@@ -182,7 +194,12 @@ export function evaluateRound(input: RoundInput): RoundResult {
         for (const pair of pairs) {
           const rows = result.players.filter((r) => r.playerId === pair.aId || r.playerId === pair.bId);
           if (rows.length === 0) continue;
-          const best = rows.reduce((a, b) => (b.value > a.value ? b : a));
+          // Net par scores 2 points, so a partial card's to-par is 2·thru − points.
+          // The better half is judged by that — fair even when the two are in
+          // different flights mid-round — and with full cards it picks the same
+          // player as best-by-points.
+          const toParOf = (r: PlayerRow) => 2 * r.thru - r.value;
+          const best = rows.reduce((a, b) => (toParOf(b) < toParOf(a) ? b : a));
           const points = hectorContribution({
             value: best.value,
             kind: "stableford",
@@ -199,6 +216,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
               who: byId.get(best.playerId)?.name,
               pct: spec.hector.pct,
               points,
+              toPar: spec.hector.pct * toParOf(best),
             },
             Math.max(...rows.map((r) => r.thru)),
           );
@@ -239,6 +257,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
                 raw: row.value,
                 pct: spec.hector.pct,
                 points,
+                toPar: spec.hector.pct * (row.toPar ?? 0),
               },
               row.thru,
             );
@@ -277,7 +296,14 @@ export function evaluateRound(input: RoundInput): RoundResult {
           });
           addHector(
             pair.id,
-            { formatId: spec.id, label: spec.label, raw: r.strokes, pct: spec.hector.pct, points },
+            {
+              formatId: spec.id,
+              label: spec.label,
+              raw: r.strokes,
+              pct: spec.hector.pct,
+              points,
+              toPar: spec.hector.pct * r.toPar,
+            },
             r.thru,
           );
         }
@@ -330,6 +356,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
                 ? { bonus: { points: bonus, birdies: r.birdies, eagles: r.eagles } }
                 : {}),
               points: applyBonuses(base, bonus),
+              toPar: applyBonuses(spec.hector.pct * r.toPar, bonus),
             },
             r.thru,
           );
@@ -351,13 +378,15 @@ export interface TournamentRow<T> {
   key: string;
   label: string;
   points: number;
+  /** Weighted to-par over holes played — the live-comparable figure (Hector only; 0 for Victor). */
+  toPar: number;
   thru: number;
   roundsPlayed: number;
   perRound: Record<string, T>;
 }
 
 export interface TournamentTotals {
-  hector: TournamentRow<{ points: number; thru: number; detail: ContributionDetail[] }>[];
+  hector: TournamentRow<{ points: number; toPar: number; thru: number; detail: ContributionDetail[] }>[];
   victor: TournamentRow<{ points: number; thru: number }>[];
   rounds: RoundResult[];
 }
@@ -373,10 +402,11 @@ export function computeTournament(
   const hector = pairs.map((pair) => {
     const a = byId.get(pair.aId);
     const b = byId.get(pair.bId);
-    const row: TournamentRow<{ points: number; thru: number; detail: ContributionDetail[] }> = {
+    const row: TournamentRow<{ points: number; toPar: number; thru: number; detail: ContributionDetail[] }> = {
       key: pair.id,
       label: `${a?.name ?? "?"} + ${b?.name ?? "?"}`,
       points: 0,
+      toPar: 0,
       thru: 0,
       roundsPlayed: 0,
       perRound: {},
@@ -385,7 +415,13 @@ export function computeTournament(
       const entry = rr.hector[pair.id];
       if (!entry || entry.thru === 0) continue;
       row.points += entry.points;
-      row.perRound[rr.roundId] = { points: entry.points, thru: entry.thru, detail: entry.detail };
+      row.toPar += entry.toPar;
+      row.perRound[rr.roundId] = {
+        points: entry.points,
+        toPar: entry.toPar,
+        thru: entry.thru,
+        detail: entry.detail,
+      };
       row.roundsPlayed += 1;
       row.thru += entry.thru;
     }
@@ -397,6 +433,7 @@ export function computeTournament(
       key: p.id,
       label: p.name,
       points: 0,
+      toPar: 0,
       thru: 0,
       roundsPlayed: 0,
       perRound: {},

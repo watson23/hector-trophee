@@ -158,7 +158,8 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     const before = computeTournament(withoutOpen, event.players, event.pairs).hector;
     const position = (list: typeof before) => {
       const played = list.filter((r) => r.roundsPlayed > 0);
-      const sorted = [...played].sort((a, b) => a.points - b.points);
+      // To par, like the table itself — totals would rank early flights last mid-round.
+      const sorted = [...played].sort((a, b) => a.toPar - b.toPar);
       return new Map(sorted.map((r, i) => [r.key, i + 1]));
     };
     const was = position(before);
