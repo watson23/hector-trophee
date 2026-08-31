@@ -153,7 +153,9 @@ export default function TournamentScreen({
     key: row.key,
     label: row.label,
     value: row.toPar,
-    display: `${formatToParFine(row.toPar, 0)} (${row.points.toFixed(0)})`,
+    // Points lead — "over 40 points!" is the number people talk about — while the
+    // to-par alongside (and the ranking) keeps mid-round comparison honest.
+    display: `${row.points.toFixed(0)} (${formatToParFine(row.toPar, 0)})`,
     extra:
       row.roundsPlayed > 0 && row.roundsPlayed < victorBegun.size
         ? `${row.roundsPlayed} of ${victorBegun.size} Stableford rounds`
@@ -237,7 +239,7 @@ export default function TournamentScreen({
           <LeaderTable
             rows={victorRows}
             lowerIsBetter
-            scoreHeader="To par"
+            scoreHeader="Pts"
             decimals={0}
             wideThru
             leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
@@ -256,9 +258,9 @@ export default function TournamentScreen({
       )}
       {tab === "victor" && (
         <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
-          Victor sums your Stableford NET points across the four Stableford rounds, shown to
-          par like every table here — fewest over net par is exactly most points. The points
-          total rides in parentheses.
+          Victor sums your Stableford NET points across the four Stableford rounds. Ranked to
+          par (in parentheses) so players mid-round compare fairly — fewest over net par is
+          exactly most points.
         </p>
       )}
     </div>

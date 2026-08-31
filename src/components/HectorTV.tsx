@@ -194,7 +194,7 @@ export function FollowStrip({
         const scoreText =
           row && spec
             ? spec.kind === "stableford"
-              ? `${formatToPar(row.toPar ?? 0)} (${row.value} pts)`
+              ? `${row.value} pts (${formatToPar(row.toPar ?? 0)})`
               : formatToPar(row.toPar ?? 0)
             : "";
 

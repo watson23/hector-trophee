@@ -148,9 +148,14 @@ export default function RoundScreen({
                 key: p.playerId,
                 label: p.name,
                 value: p.thru > 0 ? (p.toPar ?? 0) : 0,
-                // Stableford too: net par is 2 points, so it reads to par like the
-                // stroke formats — points ride in the parentheses.
-                display: `${formatToPar(p.toPar ?? 0)} (${p.value})`,
+                // Ranked to par (net par = 2 points) so mid-round comparison is fair —
+                // but points lead the display, because "40 points!" is how Stableford
+                // is actually spoken. Stroke formats lead with to par for the same
+                // reason: "twelve under" is how those are spoken.
+                display:
+                  f.spec.kind === "stableford"
+                    ? `${p.value} (${formatToPar(p.toPar ?? 0)})`
+                    : `${formatToPar(p.toPar ?? 0)} (${p.value})`,
                 extra: f.spec.net ? `playing HCP ${p.playingHcp}` : undefined,
                 thru: p.thru,
                 played: p.thru > 0,
@@ -193,7 +198,7 @@ export default function RoundScreen({
                 <LeaderTable
                   rows={rows}
                   lowerIsBetter
-                  scoreHeader="To par"
+                  scoreHeader={f.spec.kind === "stableford" ? "Pts" : "To par"}
                   leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                 />
