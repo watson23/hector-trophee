@@ -1,7 +1,7 @@
 import type { Card, EventDoc, Round } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import type { RoundResult } from "../lib/engine";
-import { formatToPar } from "../lib/leaderboard";
+import { formatToPar, formatToParFine } from "../lib/leaderboard";
 import { weightLabel } from "../lib/hector";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HectorMark from "../components/HectorMark";
@@ -206,6 +206,74 @@ export default function RoundScreen({
             </section>
           );
         })}
+
+        {/*
+          Lasse's spectator request: on rounds where the Hector comes from individual
+          play (the draft Stableford, the both-count stroke play), an individual's −3
+          tells only half the story — the pair might still be +1 once the partner's +4
+          counts. The engine already computes each pair's round contribution with the
+          format's own rules; this simply shows it. Team rounds need nothing: their
+          tables already are the pairs.
+        */}
+        {result &&
+          (() => {
+            const spec = round.formats.find((f) => f.hector && f.hector.source !== "team");
+            const entries = Object.entries(result.hector);
+            if (!spec?.hector || entries.length === 0) return null;
+            const byId = new Map(event.players.map((p) => [p.id, p]));
+            const pct = spec.hector.pct;
+            const pairRows: LeaderRow[] = entries.map(([pairId, entry]) => {
+              const pair = event.pairs.find((p) => p.id === pairId);
+              const label = pair
+                ? `${byId.get(pair.aId)?.name ?? "?"} + ${byId.get(pair.bId)?.name ?? "?"}`
+                : pairId;
+              const combined = Math.round(entry.toPar / pct);
+              const extra =
+                spec.hector!.source === "betterIndividual"
+                  ? entry.detail[0]?.who
+                    ? `counts ${entry.detail[0].who}'s ${entry.detail[0].raw} pts`
+                    : undefined
+                  : entry.detail
+                      .map((d) => {
+                        const name = d.label.split("— ")[1] ?? d.label;
+                        return `${name} ${formatToPar(Math.round(d.toPar / d.pct))}`;
+                      })
+                      .join(" · ");
+              return {
+                key: pairId,
+                label,
+                value: entry.thru > 0 ? entry.toPar : 0,
+                display: `${formatToPar(combined)} (${formatToParFine(entry.toPar, 2)})`,
+                extra,
+                thru: entry.thru,
+                played: entry.thru > 0,
+              };
+            });
+            return (
+              <section>
+                <div className="px-4 mb-2 flex items-center justify-between gap-2">
+                  <h2 className="font-semibold text-sm">The Hector this round</h2>
+                  <span className="pill bg-violet-950 text-violet-300 shrink-0">
+                    Hector {weightLabel(pct)}
+                  </span>
+                </div>
+                <div className="px-4">
+                  <LeaderTable
+                    rows={pairRows}
+                    lowerIsBetter
+                    scoreHeader="To par"
+                    leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
+                    highlightKeys={highlightPairs}
+                  />
+                </div>
+                <p className="px-4 mt-2 text-[11px] text-slate-500 leading-relaxed">
+                  {spec.hector!.source === "betterIndividual"
+                    ? "The better player's round counts for the pair. The weighted share in parentheses is what goes into the trophy."
+                    : "Both players count. The pair's combined to par leads; the weighted share in parentheses is what goes into the trophy."}
+                </p>
+              </section>
+            );
+          })()}
       </div>
     </div>
   );
