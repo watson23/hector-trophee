@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
@@ -32,7 +33,14 @@ export default function AdminScreen({
   setHole,
   onClose,
 }: Props) {
-  const [tab, setTab] = useState<"pairs" | "groups" | "rounds" | "scores">("pairs");
+  // Rounds first: it and Flights are the daily workspace, while Pairs is essentially
+  // never touched again after Thursday's draft. Session-persisted, like the rest of the
+  // UI position, so a refresh lands back on the same section.
+  const [tab, setTab] = usePersistentState<"pairs" | "groups" | "rounds" | "scores">(
+    "hectro_ui.adminTab",
+    "rounds",
+    "session",
+  );
 
   return (
     <div className="pb-4">
@@ -49,10 +57,10 @@ export default function AdminScreen({
         value={tab}
         onChange={setTab}
         options={[
-          { id: "pairs", label: "Pairs" },
-          { id: "groups", label: "Flights" },
           { id: "rounds", label: "Rounds" },
+          { id: "groups", label: "Flights" },
           { id: "scores", label: "Scores" },
+          { id: "pairs", label: "Pairs" },
         ]}
       />
       <div className="mt-4">
@@ -363,6 +371,20 @@ function PairsEditor({
 // Flights — who plays with whom, per round
 // ---------------------------------------------------------------------------
 
+const MAX_PER_FLIGHT = 4;
+
+/**
+ * A "unit" is what gets moved in and out of flights: a whole pair once the draft is
+ * done (the team formats need both cards in the same flight anyway, and assigning
+ * twenty players one tap at a time was twice the work), or a single player in the
+ * individual round — and as a fallback for anyone whose partner is somewhere odd.
+ */
+interface FlightUnit {
+  key: string;
+  label: string;
+  playerIds: string[];
+}
+
 function GroupsEditor({
   event,
   rounds,
@@ -378,19 +400,77 @@ function GroupsEditor({
 
   if (!round) return null;
 
+  // Pairs are the unit everywhere except the draft round, which is played individually.
+  const pairMode =
+    event.pairs.length > 0 &&
+    !round.formats.some((f) => f.hector?.source === "betterIndividual");
+
   const assigned = new Set(round.groups.flatMap((g) => g.playerIds));
-  const unassigned = event.players.filter((p) => !assigned.has(p.id));
+
+  /** Unassigned, grouped into movable units. */
+  const unassignedUnits: FlightUnit[] = [];
+  if (pairMode) {
+    const inPair = new Set<string>();
+    for (const pair of event.pairs) {
+      inPair.add(pair.aId);
+      inPair.add(pair.bId);
+      if (!assigned.has(pair.aId) && !assigned.has(pair.bId)) {
+        const a = byId.get(pair.aId);
+        const b = byId.get(pair.bId);
+        if (a && b) {
+          unassignedUnits.push({ key: pair.id, label: `${a.name} + ${b.name}`, playerIds: [pair.aId, pair.bId] });
+        }
+      }
+    }
+    // Anyone unpaired, or whose partner is already placed, still moves alone.
+    for (const p of event.players) {
+      if (assigned.has(p.id)) continue;
+      if (inPair.has(p.id) && !unassignedUnits.some((u) => u.playerIds.includes(p.id))) {
+        unassignedUnits.push({ key: p.id, label: p.name, playerIds: [p.id] });
+      } else if (!inPair.has(p.id)) {
+        unassignedUnits.push({ key: p.id, label: p.name, playerIds: [p.id] });
+      }
+    }
+  } else {
+    for (const p of event.players) {
+      if (!assigned.has(p.id)) unassignedUnits.push({ key: p.id, label: p.name, playerIds: [p.id] });
+    }
+  }
+
+  /** What a flight holds, rendered in the same units. */
+  function groupUnits(g: Round["groups"][number]): FlightUnit[] {
+    if (!pairMode) {
+      return g.playerIds.map((id) => ({ key: id, label: byId.get(id)?.name ?? id, playerIds: [id] }));
+    }
+    const units: FlightUnit[] = [];
+    const used = new Set<string>();
+    for (const pair of event.pairs) {
+      if (g.playerIds.includes(pair.aId) && g.playerIds.includes(pair.bId)) {
+        const a = byId.get(pair.aId);
+        const b = byId.get(pair.bId);
+        units.push({ key: pair.id, label: `${a?.name} + ${b?.name}`, playerIds: [pair.aId, pair.bId] });
+        used.add(pair.aId);
+        used.add(pair.bId);
+      }
+    }
+    for (const id of g.playerIds) {
+      if (!used.has(id)) units.push({ key: id, label: byId.get(id)?.name ?? id, playerIds: [id] });
+    }
+    return units;
+  }
 
   const update = (groups: Round["groups"]) => saveRound({ ...round, groups });
 
-  function movePlayer(playerId: string, toGroupId: string | null) {
+  function moveUnit(unit: FlightUnit, toGroupId: string | null) {
     const groups = round.groups.map((g) => ({
       ...g,
-      playerIds: g.playerIds.filter((id) => id !== playerId),
+      playerIds: g.playerIds.filter((id) => !unit.playerIds.includes(id)),
     }));
     if (toGroupId) {
       const target = groups.find((g) => g.id === toGroupId);
-      target?.playerIds.push(playerId);
+      // Four to a flight is a hard fact of golf, not a preference — never overfill.
+      if (!target || target.playerIds.length + unit.playerIds.length > MAX_PER_FLIGHT) return;
+      target.playerIds.push(...unit.playerIds);
     }
     void update(groups);
   }
@@ -436,64 +516,66 @@ function GroupsEditor({
         </button>
       </div>
 
-      {unassigned.length > 0 && (
+      {unassignedUnits.length > 0 && (
         <section>
-          <h2 className="label mb-2">Not assigned ({unassigned.length})</h2>
+          <h2 className="label mb-2">
+            Not assigned ({unassignedUnits.reduce((a, u) => a + u.playerIds.length, 0)})
+          </h2>
           <div className="flex flex-wrap gap-1.5">
-            {unassigned.map((p) => (
-              <PlayerChip
-                key={p.id}
-                player={p}
-                groups={round.groups}
-                onMove={(gid) => movePlayer(p.id, gid)}
-              />
+            {unassignedUnits.map((u) => (
+              <UnitChip key={u.key} unit={u} groups={round.groups} onMove={(gid) => moveUnit(u, gid)} />
             ))}
           </div>
         </section>
       )}
 
-      {round.groups.map((g) => (
-        <section key={g.id} className="card p-3">
-          <div className="flex items-center justify-between mb-2">
-            <input
-              className="input py-1 px-2 w-24 num text-sm"
-              value={g.teeTime}
-              onChange={(e) =>
-                update(round.groups.map((x) => (x.id === g.id ? { ...x, teeTime: e.target.value } : x)))
-              }
-            />
-            <span className="text-[11px] text-slate-500 num">{g.playerIds.length} players</span>
-          </div>
-          {g.playerIds.length === 0 ? (
-            <p className="text-xs text-slate-600">Empty</p>
-          ) : (
-            <ul className="space-y-1">
-              {g.playerIds.map((id) => (
-                <li key={id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">{byId.get(id)?.name}</span>
-                  <button
-                    onClick={() => movePlayer(id, null)}
-                    className="text-xs text-slate-500 hover:text-rose-400 px-1"
-                    aria-label={`Remove ${byId.get(id)?.name}`}
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ))}
+      {round.groups.map((g) => {
+        const full = g.playerIds.length >= MAX_PER_FLIGHT;
+        return (
+          <section key={g.id} className="card p-3">
+            <div className="flex items-center justify-between mb-2">
+              <input
+                className="input py-1 px-2 w-24 num text-sm"
+                value={g.teeTime}
+                onChange={(e) =>
+                  update(round.groups.map((x) => (x.id === g.id ? { ...x, teeTime: e.target.value } : x)))
+                }
+              />
+              <span className={`text-[11px] num ${full ? "text-emerald-500" : "text-slate-500"}`}>
+                {g.playerIds.length} players{full ? " · full" : ""}
+              </span>
+            </div>
+            {g.playerIds.length === 0 ? (
+              <p className="text-xs text-slate-600">Empty</p>
+            ) : (
+              <ul className="space-y-1">
+                {groupUnits(g).map((u) => (
+                  <li key={u.key} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="truncate">{u.label}</span>
+                    <button
+                      onClick={() => moveUnit(u, null)}
+                      className="text-xs text-slate-500 hover:text-rose-400 px-1"
+                      aria-label={`Remove ${u.label}`}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }
 
-function PlayerChip({
-  player,
+function UnitChip({
+  unit,
   groups,
   onMove,
 }: {
-  player: FieldPlayer;
+  unit: FlightUnit;
   groups: Round["groups"];
   onMove: (groupId: string) => void;
 }) {
@@ -504,22 +586,28 @@ function PlayerChip({
         onClick={() => setOpen((v) => !v)}
         className="rounded-full bg-slate-800 border border-slate-700 px-2.5 py-1 text-xs hover:border-violet-600"
       >
-        {player.name}
+        {unit.label}
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 card p-1 min-w-[7rem] shadow-xl">
-          {groups.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => {
-                onMove(g.id);
-                setOpen(false);
-              }}
-              className="block w-full text-left text-xs px-2 py-1.5 rounded-lg hover:bg-slate-800 num"
-            >
-              {g.teeTime}
-            </button>
-          ))}
+        <div className="absolute z-20 mt-1 card p-1 min-w-[8rem] shadow-xl">
+          {groups.map((g) => {
+            const full = g.playerIds.length + unit.playerIds.length > MAX_PER_FLIGHT;
+            return (
+              <button
+                key={g.id}
+                disabled={full}
+                onClick={() => {
+                  onMove(g.id);
+                  setOpen(false);
+                }}
+                className="block w-full text-left text-xs px-2 py-1.5 rounded-lg num
+                           hover:bg-slate-800 disabled:text-slate-600 disabled:hover:bg-transparent"
+              >
+                {g.teeTime} · {g.playerIds.length}/{MAX_PER_FLIGHT}
+                {full ? " full" : ""}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
