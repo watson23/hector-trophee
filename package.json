@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 3016",
     "dev:demo": "VITE_FIREBASE_PROJECT_ID= vite --port 3017",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsc -p api --noEmit && vite build",
     "preview": "vite preview --port 3016",
     "test": "vitest run",
     "lint": "eslint .",
@@ -20,6 +20,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^26.4.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^5.2.0",

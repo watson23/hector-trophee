@@ -31,12 +31,15 @@ export default function App() {
   const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
   // Hector TV: #watch in a shared link drops straight into spectator mode — no PIN,
   // because there is nothing to protect: the spectator shell has no write paths.
-  const [editFollows, setEditFollows] = useState(false);
+  // Decided once, at mount: arriving via the shared link flips the device into
+  // spectator mode and opens the follow picker.
+  const [enteredViaWatch] = useState(
+    () => location.hash === "#watch" && !session.playerId && !session.spectator,
+  );
+  const [editFollows, setEditFollows] = useState(enteredViaWatch);
   useEffect(() => {
-    if (location.hash === "#watch" && !session.playerId && !session.spectator) {
-      update({ spectator: true });
-      setEditFollows(true);
-    }
+    if (enteredViaWatch) update({ spectator: true });
+    // Once, on mount — enteredViaWatch never changes and update is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Which round the Round tab is on — session-scoped, so tomorrow follows the live
@@ -68,7 +71,7 @@ export default function App() {
   const newsUnread = (t.event?.announcements ?? []).some((a) => a.at > newsSeen);
 
   // Followed players and the pairs they belong to — the star treatment on every table.
-  const following = session.following ?? [];
+  const following = useMemo(() => session.following ?? [], [session.following]);
   const highlightPlayers = useMemo(() => new Set(following), [following]);
   const highlightPairs = useMemo(
     () =>
@@ -125,7 +128,7 @@ export default function App() {
                 rounds={t.rounds}
                 results={t.roundResults}
                 cards={t.cards}
-                initialRoundId={roundSel ?? activeRound?.id ?? null}
+                roundId={roundSel ?? activeRound?.id ?? null}
                 onRoundChange={setRoundSel}
                 highlightPlayers={highlightPlayers}
                 highlightPairs={highlightPairs}
@@ -237,7 +240,7 @@ export default function App() {
                 rounds={t.rounds}
                 results={t.roundResults}
                 cards={t.cards}
-                initialRoundId={roundSel ?? activeRound?.id ?? null}
+                roundId={roundSel ?? activeRound?.id ?? null}
                 onRoundChange={setRoundSel}
               />
             )}

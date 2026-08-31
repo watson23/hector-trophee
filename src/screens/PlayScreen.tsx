@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
@@ -51,7 +51,7 @@ export default function PlayScreen({
    * Manual position wins once taken: navigating or entering a score pins the hole until
    * the round or the view changes, so the view never jumps out from under a thumb.
    */
-  const [manualHole, setManualHole] = useState<number | null>(null);
+  const [pin, setPin] = useState<{ roundId: string; view: string; hole: number } | null>(null);
   const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
   // The escape hatch for an organiser who forgot to open the round at tee time.
   const [scoreAnyway, setScoreAnyway] = usePersistentState<string | null>(
@@ -126,15 +126,16 @@ export default function PlayScreen({
     }
     return 18;
   })();
+  // The pin remembers which round and view it was taken in, so a new round or a
+  // return to this view simply doesn't match — the entry opens on the next
+  // un-entered hole again, with no reset effect to run.
+  const manualHole =
+    pin && pin.roundId === round?.id && pin.view === view ? pin.hole : null;
   const hole = manualHole ?? firstOpenHole;
-  const setHole_ = (next: number | ((prev: number) => number)) =>
-    setManualHole(typeof next === "function" ? next(hole) : next);
-
-  // A new round, or re-entering the hole-by-hole view, releases the pin: the view
-  // opens on the next un-entered hole again.
-  useEffect(() => {
-    setManualHole(null);
-  }, [round?.id, view]);
+  const setHole_ = (next: number | ((prev: number) => number)) => {
+    if (!round) return;
+    setPin({ roundId: round.id, view, hole: typeof next === "function" ? next(hole) : next });
+  };
 
   if (!round || !course) {
     return (
@@ -285,7 +286,7 @@ export default function PlayScreen({
                   // Pin the view before writing: without this, completing the flight's
                   // last score would advance firstOpenHole and yank the view forward
                   // mid-look — "Next hole" is the deliberate way onwards.
-                  setManualHole(hole);
+                  setHole_(hole);
                   setHole(s.id, hole, v);
                 }}
               />

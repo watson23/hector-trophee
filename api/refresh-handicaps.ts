@@ -32,7 +32,7 @@ import {
   writeBatch,
   type Firestore,
 } from "firebase/firestore";
-import { eventUrl, parseHandicaps } from "./_lib/handicapPage";
+import { eventUrl, parseHandicaps } from "./_lib/handicapPage.js";
 
 const EVENTS = ["HECTOR2026", "HECTOR2026-test"];
 /** The Sunday of the trip; the morning after, the cron becomes a no-op. */

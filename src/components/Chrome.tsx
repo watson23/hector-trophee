@@ -119,12 +119,14 @@ function useSlowSync(pending: number, delayMs = 2000): boolean {
   const [slow, setSlow] = useState(false);
   const hasPending = pending > 0;
   useEffect(() => {
-    if (!hasPending) {
-      setSlow(false);
-      return;
-    }
+    if (!hasPending) return;
     const t = setTimeout(() => setSlow(true), delayMs);
-    return () => clearTimeout(t);
+    // Cleanup both cancels the timer and resets the flag, so the next pending spell
+    // starts its two seconds from zero instead of showing instantly.
+    return () => {
+      clearTimeout(t);
+      setSlow(false);
+    };
   }, [hasPending, delayMs]);
   return slow && hasPending;
 }

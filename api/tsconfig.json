@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // NodeNext resolution imposes exactly what Vercel's ESM function runtime does at
+    // /var/task: relative imports must carry explicit .js extensions. The root config
+    // (bundler resolution) can't catch that, which is how a specifier that crashes
+    // every invocation once shipped through a green build.
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "allowImportingTsExtensions": false
+  },
+  "include": ["."]
+}
