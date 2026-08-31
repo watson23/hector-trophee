@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** Build stamp ("abc1234 · 2026-09-01 14:32 UTC"), defined in vite.config.ts. */
+declare const __BUILD__: string;
+
 interface ImportMetaEnv {
   readonly VITE_FIREBASE_API_KEY?: string;
   readonly VITE_FIREBASE_AUTH_DOMAIN?: string;

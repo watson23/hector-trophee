@@ -1,8 +1,26 @@
+import { execSync } from "node:child_process";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+/**
+ * Stamped into the bundle at build time and shown at the foot of Info — the answer to
+ * "which version is your phone on?", and the thing to stare at when checking that the
+ * auto-update actually updates.
+ */
+const build = (() => {
+  let commit = "dev";
+  try {
+    commit = execSync("git rev-parse --short HEAD").toString().trim();
+  } catch {
+    /* not a git checkout, e.g. some CI tarball */
+  }
+  const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+  return `${commit} · ${stamp} UTC`;
+})();
+
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(build) },
   plugins: [
     react(),
     VitePWA({
