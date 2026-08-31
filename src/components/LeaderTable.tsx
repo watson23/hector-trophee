@@ -52,10 +52,18 @@ export default function LeaderTable({
    * to the table, not the viewport, so scrolling can never fake a move. All of it
    * sits out when the OS asks for reduced motion.
    */
+  const ranked = rank(
+    rows,
+    (r) => r.value,
+    lowerIsBetter,
+    (r) => r.played,
+  );
+
   const tableEl = useRef<HTMLTableElement | null>(null);
   const rowEls = useRef(new Map<string, HTMLTableRowElement>());
   const prevTops = useRef(new Map<string, number>());
   const prevVals = useRef(new Map<string, string | number>());
+  const prevOrder = useRef("");
   useLayoutEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const origin = tableEl.current?.getBoundingClientRect().top ?? 0;
@@ -63,15 +71,23 @@ export default function LeaderTable({
     rowEls.current.forEach((el, key) => {
       if (el.isConnected) tops.set(key, el.getBoundingClientRect().top - origin);
     });
+    // Glide only when the ORDER changed. Rows also move when a detail row opens or
+    // closes above them, but that's plain layout flow — and WebKit renders animated
+    // transforms on table rows wobbly enough to nudge the whole table sideways.
+    const order = ranked.map((r) => r.item.key).join("|");
+    const reordered = prevOrder.current !== "" && order !== prevOrder.current;
+    prevOrder.current = order;
     if (!reduced) {
-      for (const [key, top] of tops) {
-        const from = prevTops.current.get(key);
-        const el = rowEls.current.get(key);
-        if (el && from !== undefined && Math.abs(from - top) > 2) {
-          el.animate(
-            [{ transform: `translateY(${from - top}px)` }, { transform: "translateY(0)" }],
-            { duration: 500, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
-          );
+      if (reordered) {
+        for (const [key, top] of tops) {
+          const from = prevTops.current.get(key);
+          const el = rowEls.current.get(key);
+          if (el && from !== undefined && Math.abs(from - top) > 2) {
+            el.animate(
+              [{ transform: `translateY(${from - top}px)` }, { transform: "translateY(0)" }],
+              { duration: 500, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
+            );
+          }
         }
       }
       for (const r of rows) {
@@ -88,13 +104,6 @@ export default function LeaderTable({
     prevTops.current = tops;
     for (const r of rows) prevVals.current.set(r.key, r.display ?? r.value);
   });
-
-  const ranked = rank(
-    rows,
-    (r) => r.value,
-    lowerIsBetter,
-    (r) => r.played,
-  );
 
   if (rows.length === 0) {
     return (
