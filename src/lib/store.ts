@@ -43,6 +43,12 @@ export interface Store {
   subscribePending(cb: (count: number) => void): Unsubscribe;
   /** Backend errors worth showing the user, e.g. the rules rejecting a read. */
   subscribeError(cb: (error: StoreError | null) => void): Unsubscribe;
+  /**
+   * Copy another event's data wholesale into this one — the "mirror the tournament
+   * into the test space" button. Returns the number of documents written. Only the
+   * Firestore backend implements it; the local demo backend has nothing to mirror from.
+   */
+  mirrorFrom?(sourceEventId: string): Promise<number>;
 }
 
 export interface StoreError {
@@ -138,19 +144,19 @@ export function cardId(roundId: string, subjectId: string): string {
 // Local backend
 // ---------------------------------------------------------------------------
 
-const LS_PREFIX = "hectro_";
-const CHANNEL = "hectro_sync";
-
 type Listener = () => void;
 
 class LocalStore implements Store {
   readonly kind = "local" as const;
   private listeners = new Set<Listener>();
   private channel: BroadcastChannel | null = null;
+  /** Keys are per event id, so the live and test spaces stay separate in demo too. */
+  private prefix: string;
 
-  constructor() {
+  constructor(eventId: string) {
+    this.prefix = `hectro_${eventId}_`;
     if (typeof BroadcastChannel !== "undefined") {
-      this.channel = new BroadcastChannel(CHANNEL);
+      this.channel = new BroadcastChannel(`hectro_sync_${eventId}`);
       this.channel.onmessage = () => this.listeners.forEach((l) => l());
     }
     if (typeof window !== "undefined") {
@@ -160,7 +166,7 @@ class LocalStore implements Store {
 
   private read<T>(key: string, fallback: T): T {
     try {
-      const raw = localStorage.getItem(LS_PREFIX + key);
+      const raw = localStorage.getItem(this.prefix + key);
       return raw ? (JSON.parse(raw) as T) : fallback;
     } catch {
       return fallback;
@@ -168,7 +174,7 @@ class LocalStore implements Store {
   }
 
   private write(key: string, value: unknown) {
-    localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
+    localStorage.setItem(this.prefix + key, JSON.stringify(value));
     this.channel?.postMessage(key);
     this.listeners.forEach((l) => l());
   }
@@ -282,19 +288,24 @@ export function hasFirebaseConfig(): boolean {
   return Boolean(import.meta.env?.VITE_FIREBASE_PROJECT_ID);
 }
 
-let instancePromise: Promise<Store> | null = null;
+const instances = new Map<string, Promise<Store>>();
 
 /**
- * Firestore when configured, otherwise the local cross-tab backend.
+ * Firestore when configured, otherwise the local cross-tab backend — one per event id,
+ * so the live and test spaces each get their own store.
  *
  * The in-flight promise is memoised, not just the resolved value: two concurrent callers
  * (React StrictMode invokes effects twice in development) would both get past a
  * resolved-instance check while the first was still awaiting, and call
  * initializeFirestore() twice — which throws failed-precondition.
  */
-export function getStore(): Promise<Store> {
-  instancePromise ??= hasFirebaseConfig()
-    ? import("./firestore").then((m) => m.FirestoreStore.create())
-    : Promise.resolve(new LocalStore());
-  return instancePromise;
+export function getStore(eventId: string): Promise<Store> {
+  let instance = instances.get(eventId);
+  if (!instance) {
+    instance = hasFirebaseConfig()
+      ? import("./firestore").then((m) => m.FirestoreStore.create(eventId))
+      : Promise.resolve(new LocalStore(eventId));
+    instances.set(eventId, instance);
+  }
+  return instance;
 }

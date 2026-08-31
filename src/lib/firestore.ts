@@ -4,16 +4,18 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
+  getDocs,
   initializeFirestore,
   onSnapshot,
   persistentLocalCache,
   persistentMultipleTabManager,
   setDoc,
   deleteField,
+  writeBatch,
   type Firestore,
 } from "firebase/firestore";
 import type { Card, EventDoc, Round } from "../types";
-import { EVENT_ID } from "../data/field";
 import { defaultRounds } from "../data/rounds";
 import {
   buildDefaultEvent,
@@ -78,7 +80,10 @@ export class FirestoreStore implements Store {
   private error: StoreError | null = null;
   private errorListeners = new Set<(e: StoreError | null) => void>();
 
-  private constructor(private db: Firestore) {}
+  private constructor(
+    private db: Firestore,
+    private eventId: string,
+  ) {}
 
   private setError(error: StoreError | null) {
     // Keep the first real problem: later snapshots failing for the same reason
@@ -94,14 +99,14 @@ export class FirestoreStore implements Store {
     this.setError(describe(e.code ?? "unknown", e.message ?? String(err)));
   };
 
-  static async create(): Promise<FirestoreStore> {
+  static async create(eventId: string): Promise<FirestoreStore> {
     // Reuse the app across hot-module reloads; initializeApp/initializeFirestore both
     // throw if called twice for the same name.
     const app = getApps().length > 0 ? getApp() : initializeApp(config);
     const db = initializeFirestore(app, {
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
     });
-    const store = new FirestoreStore(db);
+    const store = new FirestoreStore(db, eventId);
     try {
       await signInAnonymously(getAuth(app));
     } catch (err) {
@@ -116,15 +121,54 @@ export class FirestoreStore implements Store {
   }
 
   private eventRef() {
-    return doc(this.db, "events", EVENT_ID);
+    return doc(this.db, "events", this.eventId);
   }
 
   private roundsRef() {
-    return collection(this.db, "events", EVENT_ID, "rounds");
+    return collection(this.db, "events", this.eventId, "rounds");
   }
 
   private cardsRef() {
-    return collection(this.db, "events", EVENT_ID, "cards");
+    return collection(this.db, "events", this.eventId, "cards");
+  }
+
+  /**
+   * Make this event an exact copy of another: event doc, rounds and cards written
+   * over, and any card here that the source doesn't have deleted. Server reads, so a
+   * cached stale copy can't masquerade as the current tournament.
+   */
+  async mirrorFrom(sourceEventId: string): Promise<number> {
+    const [eventSnap, roundsSnap, cardsSnap, existingCards] = await Promise.all([
+      getDoc(doc(this.db, "events", sourceEventId)),
+      getDocs(collection(this.db, "events", sourceEventId, "rounds")),
+      getDocs(collection(this.db, "events", sourceEventId, "cards")),
+      getDocs(this.cardsRef()),
+    ]);
+    if (!eventSnap.exists()) throw new Error(`No event ${sourceEventId} to mirror from`);
+
+    const batch = writeBatch(this.db);
+    let writes = 0;
+    // The copy keeps its own identity: same PINs and players either way, but the id
+    // must stay the test id or the app would think it's looking at the tournament.
+    batch.set(this.eventRef(), { ...eventSnap.data(), id: this.eventId });
+    writes += 1;
+    for (const d of roundsSnap.docs) {
+      batch.set(doc(this.roundsRef(), d.id), d.data());
+      writes += 1;
+    }
+    const sourceCardIds = new Set(cardsSnap.docs.map((d) => d.id));
+    for (const d of cardsSnap.docs) {
+      batch.set(doc(this.cardsRef(), d.id), d.data());
+      writes += 1;
+    }
+    for (const d of existingCards.docs) {
+      if (!sourceCardIds.has(d.id)) {
+        batch.delete(doc(this.cardsRef(), d.id));
+        writes += 1;
+      }
+    }
+    await batch.commit();
+    return writes;
   }
 
   subscribeEvent(cb: (event: EventDoc) => void): Unsubscribe {

@@ -30,13 +30,15 @@ export interface TournamentState {
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
+  /** Copy another event's data wholesale into this one; null when the backend can't. */
+  mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
 }
 
 /**
  * Single subscription point for the whole app: event, rounds and every card, run
  * through the scoring engine to produce per-round results and the running totals.
  */
-export function useTournament(identity: string): TournamentState {
+export function useTournament(identity: string, eventId: string): TournamentState {
   const [store, setStore] = useState<Store | null>(null);
   const [event, setEvent] = useState<EventDoc | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
@@ -49,13 +51,13 @@ export function useTournament(identity: string): TournamentState {
 
   useEffect(() => {
     let cancelled = false;
-    void getStore().then((s) => {
+    void getStore(eventId).then((s) => {
       if (!cancelled) setStore(s);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [eventId]);
 
   useEffect(() => {
     if (!store) return;
@@ -204,6 +206,12 @@ export function useTournament(identity: string): TournamentState {
     [store],
   );
 
+  const mirrorFrom = useMemo(
+    () =>
+      store?.mirrorFrom ? (sourceEventId: string) => store.mirrorFrom!(sourceEventId) : null,
+    [store],
+  );
+
   return {
     ready: Boolean(store && event && rounds.length > 0),
     backend: store?.kind ?? null,
@@ -222,5 +230,6 @@ export function useTournament(identity: string): TournamentState {
     deleteCard,
     saveEvent,
     saveRound,
+    mirrorFrom,
   };
 }

@@ -6,12 +6,16 @@ import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import { defaultGroups } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
+import { switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import HandicapRefresh from "../components/HandicapRefresh";
 
 interface Props {
   event: EventDoc;
   rounds: Round[];
+  space: Space;
+  backend: "firestore" | "local" | null;
+  mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   cards: Record<string, Record<string, Card>>;
   roundResults: Record<string, RoundResult>;
   setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
@@ -25,6 +29,9 @@ interface Props {
 export default function AdminScreen({
   event,
   rounds,
+  space,
+  backend,
+  mirrorFrom,
   cards,
   roundResults,
   setCard,
@@ -54,6 +61,32 @@ export default function AdminScreen({
           </button>
         }
       />
+      {/* Which copy of the event this device edits — visible on every admin tab, since
+          it changes what all the buttons below actually touch. */}
+      <div
+        className={`mx-4 mb-3 rounded-2xl border p-3 flex items-center justify-between gap-3 ${
+          space === "test"
+            ? "border-sky-900 bg-sky-950/30"
+            : "border-slate-800 bg-slate-900"
+        }`}
+      >
+        <div className="min-w-0">
+          <div className={`text-xs font-semibold ${space === "test" ? "text-sky-300" : ""}`}>
+            {space === "test" ? "Test space" : "Tournament"}
+          </div>
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            {space === "test"
+              ? "A sandbox with its own data — nothing here touches the tournament."
+              : "The real data everyone sees. Switch this phone to the test space to play around safely."}
+          </p>
+        </div>
+        <button
+          onClick={() => switchSpace(space === "test" ? "live" : "test")}
+          className="btn-ghost px-3 py-1.5 text-xs shrink-0"
+        >
+          {space === "test" ? "To tournament" : "To test space"}
+        </button>
+      </div>
       <Segmented
         value={tab}
         onChange={setTab}
@@ -84,6 +117,9 @@ export default function AdminScreen({
           <ScoreAdmin
             event={event}
             rounds={rounds}
+            space={space}
+            backend={backend}
+            mirrorFrom={mirrorFrom}
             cards={cards}
             setHole={setHole}
             setCard={setCard}

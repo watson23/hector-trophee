@@ -6,10 +6,15 @@ import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { generateRoundCards } from "../lib/testdata";
 import { resetTournament, simulateTournament } from "../lib/simulate";
+import { EVENT_ID } from "../data/field";
+import type { Space } from "../lib/space";
 
 interface Props {
   event: EventDoc;
   rounds: Round[];
+  space: Space;
+  backend: "firestore" | "local" | null;
+  mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   cards: Record<string, Record<string, Card>>;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
@@ -73,6 +78,9 @@ function subjectsFor(round: Round, event: EventDoc): Subject[] {
 export default function ScoreAdmin({
   event,
   rounds,
+  space,
+  backend,
+  mirrorFrom,
   cards,
   setHole,
   setCard,
@@ -84,7 +92,28 @@ export default function ScoreAdmin({
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmMirror, setConfirmMirror] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  // Simulation belongs in the sandbox. In the tournament space, filling rounds with
+  // fake scores is exactly the button nobody should be able to fat-finger — fixing a
+  // score and the confirmed resets stay available everywhere. The local demo backend
+  // is a sandbox by nature, so it keeps everything.
+  const sandbox = space === "test" || backend === "local";
+
+  async function mirror() {
+    if (!mirrorFrom) return;
+    setBusy("Copying the tournament data…");
+    try {
+      const n = await mirrorFrom(EVENT_ID);
+      setBusy(null);
+      setConfirmMirror(false);
+      alert(`Copied — ${n} documents written. This sandbox now matches the tournament.`);
+    } catch (err) {
+      setBusy(null);
+      alert(`Copy failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   const subjects = useMemo(() => (round ? subjectsFor(round, event) : []), [round, event]);
   const roundCards = round ? (cards[round.id] ?? {}) : {};
@@ -187,7 +216,43 @@ export default function ScoreAdmin({
         )}
       </section>
 
-      {/* ---------------- test data ---------------- */}
+      {/* ---------------- mirroring the tournament into the sandbox ---------------- */}
+      {space === "test" && mirrorFrom && (
+        <section className="border border-sky-900 bg-sky-950/20 rounded-2xl p-3.5">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-1">
+            Mirror the tournament
+          </h2>
+          <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+            Copies the tournament's current data — scores, pairs, flights and round setup —
+            into this sandbox, replacing everything here. The tournament itself is only read.
+          </p>
+          {!confirmMirror ? (
+            <button
+              disabled={Boolean(busy)}
+              onClick={() => setConfirmMirror(true)}
+              className="btn-ghost w-full py-2 text-xs disabled:opacity-40"
+            >
+              Copy tournament data here
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                disabled={Boolean(busy)}
+                onClick={mirror}
+                className="flex-1 rounded-xl py-2 text-xs font-semibold bg-sky-600 text-white"
+              >
+                Yes, replace this sandbox
+              </button>
+              <button onClick={() => setConfirmMirror(false)} className="btn-ghost px-4 py-2 text-xs">
+                Cancel
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ---------------- test data (sandbox only) ---------------- */}
+      {sandbox && (
       <section className="border border-amber-900/60 bg-amber-950/20 rounded-2xl p-3.5">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
           Test data · whole tournament
@@ -212,14 +277,6 @@ export default function ScoreAdmin({
             …with last round live
           </button>
         </div>
-        <button
-          disabled={Boolean(busy)}
-          onClick={() => run("Resetting…", (d) => resetTournament(d, cards))}
-          className="w-full mt-2 rounded-xl py-2 text-xs font-semibold bg-rose-950 text-rose-300
-                     border border-rose-900 disabled:opacity-40"
-        >
-          Reset everything — scores, pairs and flights
-        </button>
         {busy && <p className="text-xs text-violet-300 mt-2 num">{busy}</p>}
 
         <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mt-5 mb-1">
@@ -284,6 +341,38 @@ export default function ScoreAdmin({
             </div>
           )}
         </div>
+      </section>
+      )}
+
+      {/* ---------------- reset — available in both spaces, but never one tap ---------------- */}
+      <section>
+        {!confirmReset ? (
+          <button
+            disabled={Boolean(busy)}
+            onClick={() => setConfirmReset(true)}
+            className="w-full rounded-xl py-2 text-xs font-semibold bg-rose-950 text-rose-300
+                       border border-rose-900 disabled:opacity-40"
+          >
+            Reset everything — scores, pairs and flights
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              disabled={Boolean(busy)}
+              onClick={() => {
+                setConfirmReset(false);
+                void run("Resetting…", (d) => resetTournament(d, cards));
+              }}
+              className="flex-1 rounded-xl py-2 text-xs font-semibold bg-rose-600 text-white"
+            >
+              Yes, wipe the whole {space === "test" ? "sandbox" : "tournament"}
+            </button>
+            <button onClick={() => setConfirmReset(false)} className="btn-ghost px-4 py-2 text-xs">
+              Cancel
+            </button>
+          </div>
+        )}
+        {busy && <p className="text-xs text-violet-300 mt-2 num">{busy}</p>}
       </section>
     </div>
   );

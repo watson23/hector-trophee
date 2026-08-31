@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import HectorMark from "./HectorMark";
+import { switchSpace, type Space } from "../lib/space";
 
-export type Tab = "play" | "round" | "tournament" | "more";
+export type Tab = "play" | "round" | "tournament" | "info";
 
 const TABS: { id: Tab; label: string; icon: ReactNode | null }[] = [
   {
@@ -20,7 +21,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode | null }[] = [
   {
     // "Info", not "More": the tab holds the schedule, tee sheet, courses and rules —
     // things people actively look for. "More" said "miscellaneous", so nobody looked.
-    id: "more",
+    id: "info",
     label: "Info",
     icon: (
       <>
@@ -66,6 +67,26 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
         ))}
       </div>
     </nav>
+  );
+}
+
+/**
+ * Impossible to mistake for the real thing: whenever a device is in the test space,
+ * this stays at the top. The way back is right in the banner, so a device can always
+ * return to the tournament without hunting for the admin toggle.
+ */
+export function SpaceBanner({ space }: { space: Space }) {
+  if (space !== "test") return null;
+  return (
+    <div className="bg-sky-950/80 border-b border-sky-900 text-sky-300 text-xs px-4 py-1.5 text-center">
+      Test space — a sandbox, not the real tournament.{" "}
+      <button
+        onClick={() => switchSpace("live")}
+        className="underline underline-offset-2 font-semibold"
+      >
+        Back to tournament
+      </button>
+    </div>
   );
 }
 

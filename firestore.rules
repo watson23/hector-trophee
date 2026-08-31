@@ -3,12 +3,13 @@ rules_version = '2';
 // Hector Trophée 2026.
 //
 // Twenty friends on a golf trip, so the model is deliberately simple: anyone signed in
-// (anonymously, from the app) may read and write this one event. The event PIN and the
-// admin PIN are UI gates, not enforced here — a player with devtools could get past them.
-// What these rules do stop is the wider internet writing to the database.
+// (anonymously, from the app) may read and write any event here — which now covers both
+// the tournament (HECTOR2026) and its test sandbox (HECTOR2026-test). The event PIN and
+// the admin PIN are UI gates, not enforced here — a player with devtools could get past
+// them. What these rules do stop is the wider internet writing to the database.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /events/HECTOR2026 {
+    match /events/{eventId} {
       allow read: if request.auth != null;
       // The pin hashes are writable on purpose. They are gates, not secrets — the PINs
       // ship in the client bundle either way — and the app reconciles them against

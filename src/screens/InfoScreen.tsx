@@ -21,7 +21,7 @@ interface Props {
   onSwitchPlayer: () => void;
 }
 
-export default function MoreScreen({
+export default function InfoScreen({
   event,
   rounds,
   me,
@@ -32,7 +32,7 @@ export default function MoreScreen({
   onSwitchPlayer,
 }: Props) {
   const [section, setSection] = usePersistentState<"schedule" | "courses" | "formats">(
-    "hectro_ui.more",
+    "hectro_ui.info",
     "schedule",
   );
 

@@ -3,19 +3,30 @@ import { useSession } from "./hooks/useSession";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
-import { SyncBanner, TabBar, type Tab } from "./components/Chrome";
+import { SpaceBanner, SyncBanner, TabBar, type Tab } from "./components/Chrome";
+import { currentSpace, eventIdFor } from "./lib/space";
 import PlayScreen from "./screens/PlayScreen";
 import RoundScreen from "./screens/RoundScreen";
 import TournamentScreen from "./screens/TournamentScreen";
-import MoreScreen from "./screens/MoreScreen";
+import InfoScreen from "./screens/InfoScreen";
 import AdminScreen from "./screens/AdminScreen";
 import type { StoreError } from "./lib/store";
 
 export default function App() {
   const { session, update, reset } = useSession();
-  const t = useTournament(session.playerId ?? "anon");
+  // Which copy of the event this device is on — the tournament, or the test sandbox.
+  // Fixed for the lifetime of the page; switching spaces reloads.
+  const space = currentSpace();
+  const t = useTournament(session.playerId ?? "anon", eventIdFor(space));
   // A refresh keeps you where you were: same tab, same round, and admin stays open.
-  const [tab, setTab] = usePersistentState<Tab>("hectro_ui.tab", "play");
+  const [storedTab, setTab] = usePersistentState<Tab>("hectro_ui.tab", "play");
+  // The fourth tab was renamed "more" → "info"; a stored value from before the rename
+  // (or any other stale id) falls back to Play instead of rendering nothing.
+  const tab: Tab = ["play", "round", "tournament", "info"].includes(storedTab)
+    ? storedTab
+    : storedTab === ("more" as Tab)
+      ? "info"
+      : "play";
   const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
   // Which round the Round tab is on — session-scoped, so tomorrow follows the live
   // round again instead of the one browsed last night.
@@ -50,6 +61,7 @@ export default function App() {
     // before you type the event code, not after.
     return (
       <div className="min-h-dvh">
+        <SpaceBanner space={space} />
         <SyncBanner online={t.online} pending={t.pending} backend={t.backend} />
         <Onboarding
           event={t.event}
@@ -63,6 +75,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh">
+      <SpaceBanner space={space} />
       <SyncBanner online={t.online} pending={t.pending} backend={t.backend} />
 
       <main className="max-w-lg mx-auto pb-24">
@@ -70,6 +83,9 @@ export default function App() {
           <AdminScreen
             event={t.event}
             rounds={t.rounds}
+            space={space}
+            backend={t.backend}
+            mirrorFrom={t.mirrorFrom}
             cards={t.cards}
             roundResults={t.roundResults}
             setCard={t.setCard}
@@ -111,8 +127,8 @@ export default function App() {
             {tab === "tournament" && (
               <TournamentScreen rounds={t.rounds} hector={t.hector} victor={t.victor} movement={t.hectorMovement} />
             )}
-            {tab === "more" && (
-              <MoreScreen
+            {tab === "info" && (
+              <InfoScreen
                 event={t.event}
                 rounds={t.rounds}
                 me={me}
