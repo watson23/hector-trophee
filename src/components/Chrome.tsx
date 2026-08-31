@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import HectorMark from "./HectorMark";
 
 export type Tab = "play" | "round" | "tournament" | "more";
@@ -63,6 +63,27 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
 }
 
 /**
+ * Writes have been in flight for a while. Every score entry briefly has a pending
+ * write, and a banner that pops in and out of the layout for 200ms per tap made the
+ * whole screen jump — so nothing is shown until syncing has actually been slow for a
+ * couple of seconds, which is when it carries information (one bar of signal on the
+ * 14th fairway) rather than noise.
+ */
+function useSlowSync(pending: number, delayMs = 2000): boolean {
+  const [slow, setSlow] = useState(false);
+  const hasPending = pending > 0;
+  useEffect(() => {
+    if (!hasPending) {
+      setSlow(false);
+      return;
+    }
+    const t = setTimeout(() => setSlow(true), delayMs);
+    return () => clearTimeout(t);
+  }, [hasPending, delayMs]);
+  return slow && hasPending;
+}
+
+/**
  * Connection state. Firestore keeps accepting writes offline, so the message is about
  * whether other groups can see them yet — not whether scoring still works.
  */
@@ -75,6 +96,7 @@ export function SyncBanner({
   pending: number;
   backend: "firestore" | "local" | null;
 }) {
+  const slowSync = useSlowSync(pending);
   if (backend === "local") {
     // On localhost this is the intended fallback. On a real domain it means the deploy is
     // missing its Firebase env vars, and every player would silently get their own private
@@ -104,9 +126,16 @@ export function SyncBanner({
       </div>
     );
   }
-  if (pending > 0) {
+  if (slowSync) {
+    // Floating, not in flow: an in-flow banner here pushed the whole screen down and
+    // back up on every score entered, making each tap look shaky.
     return (
-      <div className="bg-violet-950/60 border-b border-violet-900 text-violet-300 text-xs px-4 py-1.5 text-center">
+      <div
+        style={{ top: "calc(env(safe-area-inset-top) + 8px)" }}
+        className="fixed left-1/2 -translate-x-1/2 z-40 rounded-full bg-violet-950/90 border
+                   border-violet-800 text-violet-300 text-xs px-3 py-1 shadow-lg backdrop-blur
+                   pointer-events-none"
+      >
         Syncing {pending} card{pending > 1 ? "s" : ""}…
       </div>
     );
