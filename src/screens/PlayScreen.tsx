@@ -6,6 +6,7 @@ import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { Empty, Header, Segmented } from "../components/Chrome";
+import FlightList from "../components/FlightList";
 import Scorecard from "../components/Scorecard";
 
 interface Props {
@@ -358,6 +359,10 @@ function NextRound({
     .map((id) => byId.get(id))
     .filter((p): p is FieldPlayer => Boolean(p));
   const ch = me ? courseHandicap(hiFor(round, me), tee) : null;
+  const [allFlights, setAllFlights] = useState(false);
+  const otherFlights = round.groups.filter(
+    (g) => g.playerIds.length > 0 && g.id !== group?.id,
+  ).length;
 
   return (
     <div className="pb-4">
@@ -416,6 +421,23 @@ function NextRound({
               </p>
             )}
           </div>
+
+          {/* The rest of the tee sheet, for relaying "when do the others go out?". */}
+          {otherFlights > 0 && (
+            <div className="mt-3 border-t border-slate-800 pt-3">
+              <button
+                onClick={() => setAllFlights((v) => !v)}
+                className="text-xs text-violet-400 font-medium"
+              >
+                {allFlights ? "Hide other flights" : `All flights (${otherFlights + (group ? 1 : 0)})`}
+              </button>
+              {allFlights && (
+                <div className="mt-2">
+                  <FlightList round={round} event={event} meId={me?.id ?? null} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {round.provisional && (

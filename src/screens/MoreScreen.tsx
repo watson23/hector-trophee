@@ -7,6 +7,7 @@ import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
 import { Header } from "../components/Chrome";
+import FlightList from "../components/FlightList";
 import { PREVIOUS } from "../data/history";
 
 interface Props {
@@ -74,7 +75,8 @@ export default function MoreScreen({
       </div>
 
       <div className="px-4 mt-4 space-y-3">
-        {section === "schedule" && rounds.map((r) => <RoundCard key={r.id} round={r} me={me} />)}
+        {section === "schedule" &&
+          rounds.map((r) => <RoundCard key={r.id} round={r} event={event} me={me} />)}
         {section === "courses" &&
           Object.values(courses).map((c) => <CourseCard key={c.id} courseId={c.id} />)}
         {section === "formats" && <Formats rounds={rounds} />}
@@ -101,11 +103,21 @@ export default function MoreScreen({
   );
 }
 
-function RoundCard({ round, me }: { round: Round; me: FieldPlayer | null }) {
+function RoundCard({
+  round,
+  event,
+  me,
+}: {
+  round: Round;
+  event: EventDoc;
+  me: FieldPlayer | null;
+}) {
   const course = courses[round.courseId];
   const tee = effectiveTee(round, course);
   const group = round.groups.find((g) => g.playerIds.includes(me?.id ?? ""));
   const ch = me ? courseHandicap(hiFor(round, me), tee) : null;
+  const [showFlights, setShowFlights] = useState(false);
+  const hasFlights = round.groups.some((g) => g.playerIds.length > 0);
 
   return (
     <div
@@ -162,6 +174,23 @@ function RoundCard({ round, me }: { round: Round; me: FieldPlayer | null }) {
           The published rating for this tee looks like a ladies' rating. Check it against the club
           scorecard and override it in Admin if needed.
         </p>
+      )}
+      {/* The full tee sheet — what gets relayed across the course ("when do the others
+          go out?"), so it belongs to everyone, not just the admin who set it. */}
+      {hasFlights && (
+        <div className="mt-2.5 border-t border-slate-800 pt-2.5">
+          <button
+            onClick={() => setShowFlights((v) => !v)}
+            className="text-xs text-violet-400 font-medium"
+          >
+            {showFlights ? "Hide flights" : `All flights (${round.groups.filter((g) => g.playerIds.length > 0).length})`}
+          </button>
+          {showFlights && (
+            <div className="mt-2">
+              <FlightList round={round} event={event} meId={me?.id ?? null} />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
