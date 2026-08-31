@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
@@ -29,7 +30,10 @@ export default function MoreScreen({
   onOpenAdmin,
   onSwitchPlayer,
 }: Props) {
-  const [section, setSection] = useState<"schedule" | "courses" | "formats">("schedule");
+  const [section, setSection] = usePersistentState<"schedule" | "courses" | "formats">(
+    "hectro_ui.more",
+    "schedule",
+  );
 
   return (
     <div className="pb-4">

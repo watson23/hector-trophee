@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
@@ -39,10 +40,24 @@ export default function PlayScreen({
   onShowRound,
   onShowTrophy,
 }: Props) {
-  const [hole, setHole_] = useState(1);
-  const [view, setView] = useState<"hole" | "card">("hole");
+  // Refreshing on the 14th tee must not dump you back on hole 1: the position is
+  // remembered per round, so a new round still starts on 1.
+  const [holePos, setHolePos] = usePersistentState<{ r: string; h: number } | null>(
+    "hectro_ui.hole",
+    null,
+  );
+  const hole = round && holePos?.r === round.id ? holePos.h : 1;
+  const setHole_ = (next: number | ((prev: number) => number)) => {
+    if (!round) return;
+    setHolePos({ r: round.id, h: typeof next === "function" ? next(hole) : next });
+  };
+  const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
   // The escape hatch for an organiser who forgot to open the round at tee time.
-  const [scoreAnyway, setScoreAnyway] = useState<string | null>(null);
+  const [scoreAnyway, setScoreAnyway] = usePersistentState<string | null>(
+    "hectro_ui.scoreAnyway",
+    null,
+    "session",
+  );
 
   const course = round ? courses[round.courseId] : null;
 

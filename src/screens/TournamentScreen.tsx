@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
 import { hectorLowerIsBetter, levelParTotal, weightLabel } from "../lib/hector";
@@ -51,7 +51,7 @@ function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): s
 
 /** The two trophies: Hector for the pair, Victor for the individual. */
 export default function TournamentScreen({ rounds, hector, victor, movement }: Props) {
-  const [tab, setTab] = useState<"hector" | "victor">("hector");
+  const [tab, setTab] = usePersistentState<"hector" | "victor">("hectro_ui.trophy", "hector");
   const complete = isTournamentComplete(rounds);
   const hectorRoundCount = rounds.filter((r) => r.formats.some((f) => f.hector)).length;
   const victorRoundCount = rounds.filter((r) => r.formats.some((f) => f.victor)).length;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "./hooks/useSession";
+import { usePersistentState } from "./hooks/usePersistentState";
 import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SyncBanner, TabBar, type Tab } from "./components/Chrome";
@@ -13,10 +14,16 @@ import type { StoreError } from "./lib/store";
 export default function App() {
   const { session, update, reset } = useSession();
   const t = useTournament(session.playerId ?? "anon");
-  const [tab, setTab] = useState<Tab>("play");
-  const [adminOpen, setAdminOpen] = useState(false);
-  // Set when another screen asks the Round tab to open on a specific round.
-  const [roundFocus, setRoundFocus] = useState<string | null>(null);
+  // A refresh keeps you where you were: same tab, same round, and admin stays open.
+  const [tab, setTab] = usePersistentState<Tab>("hectro_ui.tab", "play");
+  const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
+  // Which round the Round tab is on — session-scoped, so tomorrow follows the live
+  // round again instead of the one browsed last night.
+  const [roundSel, setRoundSel] = usePersistentState<string | null>(
+    "hectro_ui.round",
+    null,
+    "session",
+  );
 
   const me = useMemo(
     () => t.event?.players.find((p) => p.id === session.playerId) ?? null,
@@ -85,7 +92,7 @@ export default function App() {
                   activeRound && t.setHole(activeRound.id, subjectId, hole, value)
                 }
                 onShowRound={(roundId) => {
-                  setRoundFocus(roundId);
+                  setRoundSel(roundId);
                   setTab("round");
                 }}
                 onShowTrophy={() => setTab("tournament")}
@@ -97,7 +104,8 @@ export default function App() {
                 rounds={t.rounds}
                 results={t.roundResults}
                 cards={t.cards}
-                initialRoundId={roundFocus ?? activeRound?.id ?? null}
+                initialRoundId={roundSel ?? activeRound?.id ?? null}
+                onRoundChange={setRoundSel}
               />
             )}
             {tab === "tournament" && (

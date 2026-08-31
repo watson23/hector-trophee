@@ -16,9 +16,18 @@ interface Props {
   results: Record<string, RoundResult>;
   cards: Record<string, Record<string, Card>>;
   initialRoundId: string | null;
+  /** Reports the user's own round choice, so it survives a refresh. */
+  onRoundChange: (roundId: string) => void;
 }
 
-export default function RoundScreen({ event, rounds, results, cards, initialRoundId }: Props) {
+export default function RoundScreen({
+  event,
+  rounds,
+  results,
+  cards,
+  initialRoundId,
+  onRoundChange,
+}: Props) {
   const [roundId, setRoundId] = useState<string | null>(initialRoundId ?? rounds[0]?.id ?? null);
   // Follow a new target from outside — "Round 3 results" on the Play tab lands here.
   useEffect(() => {
@@ -49,7 +58,10 @@ export default function RoundScreen({ event, rounds, results, cards, initialRoun
         {rounds.map((r) => (
           <button
             key={r.id}
-            onClick={() => setRoundId(r.id)}
+            onClick={() => {
+              setRoundId(r.id);
+              onRoundChange(r.id);
+            }}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold num transition-colors ${
               r.id === round.id
                 ? "bg-violet-600 text-white"
