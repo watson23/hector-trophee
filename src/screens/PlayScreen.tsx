@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
@@ -41,17 +41,17 @@ export default function PlayScreen({
   onShowRound,
   onShowTrophy,
 }: Props) {
-  // Refreshing on the 14th tee must not dump you back on hole 1: the position is
-  // remembered per round, so a new round still starts on 1.
-  const [holePos, setHolePos] = usePersistentState<{ r: string; h: number } | null>(
-    "hectro_ui.hole",
-    null,
-  );
-  const hole = round && holePos?.r === round.id ? holePos.h : 1;
-  const setHole_ = (next: number | ((prev: number) => number)) => {
-    if (!round) return;
-    setHolePos({ r: round.id, h: typeof next === "function" ? next(hole) : next });
-  };
+  /*
+   * The entry view opens on the first hole the flight hasn't fully entered — derived
+   * from the cards, not remembered. This used to be persisted per round id, which
+   * survived a reset (round ids don't change) and greeted a brand-new round on "hole 4"
+   * from last week's testing. Deriving it also gives the refresh-on-the-14th-tee case
+   * for free, and on any device, not just the one that was scoring.
+   *
+   * Manual position wins once taken: navigating or entering a score pins the hole until
+   * the round or the view changes, so the view never jumps out from under a thumb.
+   */
+  const [manualHole, setManualHole] = useState<number | null>(null);
   const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
   // The escape hatch for an organiser who forgot to open the round at tee time.
   const [scoreAnyway, setScoreAnyway] = usePersistentState<string | null>(
@@ -118,6 +118,23 @@ export default function PlayScreen({
         };
       });
   }, [round, course, me, event]);
+
+  const firstOpenHole = (() => {
+    if (subjects.length === 0) return 1;
+    for (let h = 1; h <= 18; h++) {
+      if (!subjects.every((s) => cards[s.id]?.holes?.[String(h)])) return h;
+    }
+    return 18;
+  })();
+  const hole = manualHole ?? firstOpenHole;
+  const setHole_ = (next: number | ((prev: number) => number)) =>
+    setManualHole(typeof next === "function" ? next(hole) : next);
+
+  // A new round, or re-entering the hole-by-hole view, releases the pin: the view
+  // opens on the next un-entered hole again.
+  useEffect(() => {
+    setManualHole(null);
+  }, [round?.id, view]);
 
   if (!round || !course) {
     return (
@@ -264,7 +281,13 @@ export default function PlayScreen({
                 hole={hole}
                 par={par}
                 card={cards[s.id]}
-                onScore={(v) => setHole(s.id, hole, v)}
+                onScore={(v) => {
+                  // Pin the view before writing: without this, completing the flight's
+                  // last score would advance firstOpenHole and yank the view forward
+                  // mid-look — "Next hole" is the deliberate way onwards.
+                  setManualHole(hole);
+                  setHole(s.id, hole, v);
+                }}
               />
             ))}
           </div>
