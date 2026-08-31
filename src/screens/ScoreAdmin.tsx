@@ -9,6 +9,16 @@ import { resetTournament, simulateTournament } from "../lib/simulate";
 import { EVENT_ID } from "../data/field";
 import type { Space } from "../lib/space";
 
+/**
+ * ⚠️ REMOVE BEFORE THE TRIP (flip to false before Thu 24 Sep 2026).
+ *
+ * Until then the simulation buttons also work in the tournament space, so the real
+ * view has data to browse while the app is being shown around — Toni M gets the link
+ * with something on the leaderboards. Once this is false, filling fake scores is
+ * possible only in the test space (and the local demo).
+ */
+const TEST_DATA_IN_TOURNAMENT = true;
+
 interface Props {
   event: EventDoc;
   rounds: Round[];
@@ -99,7 +109,7 @@ export default function ScoreAdmin({
   // fake scores is exactly the button nobody should be able to fat-finger — fixing a
   // score and the confirmed resets stay available everywhere. The local demo backend
   // is a sandbox by nature, so it keeps everything.
-  const sandbox = space === "test" || backend === "local";
+  const sandbox = space === "test" || backend === "local" || TEST_DATA_IN_TOURNAMENT;
 
   async function mirror() {
     if (!mirrorFrom) return;
@@ -257,6 +267,12 @@ export default function ScoreAdmin({
         <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
           Test data · whole tournament
         </h2>
+        {space === "live" && backend !== "local" && (
+          <p className="text-[11px] text-rose-300/90 leading-relaxed mb-2">
+            Temporarily enabled in the tournament space so there's data to browse — this
+            gets removed before the trip.
+          </p>
+        )}
         <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
           Plays all {rounds.length} rounds end to end, including the draft — round 1 is played
           first and its Stableford order decides who picks whom. No need to enter pairs by hand.
