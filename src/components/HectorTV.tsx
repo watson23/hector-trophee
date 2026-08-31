@@ -32,14 +32,21 @@ export function TVBar({
         <HectorMark className="w-3.5 h-3.5" />
         HECTOR TV
       </span>
-      <button onClick={onEdit} className="text-[11px] text-slate-400 truncate min-w-0">
+      {/* Dressed as the control it is — a status-looking label here meant nobody
+          realised the follows can be changed mid-tournament. */}
+      <button
+        onClick={onEdit}
+        className="flex items-center gap-1.5 min-w-0 rounded-full border border-violet-800/70
+                   bg-violet-950/40 px-2.5 py-1 text-[11px] text-slate-300 active:bg-violet-900/40"
+      >
         {names ? (
-          <>
-            following <span className="text-violet-300">{names}</span>
-          </>
+          <span className="truncate">
+            ★ <span className="text-violet-300">{names}</span>
+          </span>
         ) : (
-          "follow a player →"
+          <span>follow a player</span>
         )}
+        <span className="shrink-0 text-violet-400 font-semibold">change</span>
       </button>
     </div>
   );

@@ -51,20 +51,25 @@ export default function InfoScreen({
   // first. Spectators never do — announcements are trip logistics, not broadcast.
   const showNews = !spectator && (announcements.length > 0 || admin);
 
+  // Hector TV never shows the news — and the section is persisted per device, so a
+  // stored "news" (or the unread auto-land below) must not leak it in through the back
+  // door when the chip itself is hidden.
+  const activeSection = section === "news" && !showNews ? "schedule" : section;
+
   // Something new lands this tab straight on it — the dot on the Info icon promised it.
   useEffect(() => {
-    if (unread) setSection("news");
+    if (unread && showNews) setSection("news");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unread]);
+  }, [unread, showNews]);
 
   // Reading the news is what clears the dot.
   useEffect(() => {
-    if (section === "news" && announcements.length > 0) {
+    if (activeSection === "news" && showNews && announcements.length > 0) {
       const newest = Math.max(...announcements.map((a) => a.at));
       if (newest > newsSeen) onSeenNews(newest);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, announcements.length]);
+  }, [activeSection, announcements.length]);
 
   return (
     <div className="pb-4">
@@ -98,7 +103,7 @@ export default function InfoScreen({
               key={sec}
               onClick={() => setSection(sec)}
               className={`relative rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
-                section === sec
+                activeSection === sec
                   ? "bg-violet-600 text-white"
                   : "bg-slate-900 text-slate-400 border border-slate-800"
               }`}
@@ -112,14 +117,14 @@ export default function InfoScreen({
       </div>
 
       <div className="px-4 mt-4 space-y-3">
-        {section === "news" && (
+        {activeSection === "news" && showNews && (
           <News announcements={announcements} admin={admin} saveEvent={saveEvent} />
         )}
-        {section === "schedule" &&
+        {activeSection === "schedule" &&
           rounds.map((r) => <RoundCard key={r.id} round={r} event={event} me={me} />)}
-        {section === "courses" &&
+        {activeSection === "courses" &&
           Object.values(courses).map((c) => <CourseCard key={c.id} courseId={c.id} />)}
-        {section === "formats" && <Formats rounds={rounds} />}
+        {activeSection === "formats" && <Formats rounds={rounds} />}
       </div>
 
       <div className="px-4 mt-6 space-y-2">
