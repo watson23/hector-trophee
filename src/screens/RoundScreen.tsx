@@ -1,4 +1,5 @@
-import type { Card, EventDoc, Round } from "../types";
+import { usePersistentState } from "../hooks/usePersistentState";
+import type { Card, EventDoc, FormatKind, Round } from "../types";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
 import type { RoundResult } from "../lib/engine";
 import { formatToPar, formatToParFine } from "../lib/leaderboard";
@@ -7,7 +8,7 @@ import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HectorMark from "../components/HectorMark";
 import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
 import DraftBoard from "../components/DraftBoard";
-import { Empty } from "../components/Chrome";
+import { Empty, Segmented } from "../components/Chrome";
 
 interface Props {
   event: EventDoc;
@@ -36,6 +37,35 @@ export default function RoundScreen({
   // viewer here at a specific round.
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
   const result = round ? results[round.id] : undefined;
+
+  /*
+   * A round can carry three scoreboards (two formats plus the Hector pair table), and
+   * nobody reads more than one at a time — so they sit behind a picker instead of a
+   * scroll. Session-persisted like the other view choices; an id that doesn't exist
+   * on the selected round falls back to its first board.
+   */
+  const [boardSel, setBoardSel] = usePersistentState<string | null>(
+    "hectro_ui.roundboard",
+    null,
+    "session",
+  );
+  const kindLabel: Record<FormatKind, string> = {
+    stableford: "Stableford",
+    strokeplay: "Stroke Play",
+    betterball: "Better Ball",
+    scramble: "Scramble",
+  };
+  const pairSpec = round?.formats.find((f) => f.hector && f.hector.source !== "team");
+  const hasPairBoard = Boolean(
+    pairSpec?.hector && result && Object.keys(result.hector).length > 0,
+  );
+  const boards = round
+    ? [
+        ...round.formats.map((f) => ({ id: f.id, label: kindLabel[f.kind] })),
+        ...(hasPairBoard ? [{ id: "pairs", label: "Pairs" }] : []),
+      ]
+    : [];
+  const board = boards.some((b) => b.id === boardSel) ? boardSel! : (boards[0]?.id ?? "");
 
   if (!round) return <Empty title="No rounds" body="The schedule hasn't been set up yet." />;
 
@@ -98,8 +128,15 @@ export default function RoundScreen({
           </p>
         ))}
 
+      {boards.length > 1 && (
+        <div className="mt-4">
+          <Segmented value={board} onChange={setBoardSel} options={boards} />
+        </div>
+      )}
+
       <div className="mt-4 space-y-6">
         {result?.formats.map((f) => {
+          if (f.spec.id !== board) return null;
           const isTeam = f.teams.length > 0;
           const rows: LeaderRow[] = isTeam
             ? f.teams.map((t) => ({
@@ -216,8 +253,9 @@ export default function RoundScreen({
           tables already are the pairs.
         */}
         {result &&
+          board === "pairs" &&
           (() => {
-            const spec = round.formats.find((f) => f.hector && f.hector.source !== "team");
+            const spec = pairSpec;
             const entries = Object.entries(result.hector);
             if (!spec?.hector || entries.length === 0) return null;
             const byId = new Map(event.players.map((p) => [p.id, p]));
