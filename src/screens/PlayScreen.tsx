@@ -331,12 +331,30 @@ function HoleEntry({
               <span className="pill bg-slate-800 text-slate-300 num">SI {si}</span>
               {metres && <span className="pill bg-slate-800 text-slate-400 num">{metres} m</span>}
               {holeMapUrl(round.courseId, hole) && (
+                /* Dressed as the control it is — violet outline and a glyph, so it
+                   doesn't disappear among the Par/SI data pills beside it. */
                 <button
                   onClick={() => setShowMap((v) => !v)}
-                  className={`pill transition-colors ${
-                    showMap ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-400"
+                  className={`pill transition-colors font-semibold ${
+                    showMap
+                      ? "bg-violet-600 text-white"
+                      : "border border-violet-700/70 bg-violet-950/30 text-violet-300"
                   }`}
                 >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className="w-3 h-3"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                   Map
                 </button>
               )}
