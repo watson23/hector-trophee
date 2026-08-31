@@ -4,7 +4,7 @@ import { flightsForPairs } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
-import { defaultGroups } from "../data/rounds";
+import { DEFAULT_FLIGHT_COUNT, defaultGroups } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
 import { switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
@@ -539,6 +539,29 @@ function GroupsEditor({
           </button>
         ))}
       </div>
+
+      {/* A sheet that lost tee slots (the pre-fix auto-fill could shrink it) gets a
+          one-tap rebuild that keeps everyone already placed. */}
+      {round.groups.length < DEFAULT_FLIGHT_COUNT && (
+        <section className="card p-3.5 border-amber-900/60 bg-amber-950/20">
+          <p className="text-xs text-amber-400/90 leading-relaxed mb-3">
+            This round has only {round.groups.length} of the {DEFAULT_FLIGHT_COUNT} booked
+            tee times, so there aren't enough seats for the field.
+          </p>
+          <button
+            className="btn-ghost w-full py-2 text-xs"
+            onClick={() => {
+              const groups = defaultGroups(round.teeTimeWindow);
+              round.groups.forEach((g, i) => {
+                if (groups[i]) groups[i].playerIds = [...g.playerIds];
+              });
+              void update(groups);
+            }}
+          >
+            Restore all {DEFAULT_FLIGHT_COUNT} tee times (keeps current flights)
+          </button>
+        </section>
+      )}
 
       {draftRound && unassignedUnits.length > 0 && (
         <TeeTimeDraw

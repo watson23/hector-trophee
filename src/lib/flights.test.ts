@@ -67,3 +67,29 @@ describe("rotating pair flights", () => {
     expect(flights[flights.length - 1]).toHaveLength(1);
   });
 });
+
+describe("flightsForPairs and the tee sheet", () => {
+  const round = {
+    id: "r2",
+    seq: 2,
+    teeTimeWindow: "08:36\u201309:21",
+    groups: [],
+  } as unknown as Round;
+
+  const pair = (n: number): Pair => ({ id: `p${n}`, aId: `a${n}`, bId: `b${n}` });
+
+  it("keeps all five booked tee times even mid-draft with few pairs", () => {
+    // Five pairs make three flights of company — but the resort still holds five
+    // tee times, and shrinking the sheet left nowhere to put the rest of the field.
+    const groups = flightsForPairs(round, [1, 2, 3, 4, 5].map(pair));
+    expect(groups).toHaveLength(5);
+    expect(groups.map((g) => g.teeTime)).toEqual(["08:36", "08:47", "08:59", "09:10", "09:21"]);
+    expect(groups.flatMap((g) => g.playerIds)).toHaveLength(10);
+  });
+
+  it("still fills five flights exactly with the full ten pairs", () => {
+    const groups = flightsForPairs(round, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pair));
+    expect(groups).toHaveLength(5);
+    expect(groups.every((g) => g.playerIds.length === 4)).toBe(true);
+  });
+});

@@ -1,5 +1,5 @@
 import type { Pair, PlayingGroup, Round } from "../types";
-import { defaultGroups } from "../data/rounds";
+import { DEFAULT_FLIGHT_COUNT, defaultGroups } from "../data/rounds";
 
 /**
  * Which two pairs share a flight, per round.
@@ -26,10 +26,20 @@ export function pairFlightAssignments(pairs: Pair[], rotation: number): Pair[][]
   return flights;
 }
 
-/** The assignments laid onto tee times for a round. */
+/**
+ * The assignments laid onto tee times for a round.
+ *
+ * Never fewer slots than the booked five: sizing the sheet to the pair count worked by
+ * coincidence at ten pairs, but an auto-fill run mid-draft (five pairs → three flights)
+ * overwrote the five booked tee times with three retimed ones — and a shrunken sheet
+ * has nowhere to put the remaining players.
+ */
 export function flightsForPairs(round: Round, pairs: Pair[]): PlayingGroup[] {
   const assignments = pairFlightAssignments(pairs, round.seq);
-  const groups = defaultGroups(round.teeTimeWindow, Math.max(assignments.length, 1));
+  const groups = defaultGroups(
+    round.teeTimeWindow,
+    Math.max(assignments.length, DEFAULT_FLIGHT_COUNT),
+  );
   assignments.forEach((flight, i) => {
     groups[i].playerIds.push(...flight.flatMap((p) => [p.aId, p.bId]));
   });

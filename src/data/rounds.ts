@@ -71,8 +71,11 @@ const scramble = (pct: number, bonuses?: FormatSpec["bonuses"]): FormatSpec => (
   ...(bonuses ? { bonuses } : {}),
 });
 
+/** The resort books five tee times per round — the sheet's size is a fact, not a preference. */
+export const DEFAULT_FLIGHT_COUNT = 5;
+
 /** Five flights of four, times spread evenly across the published window. */
-export function defaultGroups(window: string, count = 5): PlayingGroup[] {
+export function defaultGroups(window: string, count = DEFAULT_FLIGHT_COUNT): PlayingGroup[] {
   const [start, end] = window.split("–");
   const toMin = (t: string) => {
     const [h, m] = t.split(":").map(Number);
