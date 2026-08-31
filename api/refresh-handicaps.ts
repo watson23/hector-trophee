@@ -32,7 +32,7 @@ import {
   writeBatch,
   type Firestore,
 } from "firebase/firestore";
-import { HECTOR_EVENT_URL, parseHandicaps } from "../src/lib/handicapSource";
+import { eventUrl, parseHandicaps } from "./_lib/handicapPage";
 
 const EVENTS = ["HECTOR2026", "HECTOR2026-test"];
 /** The Sunday of the trip; the morning after, the cron becomes a no-op. */
@@ -97,7 +97,7 @@ export default async function handler(
     backup = `failed: ${err instanceof Error ? err.message : String(err)}`;
   }
 
-  const page = await fetch(HECTOR_EVENT_URL, { cache: "no-store" });
+  const page = await fetch(eventUrl(EVENTS[0]), { cache: "no-store" });
   if (!page.ok) {
     return res.status(502).json({ error: `hector.golf returned ${page.status}`, backup });
   }

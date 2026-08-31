@@ -1,24 +1,21 @@
 import type { FieldPlayer } from "../types";
 import { EVENT_ID } from "../data/field";
+import { eventUrl, parseHandicaps, type FetchedHandicap } from "../../api/_lib/handicapPage";
 
 /**
  * Handicaps, pulled from the event page on hector.golf.
  *
- * That page recalculates every night, so it is the authority during the week. It is served
- * from GitHub Pages with `access-control-allow-origin: *`, so the browser can read it
- * directly and no proxy is needed.
+ * That page recalculates every night, so it is the authority during the week. The
+ * parser itself lives in api/_lib/handicapPage.ts — one implementation shared with the
+ * 07:00 cron, see the note there — and this module adds the app-side concerns:
+ * fetching, diffing against the current field, and applying what changed.
  *
- * Player ids match the app's, because the app took them from the same page in the first
- * place — `/players/jari-k` is `jari-k` here too.
+ * Player ids match the app's, because the app took them from the same page in the
+ * first place — `/players/jari-k` is `jari-k` here too.
  */
-export const HECTOR_EVENT_URL = `https://hector.golf/events/hector/${EVENT_ID}/`;
+export const HECTOR_EVENT_URL = eventUrl(EVENT_ID);
 
-export interface FetchedHandicap {
-  id: string;
-  name: string;
-  hi: number;
-  bucket: 1 | 2;
-}
+export { parseHandicaps, type FetchedHandicap };
 
 export interface HandicapChange {
   id: string;
@@ -33,31 +30,6 @@ export interface BucketMove {
   name: string;
   from: 1 | 2;
   to: 1 | 2;
-}
-
-/**
- * Regex rather than DOM on purpose: this is the one parser, shared with the serverless
- * cron (api/refresh-handicaps.ts), which has no DOMParser. The live page is
- * Astro-generated — elements carry data-astro-cid-* attributes with whitespace between
- * everything — so every gap tolerates attributes and space. The one hard rule stands:
- * when the page changes shape, return nothing rather than guess.
- */
-export function parseHandicaps(html: string): FetchedHandicap[] {
-  const out: FetchedHandicap[] = [];
-  // `bucket\b` so "buckets", the wrapper div, doesn't start a chunk.
-  for (const chunk of html.split(/<div class="bucket\b/).slice(1)) {
-    const bucket = /^[^">]*bucket2/.test(chunk) ? 2 : 1;
-    const rows = chunk.matchAll(
-      /<td class="name"[^>]*>\s*<a href="([^"]+)"[^>]*>([\s\S]*?)<\/a>\s*<\/td>\s*<td class="handicap"[^>]*>\s*\(([-\d.,]+)\)\s*<\/td>/g,
-    );
-    for (const m of rows) {
-      const id = m[1].split("/").filter(Boolean).pop();
-      const name = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-      const hi = Number(m[3].replace(",", "."));
-      if (id && name && !Number.isNaN(hi)) out.push({ id, name, hi, bucket });
-    }
-  }
-  return out;
 }
 
 export async function fetchHandicaps(): Promise<FetchedHandicap[]> {
