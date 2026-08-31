@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
-import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
+import { courses, holeMapUrl, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
@@ -293,6 +293,9 @@ function HoleEntry({
   onFinish: () => void;
 }) {
   const [pin, setPin] = useState<number | null>(null);
+  // Once opened, the map stays on while stepping through holes — on the course you
+  // want the next tee's diagram, not another tap. Persisted like every preference.
+  const [showMap, setShowMap] = usePersistentState("hectro_ui.holemap", false);
 
   const firstOpenHole = (() => {
     for (let h = 1; h <= 18; h++) {
@@ -327,6 +330,16 @@ function HoleEntry({
               <span className="pill bg-violet-950 text-violet-300 num">Par {par}</span>
               <span className="pill bg-slate-800 text-slate-300 num">SI {si}</span>
               {metres && <span className="pill bg-slate-800 text-slate-400 num">{metres} m</span>}
+              {holeMapUrl(round.courseId, hole) && (
+                <button
+                  onClick={() => setShowMap((v) => !v)}
+                  className={`pill transition-colors ${
+                    showMap ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  Map
+                </button>
+              )}
             </div>
           </div>
           <NavButton
@@ -335,6 +348,19 @@ function HoleEntry({
             onClick={() => setHole_((h) => Math.min(18, h + 1))}
           />
         </div>
+        {showMap && holeMapUrl(round.courseId, hole) && (
+          /* hector.golf's diagram for this hole; the service worker caches each one
+             on first view, so a map seen at breakfast still opens on the fairway. */
+          <img
+            src={holeMapUrl(round.courseId, hole)!}
+            alt={`Hole ${hole} layout`}
+            loading="lazy"
+            /* Mostly tall narrow strips (~158×1050), the odd wide dogleg: natural
+               width capped, centred, transparent art straight on the ground — read
+               it top to bottom like a yardage-book page. */
+            className="mt-3 mx-auto max-w-[min(60%,260px)]"
+          />
+        )}
       </div>
 
       <div className="mt-3 px-4 space-y-3">

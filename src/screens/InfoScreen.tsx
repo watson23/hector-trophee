@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Announcement, EventDoc, FieldPlayer, Round } from "../types";
-import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
+import { courseGuideUrl, courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
@@ -366,6 +366,16 @@ function CourseCard({ courseId }: { courseId: string }) {
               </button>
             ))}
           </div>
+          {courseGuideUrl(courseId) && (
+            <a
+              href={courseGuideUrl(courseId)!}
+              target="_blank"
+              rel="noreferrer"
+              className="block mb-3 text-xs text-violet-400 font-medium"
+            >
+              Full course guide on hector.golf — photos, layout and hole maps ↗
+            </a>
+          )}
           {[0, 9].map((from) => (
             <table key={from} className="w-full text-[10px] num mb-2">
               <tbody>

@@ -56,6 +56,15 @@ export default defineConfig({
             },
           },
           {
+            urlPattern: /^https:\/\/hector\.golf\/images\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "hector-course-images",
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: "CacheFirst",
             options: {

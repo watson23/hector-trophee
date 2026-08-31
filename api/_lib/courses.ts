@@ -72,3 +72,23 @@ export const teeDotClass: Record<string, string> = {
   blue: "bg-sky-500",
   red: "bg-rose-500",
 };
+
+/**
+ * hector.golf's course pages — hero photos, full scorecards, and a layout diagram for
+ * every hole. The app links to the pages and embeds the per-hole diagrams in the
+ * score entry, rather than duplicating any of it.
+ */
+const hectorSlug: Record<string, string> = {
+  radecky: "konopiste-radecky",
+  deste: "konopiste-deste",
+};
+
+export function courseGuideUrl(courseId: string): string | null {
+  const slug = hectorSlug[courseId];
+  return slug ? `https://hector.golf/courses/${slug}/` : null;
+}
+
+export function holeMapUrl(courseId: string, hole: number): string | null {
+  const slug = hectorSlug[courseId];
+  return slug ? `https://hector.golf/images/courses/${slug}/holes/${hole}.png` : null;
+}
