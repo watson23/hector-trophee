@@ -432,6 +432,10 @@ function GroupsEditor({
   saveRound: (round: Round) => Promise<void>;
 }) {
   const [roundId, setRoundId] = useState(rounds[0]?.id);
+  // Both bulk actions replace the whole sheet — and flights are usually built by hand,
+  // by whatever principle the group negotiates (leaders pick first, reverse of
+  // yesterday…), so a stray tap must not be able to flatten that work.
+  const [confirmSheet, setConfirmSheet] = useState<"fill" | "clear" | null>(null);
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
   const byId = new Map(event.players.map((p) => [p.id, p]));
 
@@ -530,7 +534,10 @@ function GroupsEditor({
         {rounds.map((r) => (
           <button
             key={r.id}
-            onClick={() => setRoundId(r.id)}
+            onClick={() => {
+              setRoundId(r.id);
+              setConfirmSheet(null);
+            }}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold num ${
               r.id === round.id ? "bg-violet-600 text-white" : "bg-slate-900 text-slate-400 border border-slate-800"
             }`}
@@ -571,17 +578,47 @@ function GroupsEditor({
         />
       )}
 
-      <div className="flex gap-2">
-        <button onClick={autoFillByPairs} disabled={event.pairs.length === 0} className="btn-ghost flex-1 py-2 text-xs">
-          Auto-fill two pairs per flight
-        </button>
-        <button
-          onClick={() => update(defaultGroups(round.teeTimeWindow))}
-          className="btn-ghost px-3 py-2 text-xs"
-        >
-          Clear
-        </button>
-      </div>
+      {confirmSheet ? (
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (confirmSheet === "fill") autoFillByPairs();
+              else void update(defaultGroups(round.teeTimeWindow));
+              setConfirmSheet(null);
+            }}
+            className="flex-1 rounded-xl py-2 text-xs font-semibold bg-rose-600 text-white"
+          >
+            Yes, {confirmSheet === "fill" ? "replace the sheet with auto-fill" : "clear every flight"}
+          </button>
+          <button onClick={() => setConfirmSheet(null)} className="btn-ghost px-4 py-2 text-xs">
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button
+            onClick={() =>
+              round.groups.some((g) => g.playerIds.length > 0)
+                ? setConfirmSheet("fill")
+                : autoFillByPairs()
+            }
+            disabled={event.pairs.length === 0}
+            className="btn-ghost flex-1 py-2 text-xs"
+          >
+            Auto-fill two pairs per flight
+          </button>
+          <button
+            onClick={() =>
+              round.groups.some((g) => g.playerIds.length > 0)
+                ? setConfirmSheet("clear")
+                : void update(defaultGroups(round.teeTimeWindow))
+            }
+            className="btn-ghost px-3 py-2 text-xs"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {unassignedUnits.length > 0 && (
         <section>
