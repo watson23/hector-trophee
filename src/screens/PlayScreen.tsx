@@ -7,6 +7,7 @@ import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { Empty, Header, Segmented } from "../components/Chrome";
 import FlightList from "../components/FlightList";
+import HectorMark from "../components/HectorMark";
 import Scorecard from "../components/Scorecard";
 
 interface Props {
@@ -42,6 +43,17 @@ export default function PlayScreen({
   onShowTrophy,
 }: Props) {
   const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
+  /*
+   * The round this device has "finished" — the flight signing its card. Purely a
+   * per-device acknowledgment: cards are already complete in the database, and the
+   * round itself stays open until the organiser closes it for every flight in Admin.
+   * Reopening is always one tap away, because someone always remembers a wrong 5 on
+   * the walk to the terrace.
+   */
+  const [finishedRound, setFinishedRound] = usePersistentState<string | null>(
+    "hectro_ui.finished",
+    null,
+  );
   // The escape hatch for an organiser who forgot to open the round at tee time.
   const [scoreAnyway, setScoreAnyway] = usePersistentState<string | null>(
     "hectro_ui.scoreAnyway",
@@ -162,6 +174,14 @@ export default function PlayScreen({
   const tee = effectiveTee(round, course);
   const scrambleRound = round.formats.some((f) => f.teamCard);
   const noFlight = !round.groups.some((g) => g.playerIds.includes(me?.id ?? ""));
+  const complete =
+    subjects.length > 0 &&
+    subjects.every((s) => {
+      const holes = cards[s.id]?.holes ?? {};
+      for (let h = 1; h <= 18; h++) if (!holes[String(h)]) return false;
+      return true;
+    });
+  const finished = finishedRound === round.id && complete;
 
   return (
     <div className="pb-4">
@@ -213,8 +233,27 @@ export default function PlayScreen({
         <div className="mt-4 px-4">
           <Scorecard course={course} subjects={subjects} cards={cards} tee={round.tee} courseId={round.courseId} />
         </div>
+      ) : finished ? (
+        <RoundFinished
+          round={round}
+          course={course}
+          subjects={subjects}
+          cards={cards}
+          scramble={scrambleRound}
+          onReopen={() => setFinishedRound(null)}
+          onShowRound={() => onShowRound(round.id)}
+        />
       ) : (
-        <HoleEntry key={round.id} round={round} course={course} subjects={subjects} cards={cards} setHole={setHole} />
+        <HoleEntry
+          key={round.id}
+          round={round}
+          course={course}
+          subjects={subjects}
+          cards={cards}
+          setHole={setHole}
+          complete={complete}
+          onFinish={() => setFinishedRound(round.id)}
+        />
       )}
       <p className="sr-only">Tee {teeLabel[round.tee]}, course rating {tee.cr}, slope {tee.slope}.</p>
     </div>
@@ -241,12 +280,17 @@ function HoleEntry({
   subjects,
   cards,
   setHole,
+  complete,
+  onFinish,
 }: {
   round: Round;
   course: NonNullable<(typeof courses)[string]>;
   subjects: Subject[];
   cards: Record<string, Card>;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
+  /** Every card in the flight has all 18 holes. */
+  complete: boolean;
+  onFinish: () => void;
 }) {
   const [pin, setPin] = useState<number | null>(null);
 
@@ -313,9 +357,10 @@ function HoleEntry({
       </div>
 
       {/* Always in the layout, enabled once the flight is scored — appearing out of
-          nowhere made everything below it jump on the last score of each hole. */}
-      {hole < 18 && (
-        <div className="px-4 mt-4">
+          nowhere made everything below it jump on the last score of each hole. On the
+          18th, the walk continues to the clubhouse: Finish round takes its place. */}
+      <div className="px-4 mt-4">
+        {hole < 18 ? (
           <button
             className="btn-primary w-full"
             disabled={!allScored}
@@ -323,8 +368,22 @@ function HoleEntry({
           >
             Next hole →
           </button>
-        </div>
-      )}
+        ) : (
+          <>
+            <button className="btn-primary w-full" disabled={!complete} onClick={onFinish}>
+              Finish round
+            </button>
+            {!complete && (
+              <p className="text-[11px] text-slate-500 text-center mt-2 num">
+                Still missing:{" "}
+                {Array.from({ length: 18 }, (_, i) => i + 1)
+                  .filter((h) => !subjects.every((s) => cards[s.id]?.holes?.[String(h)]))
+                  .join(" · ")}
+              </p>
+            )}
+          </>
+        )}
+      </div>
 
       <HoleStrip
         hole={hole}
@@ -333,6 +392,91 @@ function HoleEntry({
         partial={(h) => subjects.some((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
       />
     </>
+  );
+}
+
+/**
+ * The flight's card is in — a small ceremony instead of a screen that just stops.
+ * Totals per card, the falcon landing, and the one honest escape hatch: someone
+ * always remembers a wrong 5, so reopening is a single tap, not an admin errand.
+ */
+function RoundFinished({
+  round,
+  course,
+  subjects,
+  cards,
+  scramble,
+  onReopen,
+  onShowRound,
+}: {
+  round: Round;
+  course: NonNullable<(typeof courses)[string]>;
+  subjects: Subject[];
+  cards: Record<string, Card>;
+  scramble: boolean;
+  onReopen: () => void;
+  onShowRound: () => void;
+}) {
+  const totals = subjects.map((s) => {
+    let gross = 0;
+    let net = 0;
+    let points = 0;
+    course.par.forEach((par, i) => {
+      const g = cards[s.id]?.holes?.[String(i + 1)] ?? 0;
+      const n = netScore(g, s.strokes[i]);
+      gross += g;
+      net += n;
+      points += stablefordPoints(par, n);
+    });
+    return { subject: s, gross, toPar: gross - course.par.reduce((a, b) => a + b, 0), net, points };
+  });
+
+  return (
+    <div className="mt-4 px-4">
+      <div className="rounded-3xl border border-gold-400/30 bg-gradient-to-b from-gold-400/[0.07] to-transparent p-6 text-center">
+        <HectorMark className="finish-flourish w-14 h-14 mx-auto text-gold-400" />
+        <p className="num text-[11px] font-semibold tracking-[0.25em] uppercase text-gold-400 mt-3">
+          Round {round.seq} · in the books
+        </p>
+        <p className="font-serif text-xl font-semibold mt-1">Well played.</p>
+
+        <ul className="mt-5 space-y-1 text-left">
+          {totals.map((t, i) => (
+            <li
+              key={t.subject.id}
+              className="finish-rise flex items-baseline justify-between gap-2 border-t border-slate-800 py-2 first:border-0"
+              style={{ animationDelay: `${300 + i * 120}ms` }}
+            >
+              <span className="text-sm font-medium truncate">
+                {t.subject.name}
+                {t.subject.mine && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-violet-400">you</span>
+                )}
+              </span>
+              <span className="shrink-0 flex items-baseline gap-2">
+                <span className="score text-lg">{t.gross}</span>
+                <span className="text-[11px] text-slate-500 num">
+                  {t.toPar === 0 ? "E" : t.toPar > 0 ? `+${t.toPar}` : t.toPar}
+                  {scramble ? ` · net ${t.net}` : ` · ${t.points} pts`}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-5 space-y-2">
+          <button className="btn-primary w-full" onClick={onShowRound}>
+            See the round results
+          </button>
+          <button className="btn-ghost w-full text-sm" onClick={onReopen}>
+            Adjust a score
+          </button>
+        </div>
+      </div>
+      <p className="text-[11px] text-slate-500 text-center leading-relaxed mt-3">
+        The organiser closes the round for everyone once all flights are in.
+      </p>
+    </div>
   );
 }
 
