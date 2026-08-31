@@ -147,7 +147,7 @@ export default function InfoScreen({
         </p>
         {/* Which version this device runs — support question #1, and the way to watch
             the auto-update do its thing. */}
-        <p className="text-[10px] text-slate-700 mt-1 text-center num">{__BUILD__}</p>
+        <p className="text-[10px] text-slate-500 mt-1 text-center num">{__BUILD__}</p>
       </div>
     </div>
   );
