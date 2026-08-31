@@ -40,7 +40,7 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, on
         <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-violet-400">
           Hector Trophée
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight mt-1">2026</h1>
+        <h1 className="font-serif text-5xl font-semibold mt-1">2026</h1>
         <p className="text-slate-400 text-sm mt-2">{event.venue}</p>
         <p className="text-slate-500 text-sm">{event.dates}</p>
       </header>

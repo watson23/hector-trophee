@@ -52,7 +52,7 @@ export default function DraftBoard({
       <p className="label text-violet-300">Draft night</p>
 
       {nextPlayer && (
-        <p className="mt-1.5 text-lg font-bold leading-tight">
+        <p className="mt-1.5 font-serif text-xl font-semibold leading-tight">
           {nextPlayer.name} picks next
           <span className="block text-xs font-normal text-slate-400 mt-0.5">
             #{rankOf(nextPlayer.id)} in round 1 · picks from bucket{" "}

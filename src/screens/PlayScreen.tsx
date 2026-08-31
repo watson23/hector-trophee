@@ -366,7 +366,7 @@ function Waiting({
   return (
     <div className="px-4 pt-8">
       <div className="card p-6 text-center">
-        <p className="text-lg font-bold">{title}</p>
+        <p className="font-serif text-xl font-semibold">{title}</p>
         <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{body}</p>
         {actions && <div className="mt-5 space-y-2">{actions}</div>}
       </div>
