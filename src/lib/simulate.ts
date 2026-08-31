@@ -2,6 +2,7 @@ import type { Card, EventDoc, Pair, Round } from "../types";
 import { courses } from "../data/courses";
 import { effectiveTee, evaluateRound } from "../lib/engine";
 import { defaultGroups } from "../data/rounds";
+import { flightsForPairs } from "./flights";
 import { generateRoundCards } from "./testdata";
 
 /**
@@ -29,15 +30,6 @@ function flightsForAll(round: Round, event: EventDoc): Round["groups"] {
   return groups;
 }
 
-/** Two pairs to a flight, so both cards of a team round travel together. */
-function flightsForPairs(round: Round, pairs: Pair[]): Round["groups"] {
-  const groups = defaultGroups(round.teeTimeWindow, Math.ceil(pairs.length / 2));
-  pairs.forEach((pair, i) => {
-    const g = groups[Math.floor(i / 2)] ?? groups[groups.length - 1];
-    g.playerIds.push(pair.aId, pair.bId);
-  });
-  return groups;
-}
 
 async function writeCards(round: Round, event: EventDoc, deps: SimulateDeps, holes: number) {
   const course = courses[round.courseId];

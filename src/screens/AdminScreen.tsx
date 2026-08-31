@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
+import { flightsForPairs } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
@@ -475,17 +476,14 @@ function GroupsEditor({
     void update(groups);
   }
 
-  /** Keeps each pair in the same flight — the team formats need both cards together. */
+  /**
+   * Keeps each pair in the same flight — the team formats need both cards together —
+   * and rotates which pairs share one, so it's different company every round rather
+   * than the same arrangement six times over.
+   */
   function autoFillByPairs() {
     if (event.pairs.length === 0) return;
-    const groups = defaultGroups(round.teeTimeWindow, Math.ceil(event.pairs.length / 2)).map(
-      (g) => ({ ...g, playerIds: [] as string[] }),
-    );
-    event.pairs.forEach((pair, i) => {
-      const target = groups[Math.floor(i / 2)] ?? groups[groups.length - 1];
-      target.playerIds.push(pair.aId, pair.bId);
-    });
-    void update(groups);
+    void update(flightsForPairs(round, event.pairs));
   }
 
   return (
