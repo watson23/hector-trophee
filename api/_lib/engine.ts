@@ -391,7 +391,7 @@ export interface TournamentRow<T> {
 
 export interface TournamentTotals {
   hector: TournamentRow<{ points: number; toPar: number; thru: number; detail: ContributionDetail[] }>[];
-  victor: TournamentRow<{ points: number; thru: number }>[];
+  victor: TournamentRow<{ points: number; toPar: number; thru: number }>[];
   rounds: RoundResult[];
 }
 
@@ -433,7 +433,7 @@ export function computeTournament(
   });
 
   const victor = players.map((p) => {
-    const row: TournamentRow<{ points: number; thru: number }> = {
+    const row: TournamentRow<{ points: number; toPar: number; thru: number }> = {
       key: p.id,
       label: p.name,
       points: 0,
@@ -447,7 +447,7 @@ export function computeTournament(
       if (!entry || entry.thru === 0) continue;
       row.points += entry.points;
       row.toPar += entry.toPar;
-      row.perRound[rr.roundId] = { points: entry.points, thru: entry.thru };
+      row.perRound[rr.roundId] = { points: entry.points, toPar: entry.toPar, thru: entry.thru };
       row.roundsPlayed += 1;
       row.thru += entry.thru;
     }

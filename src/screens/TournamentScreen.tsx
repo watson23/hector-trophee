@@ -2,7 +2,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
 import { hectorLowerIsBetter, levelParTotal, weightLabel } from "../lib/hector";
-import { formatToParFine } from "../lib/leaderboard";
+import { formatToPar, formatToParFine } from "../lib/leaderboard";
 import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
@@ -113,16 +113,22 @@ export default function TournamentScreen({
           if (!entry) return null;
           return (
             <div key={r.id}>
-              <div className="text-[11px] font-semibold text-slate-400 mb-0.5">
-                Round {r.seq} · {r.day}
+              <div className="flex justify-between gap-3 text-[11px] font-semibold text-slate-400 mb-0.5">
+                <span>
+                  Round {r.seq} · {r.day}
+                </span>
+                <span className="num text-slate-300">{formatToParFine(entry.toPar, 2)}</span>
               </div>
               {entry.detail.map((d, i) => (
                 <div key={`${d.formatId}-${i}`} className="mt-1.5 first:mt-0">
                   <div className="flex justify-between gap-3 text-xs">
                     <span className="truncate text-slate-300">{d.label}</span>
-                    <span className="shrink-0 font-semibold text-slate-100 num">
-                      {d.points >= 0 ? "+" : ""}
-                      {d.points.toFixed(2)}
+                    <span className="shrink-0 num">
+                      <span className="font-semibold text-slate-100">
+                        {d.points >= 0 ? "+" : ""}
+                        {d.points.toFixed(2)}
+                      </span>{" "}
+                      <span className="text-slate-500">({formatToParFine(d.toPar, 2)})</span>
                     </span>
                   </div>
                   {/*
@@ -178,7 +184,10 @@ export default function TournamentScreen({
               <span className="font-sans">
                 Round {r.seq} · {r.day}
               </span>
-              <span className="font-semibold text-slate-200">{entry.points.toFixed(0)} pts</span>
+              <span className="font-semibold text-slate-200">
+                {entry.points.toFixed(0)} pts{" "}
+                <span className="font-normal text-slate-500">({formatToPar(entry.toPar)})</span>
+              </span>
             </div>
           );
         })}
