@@ -15,6 +15,8 @@ interface Props {
   victor: TournamentTotals["victor"];
   /** Positions gained/lost against the standings before the open round. */
   movement: Record<string, number>;
+  highlightPlayers?: Set<string>;
+  highlightPairs?: Set<string>;
 }
 
 /**
@@ -50,7 +52,14 @@ function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): s
 }
 
 /** The two trophies: Hector for the pair, Victor for the individual. */
-export default function TournamentScreen({ rounds, hector, victor, movement }: Props) {
+export default function TournamentScreen({
+  rounds,
+  hector,
+  victor,
+  movement,
+  highlightPlayers,
+  highlightPairs,
+}: Props) {
   const [tab, setTab] = usePersistentState<"hector" | "victor">("hectro_ui.trophy", "hector");
   const complete = isTournamentComplete(rounds);
   const hectorRoundCount = rounds.filter((r) => r.formats.some((f) => f.hector)).length;
@@ -210,6 +219,7 @@ export default function TournamentScreen({ rounds, hector, victor, movement }: P
                 decimals={1}
                 wideThru
                 leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+                highlightKeys={highlightPairs}
               />
             </>
           )
@@ -221,6 +231,7 @@ export default function TournamentScreen({ rounds, hector, victor, movement }: P
             decimals={1}
             wideThru
             leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+            highlightKeys={highlightPlayers}
           />
         )}
       </div>

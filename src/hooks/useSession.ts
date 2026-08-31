@@ -5,6 +5,10 @@ export interface Session {
   playerId: string | null;
   unlocked: boolean;
   admin: boolean;
+  /** Hector TV: watching only — no PIN, no writes, no Play tab. */
+  spectator?: boolean;
+  /** Player ids this spectator follows; highlighted everywhere and pinned up top. */
+  following?: string[];
 }
 
 const KEY = "hectro_session";

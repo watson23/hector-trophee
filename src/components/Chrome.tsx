@@ -36,19 +36,25 @@ export function TabBar({
   tab,
   onChange,
   badges,
+  visible,
+  labels,
 }: {
   tab: Tab;
   onChange: (t: Tab) => void;
   /** Tabs with something unseen behind them get a dot. */
   badges?: Partial<Record<Tab, boolean>>;
+  /** Hector TV shows a subset of the tabs, with the Round tab relabelled "Live". */
+  visible?: Tab[];
+  labels?: Partial<Record<Tab, string>>;
 }) {
+  const shown = visible ? TABS.filter((t) => visible.includes(t.id)) : TABS;
   return (
     <nav
       className="fixed bottom-0 inset-x-0 z-30 bg-slate-950/95 backdrop-blur border-t border-slate-800"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="max-w-lg mx-auto grid grid-cols-4">
-        {TABS.map((t) => (
+      <div className={`max-w-lg mx-auto grid ${shown.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
+        {shown.map((t) => (
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
@@ -74,7 +80,7 @@ export function TabBar({
             ) : (
               <HectorMark className="w-6 h-6" />
             )}
-            {t.label}
+            {labels?.[t.id] ?? t.label}
           </button>
         ))}
       </div>

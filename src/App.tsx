@@ -11,6 +11,7 @@ import TournamentScreen from "./screens/TournamentScreen";
 import InfoScreen from "./screens/InfoScreen";
 import AdminScreen from "./screens/AdminScreen";
 import type { StoreError } from "./lib/store";
+import { FollowPicker, FollowStrip, TVBar } from "./components/HectorTV";
 
 export default function App() {
   const { session, update, reset } = useSession();
@@ -28,6 +29,16 @@ export default function App() {
       ? "info"
       : "play";
   const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
+  // Hector TV: #watch in a shared link drops straight into spectator mode — no PIN,
+  // because there is nothing to protect: the spectator shell has no write paths.
+  const [editFollows, setEditFollows] = useState(false);
+  useEffect(() => {
+    if (location.hash === "#watch" && !session.playerId && !session.spectator) {
+      update({ spectator: true });
+      setEditFollows(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Which round the Round tab is on — session-scoped, so tomorrow follows the live
   // round again instead of the one browsed last night.
   const [roundSel, setRoundSel] = usePersistentState<string | null>(
@@ -56,9 +67,106 @@ export default function App() {
 
   const newsUnread = (t.event?.announcements ?? []).some((a) => a.at > newsSeen);
 
+  // Followed players and the pairs they belong to — the star treatment on every table.
+  const following = session.following ?? [];
+  const highlightPlayers = useMemo(() => new Set(following), [following]);
+  const highlightPairs = useMemo(
+    () =>
+      new Set(
+        (t.event?.pairs ?? [])
+          .filter((p) => following.includes(p.aId) || following.includes(p.bId))
+          .map((p) => p.id),
+      ),
+    [t.event?.pairs, following],
+  );
+
   if (!t.ready || !t.event) {
     // A silent forever-spinner is the worst failure on a golf course, so say what's wrong.
     return <Connecting error={t.error} />;
+  }
+
+  // ------------------------------- Hector TV -------------------------------
+  if (session.spectator) {
+    if (editFollows) {
+      return (
+        <FollowPicker
+          event={t.event}
+          initial={following}
+          onDone={(f) => {
+            update({ following: f });
+            setEditFollows(false);
+          }}
+          onExit={() => {
+            reset();
+            setEditFollows(false);
+          }}
+        />
+      );
+    }
+    // The persisted tab may point at a tab the TV doesn't have (Play, from a
+    // player session on this device once) — Live is the home channel.
+    const tvTab: Tab = ["round", "tournament", "info"].includes(tab) ? tab : "round";
+    return (
+      <div className="min-h-dvh">
+        <SpaceBanner space={space} />
+        <TVBar following={following} players={t.event.players} onEdit={() => setEditFollows(true)} />
+        <main className="max-w-lg mx-auto pb-24">
+          {tvTab === "round" && (
+            <>
+              <FollowStrip
+                following={following}
+                event={t.event}
+                round={activeRound}
+                result={activeRound ? t.roundResults[activeRound.id] : undefined}
+                hector={t.hector}
+              />
+              <RoundScreen
+                event={t.event}
+                rounds={t.rounds}
+                results={t.roundResults}
+                cards={t.cards}
+                initialRoundId={roundSel ?? activeRound?.id ?? null}
+                onRoundChange={setRoundSel}
+                highlightPlayers={highlightPlayers}
+                highlightPairs={highlightPairs}
+              />
+            </>
+          )}
+          {tvTab === "tournament" && (
+            <TournamentScreen
+              rounds={t.rounds}
+              hector={t.hector}
+              victor={t.victor}
+              movement={t.hectorMovement}
+              highlightPlayers={highlightPlayers}
+              highlightPairs={highlightPairs}
+            />
+          )}
+          {tvTab === "info" && (
+            <InfoScreen
+              spectator
+              newsSeen={newsSeen}
+              onSeenNews={setNewsSeen}
+              saveEvent={t.saveEvent}
+              event={t.event}
+              rounds={t.rounds}
+              me={null}
+              admin={false}
+              backend={t.backend}
+              onAdmin={() => {}}
+              onOpenAdmin={() => {}}
+              onSwitchPlayer={() => setEditFollows(true)}
+            />
+          )}
+        </main>
+        <TabBar
+          tab={tvTab}
+          onChange={setTab}
+          visible={["round", "tournament", "info"]}
+          labels={{ round: "Live" }}
+        />
+      </div>
+    );
   }
 
   if (!session.unlocked || !session.playerId) {
@@ -73,6 +181,10 @@ export default function App() {
           unlocked={session.unlocked}
           onUnlock={() => update({ unlocked: true })}
           onPickPlayer={(playerId) => update({ playerId })}
+          onSpectate={() => {
+            update({ spectator: true });
+            setEditFollows(true);
+          }}
         />
       </div>
     );

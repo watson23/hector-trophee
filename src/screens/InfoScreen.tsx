@@ -16,6 +16,8 @@ interface Props {
   me: FieldPlayer | null;
   admin: boolean;
   backend: "firestore" | "local" | null;
+  /** Hector TV: hide News, organiser access and the player identity. */
+  spectator?: boolean;
   /** Newest announcement timestamp this device has seen. */
   newsSeen: number;
   onSeenNews: (at: number) => void;
@@ -31,6 +33,7 @@ export default function InfoScreen({
   me,
   admin,
   backend,
+  spectator = false,
   newsSeen,
   onSeenNews,
   saveEvent,
@@ -44,8 +47,9 @@ export default function InfoScreen({
   );
   const announcements = event.announcements ?? [];
   const unread = announcements.some((a) => a.at > newsSeen);
-  // Players only see the News chip once there is news; admins always, to post the first.
-  const showNews = announcements.length > 0 || admin;
+  // Players only see the News chip once there is news; admins always, to post the
+  // first. Spectators never do — announcements are trip logistics, not broadcast.
+  const showNews = !spectator && (announcements.length > 0 || admin);
 
   // Something new lands this tab straight on it — the dot on the Info icon promised it.
   useEffect(() => {
@@ -118,11 +122,13 @@ export default function InfoScreen({
         {section === "formats" && <Formats rounds={rounds} />}
       </div>
 
-      <div className="px-4 mt-6">
+      <div className="px-4 mt-6 space-y-2">
+        {/* Hector TV: the link that goes to the folks at home. */}
+        {!spectator && <ShareTV />}
         {/* One quiet entry here; the floating pill is the one that follows the organiser
             around. A full-width primary button at the top of More was the biggest thing
             on the screen for the one person who least needs reminding it exists. */}
-        {admin ? (
+        {spectator ? null : admin ? (
           <button onClick={onOpenAdmin} className="btn-ghost w-full text-sm py-2.5">
             ⚙ Open Admin
           </button>
@@ -541,6 +547,25 @@ function News({
         </div>
       ))}
     </div>
+  );
+}
+
+/** Copies the spectator link — pasted to family and the Hectorians staying home. */
+function ShareTV() {
+  const [copied, setCopied] = useState(false);
+  const url = `${location.origin}${location.pathname}#watch`;
+  return (
+    <button
+      onClick={() => {
+        void navigator.clipboard?.writeText(url).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      }}
+      className="btn-ghost w-full py-2.5 text-sm"
+    >
+      {copied ? "Link copied — paste it to the folks at home" : "📺 Share Hector TV"}
+    </button>
   );
 }
 

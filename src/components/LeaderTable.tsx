@@ -28,6 +28,7 @@ export default function LeaderTable({
   totalHoles = 18,
   leaderMark,
   wideThru = false,
+  highlightKeys,
 }: {
   rows: LeaderRow[];
   lowerIsBetter: boolean;
@@ -38,6 +39,8 @@ export default function LeaderTable({
   leaderMark?: ReactNode;
   /** Tournament tables carry round-aware Thru labels ("R6·7"), which need a wider column. */
   wideThru?: boolean;
+  /** Hector TV: rows a spectator follows — violet tint and a star, rank untouched. */
+  highlightKeys?: Set<string>;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const ranked = rank(
@@ -83,12 +86,14 @@ export default function LeaderTable({
           {ranked.map((r) => {
             const expandable = Boolean(r.item.detail);
             const isOpen = open === r.item.key;
+            // The leader's amber wins over the favourite's violet when they coincide.
+            const fav = !r.leader && highlightKeys?.has(r.item.key);
             return (
               <Fragment key={r.item.key}>
                 <tr
                   onClick={() => expandable && setOpen(isOpen ? null : r.item.key)}
                   className={`border-t border-slate-800 ${expandable ? "cursor-pointer active:bg-slate-800/60" : ""} ${
-                    r.leader ? "bg-amber-400/5" : ""
+                    r.leader ? "bg-amber-400/5" : fav ? "bg-violet-500/10 shadow-[inset_2px_0_0_theme(colors.violet.500)]" : ""
                   }`}
                 >
                   <td
@@ -105,7 +110,10 @@ export default function LeaderTable({
                       }`}
                     >
                       {r.leader && leaderMark}
-                      <span className="truncate">{r.item.label}</span>
+                      {fav && <span className="text-violet-400 shrink-0">★</span>}
+                      <span className={`truncate ${fav ? "text-violet-200 font-semibold" : ""}`}>
+                        {r.item.label}
+                      </span>
                       {r.item.movement !== undefined && r.item.movement !== 0 && (
                         <span
                           className={`shrink-0 num text-[10px] font-bold ${

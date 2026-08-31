@@ -8,10 +8,12 @@ interface Props {
   unlocked: boolean;
   onUnlock: () => void;
   onPickPlayer: (playerId: string) => void;
+  /** Hector TV: watching without the PIN. */
+  onSpectate: () => void;
 }
 
 /** Two steps on the first tee: the event PIN, then tap your own name. */
-export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer }: Props) {
+export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, onSpectate }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -63,6 +65,13 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer }: 
           {error && <p className="text-rose-400 text-sm">{error}</p>}
           <button type="submit" className="btn-primary w-full" disabled={!pin || checking}>
             {checking ? "Checking…" : "Continue"}
+          </button>
+          <button
+            type="button"
+            onClick={onSpectate}
+            className="w-full text-center text-sm text-slate-500 hover:text-violet-300 pt-1"
+          >
+            Just watching? Open Hector TV →
           </button>
         </form>
       ) : picked ? (

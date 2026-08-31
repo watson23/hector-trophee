@@ -18,6 +18,9 @@ interface Props {
   initialRoundId: string | null;
   /** Reports the user's own round choice, so it survives a refresh. */
   onRoundChange: (roundId: string) => void;
+  /** Hector TV: followed players (and their pairs) get the violet star treatment. */
+  highlightPlayers?: Set<string>;
+  highlightPairs?: Set<string>;
 }
 
 export default function RoundScreen({
@@ -27,6 +30,8 @@ export default function RoundScreen({
   cards,
   initialRoundId,
   onRoundChange,
+  highlightPlayers,
+  highlightPairs,
 }: Props) {
   const [roundId, setRoundId] = useState<string | null>(initialRoundId ?? rounds[0]?.id ?? null);
   // Follow a new target from outside — "Round 3 results" on the Play tab lands here.
@@ -186,6 +191,7 @@ export default function RoundScreen({
                   lowerIsBetter={f.spec.kind !== "stableford"}
                   scoreHeader={f.spec.kind === "stableford" ? "Pts" : "Score"}
                   leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-amber-400" />}
+                  highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                 />
               </div>
             </section>
