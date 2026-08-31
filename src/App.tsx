@@ -35,6 +35,9 @@ export default function App() {
     null,
     "session",
   );
+  // Timestamp of the newest announcement this device has seen; the Info tab gets an
+  // amber dot while something newer exists.
+  const [newsSeen, setNewsSeen] = usePersistentState("hectro_ui.newsSeen", 0);
 
   const me = useMemo(
     () => t.event?.players.find((p) => p.id === session.playerId) ?? null,
@@ -50,6 +53,8 @@ export default function App() {
       null
     );
   }, [t.rounds]);
+
+  const newsUnread = (t.event?.announcements ?? []).some((a) => a.at > newsSeen);
 
   if (!t.ready || !t.event) {
     // A silent forever-spinner is the worst failure on a golf course, so say what's wrong.
@@ -129,6 +134,9 @@ export default function App() {
             )}
             {tab === "info" && (
               <InfoScreen
+                newsSeen={newsSeen}
+                onSeenNews={setNewsSeen}
+                saveEvent={t.saveEvent}
                 event={t.event}
                 rounds={t.rounds}
                 me={me}
@@ -175,7 +183,7 @@ export default function App() {
         </button>
       )}
 
-      {!adminOpen && <TabBar tab={tab} onChange={setTab} />}
+      {!adminOpen && <TabBar tab={tab} onChange={setTab} badges={{ info: newsUnread }} />}
     </div>
   );
 }

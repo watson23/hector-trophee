@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
-import type { EventDoc, FieldPlayer, Round } from "../types";
+import type { Announcement, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
@@ -16,6 +16,10 @@ interface Props {
   me: FieldPlayer | null;
   admin: boolean;
   backend: "firestore" | "local" | null;
+  /** Newest announcement timestamp this device has seen. */
+  newsSeen: number;
+  onSeenNews: (at: number) => void;
+  saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   onAdmin: () => void;
   onOpenAdmin: () => void;
   onSwitchPlayer: () => void;
@@ -27,14 +31,36 @@ export default function InfoScreen({
   me,
   admin,
   backend,
+  newsSeen,
+  onSeenNews,
+  saveEvent,
   onAdmin,
   onOpenAdmin,
   onSwitchPlayer,
 }: Props) {
-  const [section, setSection] = usePersistentState<"schedule" | "courses" | "formats">(
+  const [section, setSection] = usePersistentState<"news" | "schedule" | "courses" | "formats">(
     "hectro_ui.info",
     "schedule",
   );
+  const announcements = event.announcements ?? [];
+  const unread = announcements.some((a) => a.at > newsSeen);
+  // Players only see the News chip once there is news; admins always, to post the first.
+  const showNews = announcements.length > 0 || admin;
+
+  // Something new lands this tab straight on it — the dot on the Info icon promised it.
+  useEffect(() => {
+    if (unread) setSection("news");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unread]);
+
+  // Reading the news is what clears the dot.
+  useEffect(() => {
+    if (section === "news" && announcements.length > 0) {
+      const newest = Math.max(...announcements.map((a) => a.at));
+      if (newest > newsSeen) onSeenNews(newest);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section, announcements.length]);
 
   return (
     <div className="pb-4">
@@ -43,15 +69,17 @@ export default function InfoScreen({
         subtitle={`${event.venue} · ${event.dates}`}
         right={
           me && (
+            /* Quiet on purpose: switching player is a rare correction, not a feature —
+               a plain block whose small "switch" hint is enough for the one time it's
+               needed. */
             <button
               onClick={onSwitchPlayer}
-              className="shrink-0 text-right rounded-xl border border-slate-800 bg-slate-900
-                         px-2.5 py-1.5 active:bg-slate-800"
+              className="shrink-0 text-right"
               aria-label="Change player"
             >
               <div className="text-sm font-semibold leading-tight">{me.name}</div>
               <div className="text-[11px] text-slate-500 num leading-tight">
-                HCP {me.hi.toFixed(1)} · <span className="text-violet-400 font-sans">switch ↺</span>
+                HCP {me.hi.toFixed(1)} · <span className="font-sans">switch</span>
               </div>
             </button>
           )
@@ -59,22 +87,30 @@ export default function InfoScreen({
       />
 
       <div className="px-4 flex gap-1.5">
-        {(["schedule", "courses", "formats"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
-              section === s
-                ? "bg-violet-600 text-white"
-                : "bg-slate-900 text-slate-400 border border-slate-800"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+        {(["news", "schedule", "courses", "formats"] as const)
+          .filter((sec) => sec !== "news" || showNews)
+          .map((sec) => (
+            <button
+              key={sec}
+              onClick={() => setSection(sec)}
+              className={`relative rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
+                section === sec
+                  ? "bg-violet-600 text-white"
+                  : "bg-slate-900 text-slate-400 border border-slate-800"
+              }`}
+            >
+              {sec}
+              {sec === "news" && unread && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400" />
+              )}
+            </button>
+          ))}
       </div>
 
       <div className="px-4 mt-4 space-y-3">
+        {section === "news" && (
+          <News announcements={announcements} admin={admin} saveEvent={saveEvent} />
+        )}
         {section === "schedule" &&
           rounds.map((r) => <RoundCard key={r.id} round={r} event={event} me={me} />)}
         {section === "courses" &&
@@ -402,6 +438,106 @@ function Formats({ rounds }: { rounds: Round[] }) {
         <div key={i.title} className="card p-3.5">
           <h3 className="font-semibold text-sm text-slate-200">{i.title}</h3>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">{i.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Announcements. WhatsApp remains the channel for chatter; this is the pinboard for the
+ * absolute essentials — a tee change, lunch moved — the things that must be findable in
+ * the app and worth an unread dot on the Info tab.
+ */
+function News({
+  announcements,
+  admin,
+  saveEvent,
+}: {
+  announcements: Announcement[];
+  admin: boolean;
+  saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const sorted = [...announcements].sort((a, b) => b.at - a.at);
+
+  async function post() {
+    const text = draft.trim();
+    if (!text) return;
+    await saveEvent({
+      announcements: [{ id: `a${Date.now()}`, text, at: Date.now() }, ...announcements],
+    });
+    setDraft("");
+  }
+
+  const stamp = (at: number) =>
+    new Date(at).toLocaleString("en-GB", {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  return (
+    <div className="space-y-3">
+      {admin && (
+        <form
+          className="card p-3 space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void post();
+          }}
+        >
+          <textarea
+            className="input w-full text-sm min-h-[4.5rem] resize-y"
+            placeholder="Announcement — everyone gets a dot on the Info tab"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          <button type="submit" className="btn-primary w-full py-2 text-sm" disabled={!draft.trim()}>
+            Post
+          </button>
+        </form>
+      )}
+
+      {sorted.length === 0 && (
+        <p className="text-sm text-slate-500 text-center py-6">Nothing announced yet.</p>
+      )}
+
+      {sorted.map((a) => (
+        <div key={a.id} className="card p-3.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[11px] text-slate-500 num">{stamp(a.at)}</span>
+            {admin &&
+              (confirmDelete === a.id ? (
+                <span className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() =>
+                      void saveEvent({
+                        announcements: announcements.filter((x) => x.id !== a.id),
+                      }).then(() => setConfirmDelete(null))
+                    }
+                    className="text-[11px] font-semibold text-white bg-rose-600 rounded px-1.5 py-0.5"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(null)}
+                    className="text-[11px] text-slate-400"
+                  >
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(a.id)}
+                  className="text-[11px] text-slate-600 hover:text-rose-400 shrink-0"
+                >
+                  remove
+                </button>
+              ))}
+          </div>
+          <p className="text-sm text-slate-200 mt-1 leading-relaxed whitespace-pre-wrap">{a.text}</p>
         </div>
       ))}
     </div>

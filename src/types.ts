@@ -110,6 +110,18 @@ export interface Round {
   provisional?: boolean;
 }
 
+/**
+ * A note from the organisers — lunch moved, tee change, bus leaves at nine. WhatsApp
+ * stays the main channel; this is for the absolute essentials that must be findable in
+ * the app, with an unread dot on the Info tab.
+ */
+export interface Announcement {
+  id: string;
+  text: string;
+  /** Date.now() when posted. */
+  at: number;
+}
+
 export interface EventDoc {
   id: string;
   name: string;
@@ -119,6 +131,7 @@ export interface EventDoc {
   adminPinHash: string;
   players: FieldPlayer[];
   pairs: Pair[];
+  announcements?: Announcement[];
   /**
    * Last year's winning pair, who defend their title together regardless of the draft.
    *

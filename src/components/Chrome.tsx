@@ -32,7 +32,16 @@ const TABS: { id: Tab; label: string; icon: ReactNode | null }[] = [
   },
 ];
 
-export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+export function TabBar({
+  tab,
+  onChange,
+  badges,
+}: {
+  tab: Tab;
+  onChange: (t: Tab) => void;
+  /** Tabs with something unseen behind them get a dot. */
+  badges?: Partial<Record<Tab, boolean>>;
+}) {
   return (
     <nav
       className="fixed bottom-0 inset-x-0 z-30 bg-slate-950/95 backdrop-blur border-t border-slate-800"
@@ -44,10 +53,13 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
             key={t.id}
             onClick={() => onChange(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
-            className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+            className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
               tab === t.id ? "text-violet-400" : "text-slate-500 hover:text-slate-300"
             }`}
           >
+            {badges?.[t.id] && (
+              <span className="absolute top-1.5 right-[calc(50%-16px)] w-2 h-2 rounded-full bg-amber-400" />
+            )}
             {t.icon ? (
               <svg
                 viewBox="0 0 24 24"
