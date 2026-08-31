@@ -267,12 +267,32 @@ export class FirestoreStore implements Store {
     await deleteDoc(doc(this.cardsRef(), cardId(roundId, subjectId)));
   }
 
+  /**
+   * Firestore throws on `undefined` field values — and the UI's idiom for "no
+   * override" is exactly that (`crOverride: undefined`). The JSON round-trip drops
+   * undefined the same way the local backend always has. Both saves also report
+   * failures to the error channel instead of letting a void'd promise swallow them,
+   * which is how "changing the course does nothing" stayed invisible.
+   */
+  private clean<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value)) as T;
+  }
+
+  private reportWriteError = (err: unknown) => {
+    const e = err as { code?: string; message?: string };
+    console.error("Write failed", err);
+    this.setError(describe(e.code ?? "unknown", e.message ?? String(err)));
+    throw err;
+  };
+
   async saveEvent(patch: Partial<EventDoc>): Promise<void> {
-    await setDoc(this.eventRef(), patch, { merge: true });
+    await setDoc(this.eventRef(), this.clean(patch), { merge: true }).catch(this.reportWriteError);
   }
 
   async saveRound(round: Round): Promise<void> {
-    await setDoc(doc(this.roundsRef(), round.id), round, { merge: true });
+    // A whole round is always saved, so this is a replace, not a merge: merging could
+    // never clear a removed field — switching course must drop a stale CR override.
+    await setDoc(doc(this.roundsRef(), round.id), this.clean(round)).catch(this.reportWriteError);
   }
 
   subscribePending(cb: (count: number) => void): Unsubscribe {
