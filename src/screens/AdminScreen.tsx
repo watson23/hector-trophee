@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
@@ -522,6 +522,8 @@ function GroupsEditor({
     void update(flightsForPairs(round, event.pairs));
   }
 
+  const draftRound = round.formats.some((f) => f.hector?.source === "betterIndividual");
+
   return (
     <div className="px-4 space-y-4">
       <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -537,6 +539,14 @@ function GroupsEditor({
           </button>
         ))}
       </div>
+
+      {draftRound && unassignedUnits.length > 0 && (
+        <TeeTimeDraw
+          remaining={unassignedUnits}
+          groups={round.groups}
+          onPlace={(unit, gid) => moveUnit(unit, gid)}
+        />
+      )}
 
       <div className="flex gap-2">
         <button onClick={autoFillByPairs} disabled={event.pairs.length === 0} className="btn-ghost flex-1 py-2 text-xs">
@@ -645,6 +655,111 @@ function UnitChip({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The bus tradition, digitised. Round 1's tee-time order has always been drawn on the
+ * bus, one name at a time — the suspense of who picks next is the point, which is why
+ * this reveals a single name per draw instead of randomising the whole list at once.
+ *
+ * "Still in the hat" is simply "not yet assigned to a flight", so there is no draw
+ * state to store or migrate: draw a name, the drawn player calls a tee time, the
+ * organiser taps it, and every phone's tee sheet updates live. A short roll through
+ * the remaining names builds the drumroll before the reveal (skipped under reduced
+ * motion). Each draw is uniform over whoever remains, which is exactly the paper
+ * version's fairness.
+ */
+function TeeTimeDraw({
+  remaining,
+  groups,
+  onPlace,
+}: {
+  remaining: FlightUnit[];
+  groups: Round["groups"];
+  onPlace: (unit: FlightUnit, groupId: string) => void;
+}) {
+  const [drawn, setDrawn] = useState<FlightUnit | null>(null);
+  const [rolling, setRolling] = useState<string | null>(null);
+  const timer = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearInterval(timer.current);
+    },
+    [],
+  );
+
+  // Placed from another device mid-draw? Then they're out of the hat here too.
+  const current = drawn && remaining.some((u) => u.key === drawn.key) ? drawn : null;
+
+  function draw() {
+    const pick = remaining[Math.floor(Math.random() * remaining.length)];
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDrawn(pick);
+      return;
+    }
+    let ticks = 0;
+    setRolling(remaining[Math.floor(Math.random() * remaining.length)].label);
+    timer.current = window.setInterval(() => {
+      ticks += 1;
+      if (ticks > 14) {
+        if (timer.current) clearInterval(timer.current);
+        setRolling(null);
+        setDrawn(pick);
+      } else {
+        setRolling(remaining[Math.floor(Math.random() * remaining.length)].label);
+      }
+    }, 90);
+  }
+
+  return (
+    <section className="card p-3.5 border-violet-800/60 bg-violet-950/20">
+      <h2 className="text-[11px] font-semibold uppercase tracking-wider text-violet-300 mb-1">
+        Tee time draw
+      </h2>
+      <p className="text-[11px] text-slate-400 leading-relaxed">
+        One name at a time, like on the bus. The drawn player calls a tee time; tap it to
+        lock them in, then draw the next.{" "}
+        <span className="num">{remaining.length}</span> still in the hat.
+      </p>
+
+      {rolling ? (
+        <p className="font-serif text-2xl text-center my-4 text-slate-500">{rolling}</p>
+      ) : current ? (
+        <>
+          <p className="finish-flourish font-serif text-2xl font-semibold text-center my-4 text-violet-200">
+            {current.label}
+          </p>
+          <p className="text-xs text-slate-400 mb-2 text-center">picks a tee time:</p>
+          <div className="grid grid-cols-3 gap-2">
+            {groups.map((g) => {
+              const full = g.playerIds.length + current.playerIds.length > MAX_PER_FLIGHT;
+              return (
+                <button
+                  key={g.id}
+                  disabled={full}
+                  onClick={() => {
+                    onPlace(current, g.id);
+                    setDrawn(null);
+                  }}
+                  className="btn-ghost py-2 text-xs num disabled:opacity-40"
+                >
+                  {g.teeTime}
+                  <span className="block text-[10px] text-slate-500">
+                    {g.playerIds.length}/{MAX_PER_FLIGHT}
+                    {full ? " full" : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <button className="btn-primary w-full py-2.5 mt-3" onClick={draw}>
+          Draw a name
+        </button>
+      )}
+    </section>
   );
 }
 
