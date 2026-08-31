@@ -41,17 +41,6 @@ export default function PlayScreen({
   onShowRound,
   onShowTrophy,
 }: Props) {
-  /*
-   * The entry view opens on the first hole the flight hasn't fully entered — derived
-   * from the cards, not remembered. This used to be persisted per round id, which
-   * survived a reset (round ids don't change) and greeted a brand-new round on "hole 4"
-   * from last week's testing. Deriving it also gives the refresh-on-the-14th-tee case
-   * for free, and on any device, not just the one that was scoring.
-   *
-   * Manual position wins once taken: navigating or entering a score pins the hole until
-   * the round or the view changes, so the view never jumps out from under a thumb.
-   */
-  const [pin, setPin] = useState<{ roundId: string; view: string; hole: number } | null>(null);
   const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
   // The escape hatch for an organiser who forgot to open the round at tee time.
   const [scoreAnyway, setScoreAnyway] = usePersistentState<string | null>(
@@ -119,24 +108,6 @@ export default function PlayScreen({
       });
   }, [round, course, me, event]);
 
-  const firstOpenHole = (() => {
-    if (subjects.length === 0) return 1;
-    for (let h = 1; h <= 18; h++) {
-      if (!subjects.every((s) => cards[s.id]?.holes?.[String(h)])) return h;
-    }
-    return 18;
-  })();
-  // The pin remembers which round and view it was taken in, so a new round or a
-  // return to this view simply doesn't match — the entry opens on the next
-  // un-entered hole again, with no reset effect to run.
-  const manualHole =
-    pin && pin.roundId === round?.id && pin.view === view ? pin.hole : null;
-  const hole = manualHole ?? firstOpenHole;
-  const setHole_ = (next: number | ((prev: number) => number)) => {
-    if (!round) return;
-    setPin({ roundId: round.id, view, hole: typeof next === "function" ? next(hole) : next });
-  };
-
   if (!round || !course) {
     return (
       <Empty
@@ -189,12 +160,8 @@ export default function PlayScreen({
   }
 
   const tee = effectiveTee(round, course);
-  const par = course.par[hole - 1];
-  const si = course.si[hole - 1];
-  const metres = holeMetres[round.courseId]?.[round.tee]?.[hole - 1];
   const scrambleRound = round.formats.some((f) => f.teamCard);
   const noFlight = !round.groups.some((g) => g.playerIds.includes(me?.id ?? ""));
-  const allScored = subjects.length > 0 && subjects.every((s) => cards[s.id]?.holes?.[String(hole)]);
 
   return (
     <div className="pb-4">
@@ -247,76 +214,125 @@ export default function PlayScreen({
           <Scorecard course={course} subjects={subjects} cards={cards} tee={round.tee} courseId={round.courseId} />
         </div>
       ) : (
-        <>
-          <div className="mt-4 px-4">
-            <div className="card flex items-center justify-between px-2 py-3">
-              <NavButton
-                dir="prev"
-                disabled={hole === 1}
-                onClick={() => setHole_((h) => Math.max(1, h - 1))}
-              />
-              <div className="text-center">
-                <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-                  Hole
-                </div>
-                <div className="text-4xl font-extrabold num leading-none mt-0.5">{hole}</div>
-                <div className="flex items-center justify-center gap-2 mt-2 text-xs">
-                  <span className="pill bg-violet-950 text-violet-300 num">Par {par}</span>
-                  <span className="pill bg-slate-800 text-slate-300 num">SI {si}</span>
-                  {metres && <span className="pill bg-slate-800 text-slate-400 num">{metres} m</span>}
-                </div>
-              </div>
-              <NavButton
-                dir="next"
-                disabled={hole === 18}
-                onClick={() => setHole_((h) => Math.min(18, h + 1))}
-              />
-            </div>
-          </div>
-
-          <div className="mt-3 px-4 space-y-3">
-            {subjects.map((s) => (
-              <SubjectRow
-                key={s.id}
-                subject={s}
-                hole={hole}
-                par={par}
-                card={cards[s.id]}
-                onScore={(v) => {
-                  // Pin the view before writing: without this, completing the flight's
-                  // last score would advance firstOpenHole and yank the view forward
-                  // mid-look — "Next hole" is the deliberate way onwards.
-                  setHole_(hole);
-                  setHole(s.id, hole, v);
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Always in the layout, enabled once the flight is scored — appearing out of
-              nowhere made everything below it jump on the last score of each hole. */}
-          {hole < 18 && (
-            <div className="px-4 mt-4">
-              <button
-                className="btn-primary w-full"
-                disabled={!allScored}
-                onClick={() => setHole_((h) => h + 1)}
-              >
-                Next hole →
-              </button>
-            </div>
-          )}
-
-          <HoleStrip
-            hole={hole}
-            onPick={setHole_}
-            filled={(h) => subjects.every((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
-            partial={(h) => subjects.some((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
-          />
-        </>
+        <HoleEntry key={round.id} round={round} course={course} subjects={subjects} cards={cards} setHole={setHole} />
       )}
       <p className="sr-only">Tee {teeLabel[round.tee]}, course rating {tee.cr}, slope {tee.slope}.</p>
     </div>
+  );
+}
+
+/**
+ * The hole-by-hole entry: navigation, one row per card, the next-hole button.
+ *
+ * It opens on the first hole the flight hasn't fully entered — derived from the cards,
+ * not remembered. Positions used to be persisted per round id, which survived a reset
+ * (round ids don't change) and greeted a brand-new round on "hole 4" from last week's
+ * testing. Deriving also gives the refresh-on-the-14th-tee case for free, on any device.
+ *
+ * A manual position wins once taken: navigating or entering a score pins the hole, so
+ * the view never jumps out from under a thumb when firstOpenHole advances. The pin is
+ * plain state in here on purpose — this component only mounts while the hole view is
+ * showing and is keyed by round id, so leaving the view or changing rounds resets it by
+ * unmounting, and the entry always reopens on the next un-entered hole.
+ */
+function HoleEntry({
+  round,
+  course,
+  subjects,
+  cards,
+  setHole,
+}: {
+  round: Round;
+  course: NonNullable<(typeof courses)[string]>;
+  subjects: Subject[];
+  cards: Record<string, Card>;
+  setHole: (subjectId: string, hole: number, value: number | null) => void;
+}) {
+  const [pin, setPin] = useState<number | null>(null);
+
+  const firstOpenHole = (() => {
+    for (let h = 1; h <= 18; h++) {
+      if (!subjects.every((s) => cards[s.id]?.holes?.[String(h)])) return h;
+    }
+    return 18;
+  })();
+  const hole = pin ?? firstOpenHole;
+  const setHole_ = (next: number | ((prev: number) => number)) =>
+    setPin(typeof next === "function" ? next(hole) : next);
+
+  const par = course.par[hole - 1];
+  const si = course.si[hole - 1];
+  const metres = holeMetres[round.courseId]?.[round.tee]?.[hole - 1];
+  const allScored = subjects.length > 0 && subjects.every((s) => cards[s.id]?.holes?.[String(hole)]);
+
+  return (
+    <>
+      <div className="mt-4 px-4">
+        <div className="card flex items-center justify-between px-2 py-3">
+          <NavButton
+            dir="prev"
+            disabled={hole === 1}
+            onClick={() => setHole_((h) => Math.max(1, h - 1))}
+          />
+          <div className="text-center">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+              Hole
+            </div>
+            <div className="text-4xl font-extrabold num leading-none mt-0.5">{hole}</div>
+            <div className="flex items-center justify-center gap-2 mt-2 text-xs">
+              <span className="pill bg-violet-950 text-violet-300 num">Par {par}</span>
+              <span className="pill bg-slate-800 text-slate-300 num">SI {si}</span>
+              {metres && <span className="pill bg-slate-800 text-slate-400 num">{metres} m</span>}
+            </div>
+          </div>
+          <NavButton
+            dir="next"
+            disabled={hole === 18}
+            onClick={() => setHole_((h) => Math.min(18, h + 1))}
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 px-4 space-y-3">
+        {subjects.map((s) => (
+          <SubjectRow
+            key={s.id}
+            subject={s}
+            hole={hole}
+            par={par}
+            card={cards[s.id]}
+            onScore={(v) => {
+              // Pin the view before writing: without this, completing the flight's
+              // last score would advance firstOpenHole and yank the view forward
+              // mid-look — "Next hole" is the deliberate way onwards.
+              setHole_(hole);
+              setHole(s.id, hole, v);
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Always in the layout, enabled once the flight is scored — appearing out of
+          nowhere made everything below it jump on the last score of each hole. */}
+      {hole < 18 && (
+        <div className="px-4 mt-4">
+          <button
+            className="btn-primary w-full"
+            disabled={!allScored}
+            onClick={() => setHole_((h) => h + 1)}
+          >
+            Next hole →
+          </button>
+        </div>
+      )}
+
+      <HoleStrip
+        hole={hole}
+        onPick={setHole_}
+        filled={(h) => subjects.every((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
+        partial={(h) => subjects.some((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
+      />
+    </>
   );
 }
 
