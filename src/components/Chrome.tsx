@@ -18,9 +18,16 @@ const TABS: { id: Tab; label: string; icon: ReactNode | null }[] = [
   },
   { id: "tournament", label: "Trophy", icon: null },
   {
+    // "Info", not "More": the tab holds the schedule, tee sheet, courses and rules —
+    // things people actively look for. "More" said "miscellaneous", so nobody looked.
     id: "more",
-    label: "More",
-    icon: <path d="M5 12h.01M12 12h.01M19 12h.01" strokeLinecap="round" strokeWidth={2.5} />,
+    label: "Info",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 11v5m0-8.5v.5" strokeLinecap="round" strokeWidth={2.2} />
+      </>
+    ),
   },
 ];
 

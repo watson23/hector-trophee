@@ -130,24 +130,32 @@ export default function App() {
         )}
       </main>
 
-      {/* Admin lived at the bottom of the More tab behind faint grey text, which was
+      {/* Admin lived at the bottom of the Info tab behind faint grey text, which was
           effectively hidden. Once unlocked, it gets a button that follows you around —
           bottom-right, above the tab bar, where it covers nothing: fixed top-right it sat
-          on the sync banner's text and on the identity block of the More header. */}
-      {!adminOpen && session.admin && (
+          on the sync banner's text and on the identity block of the Info header. It's a
+          toggle: the way out of Admin lives in the same spot as the way in, so one thumb
+          position switches modes in both directions. */}
+      {session.admin && (
         <button
-          onClick={() => setAdminOpen(true)}
-          aria-label="Open Admin"
+          onClick={() => setAdminOpen((v) => !v)}
+          aria-label={adminOpen ? "Close Admin" : "Open Admin"}
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 76px)" }}
           className="fixed right-3 z-40 flex items-center gap-1.5 rounded-full
                      bg-violet-600/90 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold
                      shadow-lg backdrop-blur active:bg-violet-700"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.4.64.73.83" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Admin
+          {adminOpen ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-3.5 h-3.5">
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.4.64.73.83" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+          {adminOpen ? "Exit admin" : "Admin"}
         </button>
       )}
 

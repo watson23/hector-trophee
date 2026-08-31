@@ -2,7 +2,7 @@ import type { EventDoc, Round } from "../types";
 
 /**
  * Every flight of a round, with tee times — the sheet everyone photographs and relays
- * on the course. Shown to all players (More → Schedule, and the between-rounds card),
+ * on the course. Shown to all players (Info → Schedule, and the between-rounds card),
  * not just the admin who set it up.
  *
  * Names are grouped the way people say them: as pairs where both halves are in the
