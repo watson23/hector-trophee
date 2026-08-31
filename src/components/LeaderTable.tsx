@@ -190,7 +190,11 @@ export default function LeaderTable({
                       </div>
                     )}
                   </td>
-                  <td className="text-right px-1.5 score text-[17px] whitespace-nowrap">
+                  <td
+                    className={`text-right px-1.5 score text-[17px] whitespace-nowrap ${
+                      r.leader ? "text-gold-300" : ""
+                    }`}
+                  >
                     {r.item.played
                       ? (r.item.display ?? r.item.value.toFixed(decimals))
                       : "—"}
