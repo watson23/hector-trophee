@@ -720,12 +720,16 @@ function SubjectRow({
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {strokes !== 0 && (
+            /* Signed the Golf GameBook way — the app everyone's instincts come from:
+               minus for strokes received (they come OFF the score), plus for the
+               plus-handicapper's give-back. */
             <span
               className={`pill num ${
                 strokes > 0 ? "bg-emerald-950 text-emerald-400" : "bg-rose-950 text-rose-400"
               }`}
             >
-              {strokes > 0 ? `+${strokes}` : strokes} stroke{Math.abs(strokes) > 1 ? "s" : ""}
+              {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`} stroke
+              {Math.abs(strokes) > 1 ? "s" : ""}
             </span>
           )}
           {net !== null && (
