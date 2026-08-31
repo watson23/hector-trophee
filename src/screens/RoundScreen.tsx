@@ -7,7 +7,7 @@ import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HectorMark from "../components/HectorMark";
 import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
 import DraftBoard from "../components/DraftBoard";
-import { Empty, Header } from "../components/Chrome";
+import { Empty } from "../components/Chrome";
 
 interface Props {
   event: EventDoc;
@@ -44,16 +44,26 @@ export default function RoundScreen({
 
   return (
     <div className="pb-4">
-      <Header
-        title={`Round ${round.seq}`}
-        subtitle={
-          <span className="flex items-center gap-1.5">
-            {round.day} · {course?.shortName}
-            <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-            {teeLabel[round.tee]}
+      {/* The chyron: broadcast's thin caption strip in place of a document header —
+          what's on air and where, in the same tracked-caps voice as the Hector TV
+          ident. The register shifts with the selected round's status: a breathing
+          dot and LIVE while play is on, quiet caps otherwise. */}
+      <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-3 num text-[11px] tracking-[0.2em] uppercase">
+        <span className="flex items-center gap-2 shrink-0 font-semibold">
+          {round.status === "open" && <span className="live-dot text-emerald-400" />}
+          <span className={round.status === "open" ? "text-emerald-300" : "text-slate-300"}>
+            {round.status === "open" ? "Live" : round.status === "final" ? "Final" : "Upcoming"}
+            <span className="text-slate-600"> · </span>Round {round.seq}
           </span>
-        }
-      />
+        </span>
+        <span className="flex items-center gap-1.5 min-w-0 truncate text-slate-500">
+          <span className="truncate">
+            {round.day} · {course?.shortName}
+          </span>
+          <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${teeDotClass[round.tee]}`} />
+          {teeLabel[round.tee]}
+        </span>
+      </div>
 
       <div className="px-4 flex gap-1.5 overflow-x-auto pb-1">
         {rounds.map((r) => (
