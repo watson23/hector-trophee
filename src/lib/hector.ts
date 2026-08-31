@@ -56,16 +56,13 @@ export interface HectorInput {
  * rounding 1/3 to "33%" makes the arithmetic shown beside it fail to add up.
  */
 export function weightLabel(pct: number): string {
-  const named: [number, string][] = [
-    [1, "all"],
-    [1 / 2, "½"],
-    [1 / 3, "⅓"],
-    [1 / 4, "¼"],
-    [2 / 3, "⅔"],
-    [3 / 4, "¾"],
-  ];
-  const hit = named.find(([v]) => Math.abs(v - pct) < 1e-9);
-  return hit ? hit[1] : `${Math.round(pct * 1000) / 10}%`;
+  // Percentages, not fraction glyphs: ½, ⅓ and ¼ are nearly indistinguishable at pill
+  // size, and "50% / 33% / 25%" is how these weights have always been communicated in
+  // this group. 33% is knowingly imprecise — the engine computes with exactly 1/3, and
+  // the label follows tradition rather than the arithmetic.
+  if (Math.abs(pct - 1 / 3) < 1e-9) return "33%";
+  if (Math.abs(pct - 2 / 3) < 1e-9) return "67%";
+  return `${Math.round(pct * 100)}%`;
 }
 
 /** Stableford points expressed as strokes against the course par. */

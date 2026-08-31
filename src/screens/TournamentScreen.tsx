@@ -107,10 +107,11 @@ export default function TournamentScreen({ rounds, hector, victor, movement }: P
                     </span>
                   </div>
                   {/*
-                    Spell the arithmetic out. This used to read "(33% of 39 pts = 69)",
-                    which parses as "33% of 39 equals 69" — three different things
-                    smashed together, and the weight was wrong too: it is a third, so
-                    33% doesn't reconcile with the number beside it.
+                    Spell the arithmetic out — "(33% of 39 pts = 69)" parsed as "33% of
+                    39 equals 69", three different things smashed together. The weight
+                    label is deliberately "33%" rather than ⅓: the fraction glyphs are
+                    unreadable at this size, and percentages are how this group has
+                    always talked about the weights. The engine still computes 1/3.
                   */}
                   <div className="text-[11px] text-slate-500 leading-relaxed">
                     {d.converted !== undefined
