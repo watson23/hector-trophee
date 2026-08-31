@@ -218,10 +218,9 @@ export default function TournamentScreen({
           ) : (
             <>
               <p className="text-[11px] leading-relaxed text-slate-500 mb-2">
-                Scored to par — <span className="text-slate-300 font-medium">lower wins</span>,
-                and pairs mid-round compare fairly: each hole lands with its round's weight,
-                so a bogey in a 50% round costs +0.5. E is a level-par week of{" "}
-                <span className="num text-slate-400">{levelPar.toFixed(1)}</span> strokes.
+                Weighted to par — <span className="text-slate-300 font-medium">lower wins</span>.
+                E is a level-par week (
+                <span className="num text-slate-400">{levelPar.toFixed(1)}</span> strokes).
               </p>
               <LeaderTable
                 rows={hectorRows}
