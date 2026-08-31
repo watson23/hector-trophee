@@ -25,6 +25,8 @@ interface Props {
   onAdmin: () => void;
   onOpenAdmin: () => void;
   onSwitchPlayer: () => void;
+  /** Player mode: peek at Hector TV on this device without losing the session. */
+  onWatchTV?: () => void;
 }
 
 export default function InfoScreen({
@@ -40,6 +42,7 @@ export default function InfoScreen({
   onAdmin,
   onOpenAdmin,
   onSwitchPlayer,
+  onWatchTV,
 }: Props) {
   const [section, setSection] = usePersistentState<
     "news" | "schedule" | "field" | "courses" | "formats"
@@ -132,8 +135,14 @@ export default function InfoScreen({
       </div>
 
       <div className="px-4 mt-6 space-y-2">
-        {/* Hector TV: the link that goes to the folks at home. */}
+        {/* Hector TV: the link that goes to the folks at home — and a peek for
+            yourself, which comes back via the floating Exit TV pill. */}
         {!spectator && <ShareTV />}
+        {!spectator && onWatchTV && (
+          <button onClick={onWatchTV} className="btn-ghost w-full py-2.5 text-sm">
+            Watch Hector TV on this phone
+          </button>
+        )}
         {/* One quiet entry here; the floating pill is the one that follows the organiser
             around. A full-width primary button at the top of More was the biggest thing
             on the screen for the one person who least needs reminding it exists. */}
@@ -640,7 +649,7 @@ function News({
 /** Copies the spectator link — pasted to family and the Hectorians staying home. */
 function ShareTV() {
   const [copied, setCopied] = useState(false);
-  const url = `${location.origin}${location.pathname}#watch`;
+  const url = `${location.origin}/tv`;
   return (
     <button
       onClick={() => {

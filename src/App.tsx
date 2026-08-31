@@ -31,14 +31,20 @@ export default function App() {
   const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
   // Hector TV: #watch in a shared link drops straight into spectator mode — no PIN,
   // because there is nothing to protect: the spectator shell has no write paths.
-  // Decided once, at mount: arriving via the shared link flips the device into
-  // spectator mode and opens the follow picker.
+  // Decided once, at mount: arriving via the shared link (/tv — plus the older
+  // #watch, which is out in the wild) flips the device into Hector TV — for a fresh
+  // spectator via the follow picker, and for a signed-in player as a peek that keeps
+  // their identity. The URL is consumed on entry so that leaving TV sticks: without
+  // that, every reload would bounce an exited player straight back in.
   const [enteredViaWatch] = useState(
-    () => location.hash === "#watch" && !session.playerId && !session.spectator,
+    () => (location.pathname === "/tv" || location.hash === "#watch") && !session.spectator,
   );
-  const [editFollows, setEditFollows] = useState(enteredViaWatch);
+  const [editFollows, setEditFollows] = useState(enteredViaWatch && !session.playerId);
   useEffect(() => {
-    if (enteredViaWatch) update({ spectator: true });
+    if (enteredViaWatch) {
+      update({ spectator: true });
+      history.replaceState(null, "", "/");
+    }
     // Once, on mount — enteredViaWatch never changes and update is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -95,12 +101,18 @@ export default function App() {
         <FollowPicker
           event={t.event}
           initial={following}
+          exitLabel={
+            session.playerId ? "Back to the player view" : "Actually playing? Enter the event"
+          }
           onDone={(f) => {
             update({ following: f });
             setEditFollows(false);
           }}
           onExit={() => {
-            reset();
+            // A signed-in player peeking at TV keeps their identity; only a pure
+            // spectator backing out goes through onboarding again.
+            if (session.playerId) update({ spectator: false });
+            else reset();
             setEditFollows(false);
           }}
         />
@@ -162,6 +174,16 @@ export default function App() {
             />
           )}
         </main>
+        {session.playerId && (
+          <button
+            onClick={() => update({ spectator: false })}
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 76px)" }}
+            className="fixed right-3 z-40 rounded-full bg-violet-600/90 text-white px-3 py-1.5
+                       text-xs font-semibold shadow-lg backdrop-blur active:bg-violet-700"
+          >
+            Exit TV
+          </button>
+        )}
         <TabBar
           tab={tvTab}
           onChange={setTab}
@@ -263,6 +285,7 @@ export default function App() {
                 }}
                 onOpenAdmin={() => setAdminOpen(true)}
                 onSwitchPlayer={reset}
+                onWatchTV={() => update({ spectator: true })}
               />
             )}
           </>

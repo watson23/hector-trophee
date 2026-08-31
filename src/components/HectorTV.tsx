@@ -62,12 +62,14 @@ export function FollowPicker({
   initial,
   onDone,
   onExit,
+  exitLabel = "Actually playing? Enter the event",
 }: {
   event: EventDoc;
   initial: string[];
   onDone: (following: string[]) => void;
-  /** "Actually playing?" — back out of Hector TV to the player onboarding. */
+  /** Back out of Hector TV — to onboarding for a spectator, to the app for a player. */
   onExit?: () => void;
+  exitLabel?: string;
 }) {
   const [picked, setPicked] = useState<Set<string>>(new Set(initial));
   const toggle = (id: string) =>
@@ -120,7 +122,7 @@ export function FollowPicker({
         </button>
         {onExit && (
           <button className="w-full text-sm text-slate-500 py-1.5" onClick={onExit}>
-            Actually playing? Enter the event
+            {exitLabel}
           </button>
         )}
       </div>
