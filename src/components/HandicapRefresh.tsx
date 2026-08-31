@@ -5,6 +5,7 @@ import {
   diffHandicaps,
   fetchHandicaps,
   HECTOR_EVENT_URL,
+  type BucketMove,
   type FetchedHandicap,
   type HandicapChange,
 } from "../lib/handicapSource";
@@ -29,6 +30,7 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
   const [state, setState] = useState<"idle" | "loading" | "ready" | "saving">("idle");
   const [fetched, setFetched] = useState<FetchedHandicap[] | null>(null);
   const [changes, setChanges] = useState<HandicapChange[]>([]);
+  const [bucketMoves, setBucketMoves] = useState<BucketMove[]>([]);
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
       const d = diffHandicaps(event.players, list);
       setFetched(list);
       setChanges(d.changes);
+      setBucketMoves(d.bucketMoves);
       setUnmatched(d.unmatched);
       setState("ready");
     } catch (e) {
@@ -56,10 +59,17 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
     if (!fetched) return;
     setState("saving");
     await saveEvent({ players: applyHandicaps(event.players, fetched) });
-    setDone(`Updated ${changes.length} handicap${changes.length === 1 ? "" : "s"}.`);
+    setDone(
+      `Updated ${changes.length} handicap${changes.length === 1 ? "" : "s"}${
+        bucketMoves.length > 0
+          ? ` and moved ${bucketMoves.map((m) => m.name).join(", ")} between buckets`
+          : ""
+      }.`,
+    );
     setState("idle");
     setFetched(null);
     setChanges([]);
+    setBucketMoves([]);
   }
 
   return (
@@ -82,7 +92,7 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
         </button>
       ) : (
         <>
-          {changes.length === 0 ? (
+          {changes.length === 0 && bucketMoves.length === 0 ? (
             <p className="text-xs text-emerald-400">
               Already up to date — all {event.players.length} handicaps match.
             </p>
@@ -103,6 +113,18 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
             </ul>
           )}
 
+          {/* A handicap crossing the line moves someone between buckets — which changes
+              Thursday's draft pools, so it gets said out loud, not applied silently. */}
+          {bucketMoves.length > 0 && (
+            <ul className="space-y-1 mb-3">
+              {bucketMoves.map((m) => (
+                <li key={m.id} className="text-xs text-violet-300">
+                  {m.name} moves to bucket {m.to}
+                </li>
+              ))}
+            </ul>
+          )}
+
           {unmatched.length > 0 && (
             <p className="text-[11px] text-amber-400/90 mb-2 leading-relaxed">
               On hector.golf but not in this event: {unmatched.join(", ")}. Add them under
@@ -111,9 +133,10 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
           )}
 
           <div className="flex gap-2">
-            {changes.length > 0 && (
+            {changes.length + bucketMoves.length > 0 && (
               <button onClick={apply} className="btn-primary flex-1 py-2 text-xs">
-                Apply {changes.length} change{changes.length === 1 ? "" : "s"}
+                Apply {changes.length + bucketMoves.length} change
+                {changes.length + bucketMoves.length === 1 ? "" : "s"}
               </button>
             )}
             <button

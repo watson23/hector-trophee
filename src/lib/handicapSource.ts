@@ -27,6 +27,14 @@ export interface HandicapChange {
   to: number;
 }
 
+/** Until the draft, a moving handicap can carry a player across the bucket line. */
+export interface BucketMove {
+  id: string;
+  name: string;
+  from: 1 | 2;
+  to: 1 | 2;
+}
+
 export function parseHandicaps(html: string): FetchedHandicap[] {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const out: FetchedHandicap[] = [];
@@ -61,24 +69,34 @@ export async function fetchHandicaps(): Promise<FetchedHandicap[]> {
 export function diffHandicaps(
   current: FieldPlayer[],
   fetched: FetchedHandicap[],
-): { changes: HandicapChange[]; unmatched: string[] } {
+): { changes: HandicapChange[]; bucketMoves: BucketMove[]; unmatched: string[] } {
   const byId = new Map(fetched.map((f) => [f.id, f]));
   const changes: HandicapChange[] = [];
+  const bucketMoves: BucketMove[] = [];
   for (const p of current) {
     const f = byId.get(p.id);
     if (!f) continue;
     if (Math.abs(f.hi - p.hi) > 1e-9) {
       changes.push({ id: p.id, name: p.name, from: p.hi, to: f.hi });
     }
+    if (f.bucket !== p.bucket) {
+      bucketMoves.push({ id: p.id, name: p.name, from: p.bucket, to: f.bucket });
+    }
   }
   const known = new Set(current.map((p) => p.id));
-  return { changes, unmatched: fetched.filter((f) => !known.has(f.id)).map((f) => f.name) };
+  return {
+    changes,
+    bucketMoves,
+    unmatched: fetched.filter((f) => !known.has(f.id)).map((f) => f.name),
+  };
 }
 
 export function applyHandicaps(current: FieldPlayer[], fetched: FetchedHandicap[]): FieldPlayer[] {
   const byId = new Map(fetched.map((f) => [f.id, f]));
   return current.map((p) => {
     const f = byId.get(p.id);
-    return f ? { ...p, hi: f.hi } : p;
+    // Bucket comes along with the handicap: hector.golf recomputes both nightly, and a
+    // stale bucket here would run Thursday's draft with the wrong pools.
+    return f ? { ...p, hi: f.hi, bucket: f.bucket } : p;
   });
 }

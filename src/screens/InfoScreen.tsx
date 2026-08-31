@@ -41,10 +41,9 @@ export default function InfoScreen({
   onOpenAdmin,
   onSwitchPlayer,
 }: Props) {
-  const [section, setSection] = usePersistentState<"news" | "schedule" | "courses" | "formats">(
-    "hectro_ui.info",
-    "schedule",
-  );
+  const [section, setSection] = usePersistentState<
+    "news" | "schedule" | "field" | "courses" | "formats"
+  >("hectro_ui.info", "schedule");
   const announcements = event.announcements ?? [];
   const unread = announcements.some((a) => a.at > newsSeen);
   // Players only see the News chip once there is news; admins always, to post the
@@ -96,7 +95,7 @@ export default function InfoScreen({
       />
 
       <div className="px-4 flex gap-1.5">
-        {(["news", "schedule", "courses", "formats"] as const)
+        {(["news", "schedule", "field", "courses", "formats"] as const)
           .filter((sec) => sec !== "news" || showNews)
           .map((sec) => (
             <button
@@ -122,6 +121,7 @@ export default function InfoScreen({
         )}
         {activeSection === "schedule" &&
           rounds.map((r) => <RoundCard key={r.id} round={r} event={event} me={me} />)}
+        {activeSection === "field" && <Field event={event} me={me} />}
         {activeSection === "courses" &&
           Object.values(courses).map((c) => <CourseCard key={c.id} courseId={c.id} />)}
         {activeSection === "formats" && <Formats rounds={rounds} />}
@@ -239,6 +239,65 @@ function RoundCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The field, bucket by bucket. Pre-draft this is the page that gets studied: who's
+ * coming this year, how strong the field is, and who sits near the line — the buckets
+ * keep moving with the nightly handicap updates right up to Thursday's draft.
+ */
+function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
+  const buckets = ([1, 2] as const).map((b) =>
+    event.players.filter((p) => p.bucket === b).sort((a, x) => a.hi - x.hi),
+  );
+  const avg = (ps: FieldPlayer[]) =>
+    ps.length ? ps.reduce((a, p) => a + p.hi, 0) / ps.length : 0;
+  const drafted = event.pairs.length > 0;
+
+  return (
+    <div className="space-y-3">
+      <div className="card p-3.5 flex items-baseline justify-between">
+        <div>
+          <div className="text-sm font-semibold">{event.players.length} players</div>
+          <div className="text-[11px] text-slate-500">this year's field</div>
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-semibold num text-violet-300">
+            {avg(event.players).toFixed(1)}
+          </div>
+          <div className="text-[11px] text-slate-500">average HCP</div>
+        </div>
+      </div>
+
+      {buckets.map((players, i) => (
+        <div key={i} className="card p-3.5">
+          <div className="flex items-baseline justify-between mb-2">
+            <h3 className="label">Bucket {i + 1}</h3>
+            <span className="text-[11px] text-slate-500 num">avg {avg(players).toFixed(1)}</span>
+          </div>
+          <ul className="space-y-1">
+            {players.map((p) => (
+              <li key={p.id} className="flex items-baseline justify-between text-sm">
+                <span className={p.id === me?.id ? "font-semibold" : "text-slate-300"}>
+                  {p.name}
+                  {p.id === me?.id && (
+                    <span className="ml-1.5 text-[10px] font-semibold text-violet-400">you</span>
+                  )}
+                </span>
+                <span className="text-[11px] text-slate-500 num">{p.hi.toFixed(1)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <p className="text-[11px] text-slate-500 leading-relaxed">
+        {drafted
+          ? "The draft pairs one player from each bucket."
+          : "Handicaps refresh nightly from hector.golf until the draft — a moving handicap can still carry someone across the bucket line. The draft pairs one player from each bucket."}
+      </p>
     </div>
   );
 }

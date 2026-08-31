@@ -57,6 +57,19 @@ describe("reading handicaps from hector.golf", () => {
     expect(unmatched).toEqual(["Sami H", "Lasse K"]);
   });
 
+  it("carries bucket membership along with the handicap", () => {
+    // Lasse's page says lasse-k now sits in bucket 2 with 15.1 — but pretend the app
+    // still has him in bucket 1: apply must move him, and diff must say so first.
+    const stale: FieldPlayer[] = [
+      { id: "lasse-k", name: "Lasse K", hi: 14.8, bucket: 1 },
+    ];
+    const fetched = parseHandicaps(HTML).filter((p) => p.id === "lasse-k");
+    expect(diffHandicaps(stale, fetched).bucketMoves).toEqual([
+      { id: "lasse-k", name: "Lasse K", from: 1, to: 2 },
+    ]);
+    expect(applyHandicaps(stale, fetched)[0].bucket).toBe(2);
+  });
+
   it("leaves players the page omits untouched rather than dropping them", () => {
     // Someone withdrawing upstream must not delete them from a tournament in progress.
     const partial = parseHandicaps(HTML).filter((p) => p.id === "jari-k");
