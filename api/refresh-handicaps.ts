@@ -1,0 +1,121 @@
+/**
+ * The 07:00 handicap refresh — a Vercel cron does every morning what the Admin
+ * button does by hand: read hector.golf, and carry new handicaps AND bucket moves
+ * into the event. Runs until the tournament ends, then turns itself off.
+ *
+ * Schedule lives in vercel.json ("0 4 * * *" — 04:00 UTC = 07:00 in Finland during
+ * EEST, which covers the whole run up to 27 Sep). Rounds already opened keep their
+ * handicap snapshot, so this can never rescore anything played — same guarantee as
+ * the manual refresh.
+ *
+ * Standalone on purpose: src/lib/handicapSource.ts parses with the browser's
+ * DOMParser and reads import.meta.env, neither of which exists in a serverless
+ * function. The parser here mirrors its one hard rule — when the page changes
+ * shape, return nothing rather than guess — and the jsdom test on the src parser
+ * pins the page structure they both assume.
+ */
+import { getApps, getApp, initializeApp } from "firebase/app";
+import { getAuth, signInAnonymously } from "firebase/auth";
+import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+
+const EVENT_URL = "https://hector.golf/events/hector/HECTOR2026/";
+const EVENTS = ["HECTOR2026", "HECTOR2026-test"];
+/** The Sunday of the trip; the morning after, the cron becomes a no-op. */
+const LAST_RUN = Date.UTC(2026, 8, 27, 23, 59);
+
+interface Fetched {
+  id: string;
+  hi: number;
+  bucket: 1 | 2;
+}
+
+/**
+ * `.bucket` blocks, each with `td.name a[href]` + `td.handicap` rows. The live page is
+ * Astro-generated: elements carry data-astro-cid-* attributes and there's whitespace
+ * between everything, so every gap tolerates attributes and space. Verified against
+ * the real page, and the same structural assumptions are pinned by the jsdom test on
+ * the browser parser.
+ */
+function parseHandicaps(html: string): Fetched[] {
+  const out: Fetched[] = [];
+  for (const chunk of html.split(/<div class="bucket\b/).slice(1)) {
+    const bucket = /^[^">]*bucket2/.test(chunk) ? 2 : 1;
+    const rows = chunk.matchAll(
+      /<td class="name"[^>]*>\s*<a href="([^"]+)"[^>]*>[\s\S]*?<\/a>\s*<\/td>\s*<td class="handicap"[^>]*>\s*\(([-\d.,]+)\)\s*<\/td>/g,
+    );
+    for (const m of rows) {
+      const id = m[1].split("/").filter(Boolean).pop();
+      const hi = Number(m[2].replace(",", "."));
+      if (id && !Number.isNaN(hi)) out.push({ id, hi, bucket: bucket as 1 | 2 });
+    }
+  }
+  return out;
+}
+
+export default async function handler(
+  req: { headers: Record<string, string | string[] | undefined> },
+  res: {
+    status: (code: number) => { json: (body: unknown) => void };
+  },
+) {
+  // Vercel sends this header for cron invocations when CRON_SECRET is configured;
+  // without the env var the endpoint is open, which is fine — it only syncs truth.
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers["authorization"] !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+
+  if (Date.now() > LAST_RUN) {
+    return res.status(200).json({ status: "expired", note: "the tournament is over" });
+  }
+
+  const page = await fetch(EVENT_URL, { cache: "no-store" });
+  if (!page.ok) {
+    return res.status(502).json({ error: `hector.golf returned ${page.status}` });
+  }
+  const fetched = parseHandicaps(await page.text());
+  if (fetched.length === 0) {
+    // The page changed shape. Write nothing; the error in the cron log is the alarm.
+    return res.status(500).json({ error: "couldn't find any handicaps on the page" });
+  }
+  const byId = new Map(fetched.map((f) => [f.id, f]));
+
+  const app =
+    getApps().length > 0
+      ? getApp()
+      : initializeApp({
+          apiKey: process.env.VITE_FIREBASE_API_KEY,
+          authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+          projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+        });
+  await signInAnonymously(getAuth(app));
+  const db = getFirestore(app);
+
+  const report: Record<string, unknown> = {};
+  for (const eventId of EVENTS) {
+    const ref = doc(db, "events", eventId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      report[eventId] = "no such event";
+      continue;
+    }
+    const players = (snap.data().players ?? []) as {
+      id: string;
+      name: string;
+      hi: number;
+      bucket: 1 | 2;
+    }[];
+    const changes: string[] = [];
+    const next = players.map((p) => {
+      const f = byId.get(p.id);
+      if (!f) return p; // withdrawn upstream ≠ deleted here, same as the manual refresh
+      if (Math.abs(f.hi - p.hi) > 1e-9) changes.push(`${p.name} ${p.hi} → ${f.hi}`);
+      if (f.bucket !== p.bucket) changes.push(`${p.name} moves to bucket ${f.bucket}`);
+      return { ...p, hi: f.hi, bucket: f.bucket };
+    });
+    if (changes.length > 0) await setDoc(ref, { players: next }, { merge: true });
+    report[eventId] = changes.length > 0 ? changes : "up to date";
+  }
+
+  return res.status(200).json({ status: "ok", parsed: fetched.length, report });
+}
