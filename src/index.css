@@ -73,6 +73,25 @@
   .label {
     @apply text-xs font-semibold uppercase tracking-wider text-slate-400;
   }
+
+  /* The on-air dot: takes the text colour of its context, breathes unless the OS
+     asks for stillness. */
+  .live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+    animation: live-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot { animation: none; }
+  }
 }
 
 /* Dark scrollbars, so the leaderboard tables don't flash white gutters. */

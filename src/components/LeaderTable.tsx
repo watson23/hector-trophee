@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { formatDiff, formatThru, rank } from "../lib/leaderboard";
 
 export interface LeaderRow {
@@ -43,6 +43,52 @@ export default function LeaderTable({
   highlightKeys?: Set<string>;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+
+  /*
+   * Broadcast motion, straight off live TV graphics: when the standings change, rows
+   * glide to their new position (FLIP via the Web Animations API), and a row whose
+   * score just changed gets a one-beat violet pulse — which is how everyone in the
+   * clubhouse sees a score land from another phone. Positions are measured relative
+   * to the table, not the viewport, so scrolling can never fake a move. All of it
+   * sits out when the OS asks for reduced motion.
+   */
+  const tableEl = useRef<HTMLTableElement | null>(null);
+  const rowEls = useRef(new Map<string, HTMLTableRowElement>());
+  const prevTops = useRef(new Map<string, number>());
+  const prevVals = useRef(new Map<string, string | number>());
+  useLayoutEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const origin = tableEl.current?.getBoundingClientRect().top ?? 0;
+    const tops = new Map<string, number>();
+    rowEls.current.forEach((el, key) => {
+      if (el.isConnected) tops.set(key, el.getBoundingClientRect().top - origin);
+    });
+    if (!reduced) {
+      for (const [key, top] of tops) {
+        const from = prevTops.current.get(key);
+        const el = rowEls.current.get(key);
+        if (el && from !== undefined && Math.abs(from - top) > 2) {
+          el.animate(
+            [{ transform: `translateY(${from - top}px)` }, { transform: "translateY(0)" }],
+            { duration: 500, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
+          );
+        }
+      }
+      for (const r of rows) {
+        const now = r.display ?? r.value;
+        const before = prevVals.current.get(r.key);
+        if (before !== undefined && before !== now) {
+          rowEls.current.get(r.key)?.animate(
+            [{ backgroundColor: "rgba(139, 92, 246, 0.16)" }, { backgroundColor: "transparent" }],
+            { duration: 900, easing: "ease-out" },
+          );
+        }
+      }
+    }
+    prevTops.current = tops;
+    for (const r of rows) prevVals.current.set(r.key, r.display ?? r.value);
+  });
+
   const ranked = rank(
     rows,
     (r) => r.value,
@@ -64,7 +110,7 @@ export default function LeaderTable({
         matters here: an expanded detail row spans all five columns, and with auto layout
         its content would widen the whole table, clipping the score and thru columns.
       */}
-      <table className="w-full table-fixed text-sm">
+      <table ref={tableEl} className="w-full table-fixed text-sm">
         {/* Widths are tuned so a pair name like "Sami H + Kristian H" fits on a 375px screen. */}
         <colgroup>
           <col className="w-8" />
@@ -92,6 +138,10 @@ export default function LeaderTable({
             return (
               <Fragment key={r.item.key}>
                 <tr
+                  ref={(el) => {
+                    if (el) rowEls.current.set(r.item.key, el);
+                    else rowEls.current.delete(r.item.key);
+                  }}
                   onClick={() => expandable && setOpen(isOpen ? null : r.item.key)}
                   className={`border-t border-slate-800 ${expandable ? "cursor-pointer active:bg-slate-800/60" : ""} ${
                     r.leader

@@ -179,7 +179,10 @@ function RoundCard({
             <span className="text-xs font-bold text-violet-400 num">R{round.seq}</span>
             <span className="text-sm font-semibold truncate">{round.day}</span>
             {round.status === "open" && (
-              <span className="pill bg-emerald-950 text-emerald-400">Live</span>
+              <span className="pill bg-emerald-950 text-emerald-400">
+                <span className="live-dot" />
+                Live
+              </span>
             )}
             {round.status === "final" && (
               <span className="pill bg-slate-800 text-slate-400">Final</span>

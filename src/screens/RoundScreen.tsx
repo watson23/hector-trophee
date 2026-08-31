@@ -69,7 +69,9 @@ export default function RoundScreen({
             }`}
           >
             R{r.seq}
-            {r.status === "open" && r.id !== round.id && <span className="ml-1">•</span>}
+            {r.status === "open" && r.id !== round.id && (
+              <span className="live-dot ml-1 align-middle" />
+            )}
           </button>
         ))}
       </div>

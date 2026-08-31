@@ -31,6 +31,7 @@ export function TVBar({
       <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.2em] text-violet-300 num">
         <HectorMark className="w-3.5 h-3.5" />
         HECTOR TV
+        <span className="live-dot text-violet-400" />
       </span>
       {/* Dressed as the control it is — a status-looking label here meant nobody
           realised the follows can be changed mid-tournament. */}
