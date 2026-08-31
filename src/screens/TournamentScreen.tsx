@@ -152,8 +152,8 @@ export default function TournamentScreen({
   const victorRows: LeaderRow[] = victor.map((row) => ({
     key: row.key,
     label: row.label,
-    value: row.points,
-    display: row.points.toFixed(1),
+    value: row.toPar,
+    display: `${formatToParFine(row.toPar, 0)} (${row.points.toFixed(0)})`,
     extra:
       row.roundsPlayed > 0 && row.roundsPlayed < victorBegun.size
         ? `${row.roundsPlayed} of ${victorBegun.size} Stableford rounds`
@@ -236,9 +236,9 @@ export default function TournamentScreen({
         ) : (
           <LeaderTable
             rows={victorRows}
-            lowerIsBetter={false}
-            scoreHeader="Points"
-            decimals={1}
+            lowerIsBetter
+            scoreHeader="To par"
+            decimals={0}
             wideThru
             leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
             highlightKeys={highlightPlayers}
@@ -256,8 +256,9 @@ export default function TournamentScreen({
       )}
       {tab === "victor" && (
         <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
-          Victor is the sum of your Stableford NET points across the four Stableford rounds.
-          Highest wins.
+          Victor sums your Stableford NET points across the four Stableford rounds, shown to
+          par like every table here — fewest over net par is exactly most points. The points
+          total rides in parentheses.
         </p>
       )}
     </div>

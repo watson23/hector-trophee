@@ -115,8 +115,8 @@ export default async function handler(
 
   const victor = rank(
     totals.victor,
-    (r) => r.points,
-    false,
+    (r) => r.toPar,
+    true,
     (r) => r.roundsPlayed > 0,
   ).map((r) => ({
     position: r.position || null,
@@ -124,6 +124,7 @@ export default async function handler(
     playerId: r.item.key,
     player: r.item.label,
     points: round2(r.item.points),
+    toPar: round2(r.item.toPar),
     diffToLeader: r.diff === null ? null : round2(r.diff),
     roundsPlayed: r.item.roundsPlayed,
   }));

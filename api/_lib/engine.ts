@@ -107,7 +107,7 @@ export interface RoundResult {
     string,
     { points: number; toPar: number; thru: number; detail: ContributionDetail[] }
   >;
-  victor: Record<string, { points: number; thru: number }>;
+  victor: Record<string, { points: number; toPar: number; thru: number }>;
 }
 
 /**
@@ -179,14 +179,18 @@ export function evaluateRound(input: RoundInput): RoundResult {
           playerId: p.id,
           name: p.name,
           value: r.points,
+          // Net par scores 2 points, so Stableford reads to par the same way stroke
+          // play does — it is net stroke play inverted, with a per-hole cap.
+          toPar: 2 * r.thru - r.points,
           thru: r.thru,
           playingHcp: r.playingHcp,
           perHole: r.perHole,
           strokes: allocationFor(ctx).strokes,
         });
         if (spec.victor) {
-          const v = (victor[p.id] ??= { points: 0, thru: 0 });
+          const v = (victor[p.id] ??= { points: 0, toPar: 0, thru: 0 });
           v.points += r.points * spec.victor.pct;
+          v.toPar += (2 * r.thru - r.points) * spec.victor.pct;
           v.thru = Math.max(v.thru, r.thru);
         }
       }
@@ -442,6 +446,7 @@ export function computeTournament(
       const entry = rr.victor[p.id];
       if (!entry || entry.thru === 0) continue;
       row.points += entry.points;
+      row.toPar += entry.toPar;
       row.perRound[rr.roundId] = { points: entry.points, thru: entry.thru };
       row.roundsPlayed += 1;
       row.thru += entry.thru;

@@ -177,8 +177,8 @@ export function FollowStrip({
         const ranked = format
           ? rank(
               format.players,
-              (p) => (format.spec.kind === "stableford" ? p.value : (p.toPar ?? 0)),
-              format.spec.kind !== "stableford",
+              (p) => p.toPar ?? 0,
+              true,
               (p) => p.thru > 0,
             ).find((r) => r.item.playerId === id)
           : teamFormat && pair
@@ -194,7 +194,7 @@ export function FollowStrip({
         const scoreText =
           row && spec
             ? spec.kind === "stableford"
-              ? `${row.value} pts`
+              ? `${formatToPar(row.toPar ?? 0)} (${row.value} pts)`
               : formatToPar(row.toPar ?? 0)
             : "";
 

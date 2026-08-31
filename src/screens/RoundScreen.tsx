@@ -147,12 +147,10 @@ export default function RoundScreen({
             : f.players.map((p) => ({
                 key: p.playerId,
                 label: p.name,
-                value:
-                  f.spec.kind === "stableford" ? p.value : p.thru > 0 ? (p.toPar ?? 0) : 0,
-                display:
-                  f.spec.kind === "stableford"
-                    ? String(p.value)
-                    : `${formatToPar(p.toPar ?? 0)} (${p.value})`,
+                value: p.thru > 0 ? (p.toPar ?? 0) : 0,
+                // Stableford too: net par is 2 points, so it reads to par like the
+                // stroke formats — points ride in the parentheses.
+                display: `${formatToPar(p.toPar ?? 0)} (${p.value})`,
                 extra: f.spec.net ? `playing HCP ${p.playingHcp}` : undefined,
                 thru: p.thru,
                 played: p.thru > 0,
@@ -194,8 +192,8 @@ export default function RoundScreen({
               <div className="px-4">
                 <LeaderTable
                   rows={rows}
-                  lowerIsBetter={f.spec.kind !== "stableford"}
-                  scoreHeader={f.spec.kind === "stableford" ? "Pts" : "Score"}
+                  lowerIsBetter
+                  scoreHeader="To par"
                   leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                 />

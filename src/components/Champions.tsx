@@ -27,8 +27,8 @@ export default function Champions({ rounds, hector, victor }: Props) {
   );
   const victorRanked = rank(
     victor,
-    (r) => r.points,
-    false,
+    (r) => r.toPar,
+    hectorLowerIsBetter,
     (r) => r.roundsPlayed > 0,
   );
 

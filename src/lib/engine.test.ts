@@ -425,13 +425,13 @@ describe("tournament totals", () => {
         roundId: "r1",
         formats: [],
         hector: { p1: { points: 23.8, toPar: -0.2, thru: 18, detail: [] } },
-        victor: { "jari-k": { points: 38, thru: 18 } },
+        victor: { "jari-k": { points: 38, toPar: -2, thru: 18 } },
       },
       {
         roundId: "r2",
         formats: [],
         hector: { p1: { points: 36, toPar: 0, thru: 18, detail: [] } },
-        victor: { "jari-k": { points: 34, thru: 18 } },
+        victor: { "jari-k": { points: 34, toPar: 2, thru: 18 } },
       },
     ];
     const totals = computeTournament(results, [jari, lasse], [pair]);
@@ -624,6 +624,12 @@ describe("hector to par", () => {
     for (const row of totals.hector) {
       expect(row.roundsPlayed).toBe(6);
       expect(row.toPar).toBeCloseTo(row.points - 240, 6);
+    }
+    // Victor's mirror invariant: four full Stableford rounds are 72 holes of
+    // 2-point par, so to-par is exactly 144 − points.
+    for (const row of totals.victor) {
+      expect(row.roundsPlayed).toBe(4);
+      expect(row.toPar).toBeCloseTo(144 - row.points, 6);
     }
   });
 });
