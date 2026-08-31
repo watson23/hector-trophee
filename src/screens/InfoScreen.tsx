@@ -73,6 +73,7 @@ export default function InfoScreen({
   return (
     <div className="pb-4">
       <Header
+        masthead
         title={event.name}
         subtitle={`${event.venue} · ${event.dates}`}
         right={
@@ -94,22 +95,25 @@ export default function InfoScreen({
         }
       />
 
-      <div className="px-4 flex gap-1.5">
+      {/* Section idents, not pills: tracked caps on a hairline, the active one
+          underlined — the same voice as the chyron and the TV bar. */}
+      <div className="px-4 flex gap-4 overflow-x-auto border-b border-slate-800">
         {(["news", "schedule", "field", "courses", "formats"] as const)
           .filter((sec) => sec !== "news" || showNews)
           .map((sec) => (
             <button
               key={sec}
               onClick={() => setSection(sec)}
-              className={`relative rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
-                activeSection === sec
-                  ? "bg-violet-600 text-white"
-                  : "bg-slate-900 text-slate-400 border border-slate-800"
+              className={`relative shrink-0 pt-1 pb-2.5 num text-[11px] tracking-[0.14em] uppercase transition-colors ${
+                activeSection === sec ? "text-violet-300 font-semibold" : "text-slate-500"
               }`}
             >
               {sec}
+              {activeSection === sec && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-violet-500" />
+              )}
               {sec === "news" && unread && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400" />
+                <span className="absolute top-0 -right-1.5 w-2 h-2 rounded-full bg-amber-400" />
               )}
             </button>
           ))}
@@ -171,7 +175,7 @@ function RoundCard({
 
   return (
     <div
-      className={`card p-3.5 ${round.status === "open" ? "ring-1 ring-emerald-700 border-emerald-800" : ""}`}
+      className={`card p-3.5 ${round.status === "open" ? "shadow-[inset_3px_0_0_theme(colors.emerald.400)]" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -199,7 +203,7 @@ function RoundCard({
         </div>
         <div className="text-right shrink-0">
           <div className="text-[10px] text-slate-500">{group ? "your tee" : "tee times"}</div>
-          <div className="text-sm num font-semibold text-slate-300">
+          <div className="score text-base text-slate-200">
             {group?.teeTime ?? round.teeTimeWindow}
           </div>
           {ch !== null && <div className="text-[11px] text-slate-500 num">your CH {ch}</div>}
@@ -263,29 +267,33 @@ function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
   const drafted = event.pairs.length > 0;
 
   return (
-    <div className="space-y-3">
-      <div className="card p-3.5 flex items-baseline justify-between">
-        <div>
-          <div className="text-sm font-semibold">{event.players.length} players</div>
-          <div className="text-[11px] text-slate-500">this year's field</div>
+    <div className="space-y-5">
+      {/* The field's two numbers, in the scoreboard face — no box needed. */}
+      <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline gap-2">
+          <span className="score text-3xl">{event.players.length}</span>
+          <span className="text-[11px] uppercase tracking-wider text-slate-500">players</span>
         </div>
-        <div className="text-right">
-          <div className="text-sm font-semibold num text-violet-300">
-            {avg(event.players).toFixed(1)}
-          </div>
-          <div className="text-[11px] text-slate-500">average HCP</div>
+        <div className="flex items-baseline gap-2">
+          <span className="score text-3xl text-violet-300">{avg(event.players).toFixed(1)}</span>
+          <span className="text-[11px] uppercase tracking-wider text-slate-500">avg HCP</span>
         </div>
       </div>
 
       {buckets.map((players, i) => (
-        <div key={i} className="card p-3.5">
-          <div className="flex items-baseline justify-between mb-2">
-            <h3 className="label">Bucket {i + 1}</h3>
+        <section key={i}>
+          <div className="flex items-baseline justify-between border-b border-slate-700/70 pb-1.5">
+            <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-slate-500">
+              Bucket {i + 1}
+            </h3>
             <span className="text-[11px] text-slate-500 num">avg {avg(players).toFixed(1)}</span>
           </div>
-          <ul className="space-y-1">
+          <ul>
             {players.map((p) => (
-              <li key={p.id} className="flex items-baseline justify-between text-sm">
+              <li
+                key={p.id}
+                className="flex items-baseline justify-between text-sm py-2 border-b border-slate-800 last:border-0"
+              >
                 <span className={p.id === me?.id ? "font-semibold" : "text-slate-300"}>
                   {p.name}
                   {p.id === me?.id && (
@@ -296,7 +304,7 @@ function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ))}
 
       <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -447,11 +455,14 @@ function Formats({ rounds }: { rounds: Round[] }) {
   ];
 
   return (
-    <div className="space-y-2.5">
+    <div>
       {/* The pair competition first: it is the main event, and the one nobody can
-          rescore in their head without the rules in front of them. */}
-      <div className="card p-3.5">
-        <h3 className="font-semibold text-sm text-violet-300">The Hector · pairs</h3>
+          rescore in their head without the rules in front of them. De-boxed into a
+          rules sheet: hairline sections, tracked-caps headings. */}
+      <div className="py-4 pt-1">
+        <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-violet-300">
+          The Hector · pairs
+        </h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
           A <strong className="text-slate-300 font-semibold">stroke total — lower wins</strong>.
           Each round adds a weighted share of the pair's result:
@@ -489,8 +500,10 @@ function Formats({ rounds }: { rounds: Round[] }) {
         </p>
       </div>
 
-      <div className="card p-3.5">
-        <h3 className="font-semibold text-sm text-violet-300">The draft</h3>
+      <div className="py-4 border-t border-slate-800">
+        <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-violet-300">
+          The draft
+        </h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
           Round 1 is played individually; its Stableford order is the pick order on Thursday
           night. Best round picks first, from the opposite bucket, and so on until ten pairs
@@ -499,8 +512,10 @@ function Formats({ rounds }: { rounds: Round[] }) {
         </p>
       </div>
 
-      <div className="card p-3.5">
-        <h3 className="font-semibold text-sm text-amber-300">The Victor · individual</h3>
+      <div className="py-4 border-t border-slate-800">
+        <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-amber-300">
+          The Victor · individual
+        </h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
           Your Stableford NET points from the {victorRounds.length} Stableford rounds
           {victorRounds.length > 0 && (
@@ -511,8 +526,10 @@ function Formats({ rounds }: { rounds: Round[] }) {
       </div>
 
       {formats.map((i) => (
-        <div key={i.title} className="card p-3.5">
-          <h3 className="font-semibold text-sm text-slate-200">{i.title}</h3>
+        <div key={i.title} className="py-4 border-t border-slate-800">
+          <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-slate-300">
+            {i.title}
+          </h3>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">{i.body}</p>
         </div>
       ))}

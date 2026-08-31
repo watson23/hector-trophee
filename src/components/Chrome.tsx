@@ -195,15 +195,26 @@ export function Header({
   title,
   subtitle,
   right,
+  masthead = false,
 }: {
   title: string;
   subtitle?: ReactNode;
   right?: ReactNode;
+  /** The trophée's own name gets the ceremony serif — the one masthead in the app. */
+  masthead?: boolean;
 }) {
   return (
     <header className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
       <div className="min-w-0">
-        <h1 className="text-xl font-bold tracking-tight truncate">{title}</h1>
+        <h1
+          className={
+            masthead
+              ? "font-serif text-[22px] font-semibold tracking-tight truncate"
+              : "text-xl font-bold tracking-tight truncate"
+          }
+        >
+          {title}
+        </h1>
         {subtitle && <div className="text-sm text-slate-400 truncate">{subtitle}</div>}
       </div>
       {right}
