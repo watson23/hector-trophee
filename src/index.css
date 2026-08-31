@@ -12,9 +12,12 @@
 
   html {
     -webkit-text-size-adjust: 100%;
-    /* Reserve the scrollbar's width even when the page fits the viewport. Without this,
-       anything that makes the page taller (the "Next hole" button appearing) summons a
-       scrollbar, shrinks the content area, and nudges the whole centered view left. */
+    /* The scrollbar must never toggle: anything that makes the page taller (a breakdown
+       expanding, the Next-hole button appearing) would otherwise summon it, shrink the
+       viewport, and nudge the whole centered view sideways. scrollbar-gutter: stable is
+       the modern answer, but WebKit ignores it on the root scroller — so the root is
+       simply always scrollable. The styled dark track is invisible against the ground. */
+    overflow-y: scroll;
     scrollbar-gutter: stable;
   }
 
