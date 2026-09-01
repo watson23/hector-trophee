@@ -134,24 +134,25 @@ export default function InfoScreen({
         {activeSection === "formats" && <Formats rounds={rounds} />}
       </div>
 
-      <div className="px-4 mt-6 space-y-2">
-        {/* Hector TV: the link that goes to the folks at home — and a peek for
-            yourself, which comes back via the floating Exit TV pill. */}
-        {!spectator && <ShareTV />}
-        {!spectator && onWatchTV && (
-          <button onClick={onWatchTV} className="btn-ghost w-full py-2.5 text-sm">
-            Watch Hector TV on this phone
-          </button>
-        )}
-        {/* One quiet entry here; the floating pill is the one that follows the organiser
-            around. A full-width primary button at the top of More was the biggest thing
-            on the screen for the one person who least needs reminding it exists. */}
-        {spectator ? null : admin ? (
-          <button onClick={onOpenAdmin} className="btn-ghost w-full text-sm py-2.5">
-            ⚙ Open Admin
-          </button>
-        ) : (
-          <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
+      <div className="px-4 mt-6">
+        {/* Hector TV and organiser access are for the rare moment, not the round —
+            one quiet footer line, not a stack of buttons on every section. */}
+        {!spectator && (
+          <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+            <ShareTV />
+            {onWatchTV && (
+              <button onClick={onWatchTV} className="hover:text-slate-400 py-2">
+                Watch TV here
+              </button>
+            )}
+            {admin ? (
+              <button onClick={onOpenAdmin} className="hover:text-slate-400 py-2">
+                ⚙ Admin
+              </button>
+            ) : (
+              <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
+            )}
+          </div>
         )}
         <p className="text-[11px] text-slate-600 mt-3 text-center leading-relaxed">
           {backend === "local"
@@ -674,9 +675,9 @@ function ShareTV() {
           setTimeout(() => setCopied(false), 2000);
         });
       }}
-      className="btn-ghost w-full py-2.5 text-sm"
+      className={`py-2 ${copied ? "text-emerald-400" : "hover:text-slate-400"}`}
     >
-      {copied ? "Link copied — paste it to the folks at home" : "📺 Share Hector TV"}
+      {copied ? "Link copied ✓" : "📺 Share Hector TV"}
     </button>
   );
 }
@@ -688,10 +689,7 @@ function AdminUnlock({ hash, onUnlock }: { hash: string; onUnlock: () => void })
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="w-full text-center text-xs text-slate-600 hover:text-slate-400 py-2"
-      >
+      <button onClick={() => setOpen(true)} className="hover:text-slate-400 py-2">
         Organiser access
       </button>
     );
@@ -699,7 +697,7 @@ function AdminUnlock({ hash, onUnlock }: { hash: string; onUnlock: () => void })
 
   return (
     <form
-      className="card p-3.5 flex gap-2"
+      className="card p-3.5 flex gap-2 basis-full"
       onSubmit={async (e) => {
         e.preventDefault();
         if (await checkPin(pin, hash)) onUnlock();
