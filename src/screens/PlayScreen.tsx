@@ -587,7 +587,6 @@ function NextRound({
     .map((id) => byId.get(id))
     .filter((p): p is FieldPlayer => Boolean(p));
   const ch = me ? courseHandicap(hiFor(round, me), tee) : null;
-  const [allFlights, setAllFlights] = useState(false);
   const otherFlights = round.groups.filter(
     (g) => g.playerIds.length > 0 && g.id !== group?.id,
   ).length;
@@ -654,20 +653,12 @@ function NextRound({
             )}
           </div>
 
-          {/* The rest of the tee sheet, for relaying "when do the others go out?". */}
+          {/* The rest of the tee sheet, always in view — "when do the others go
+              out?" is half of what this card gets opened for. */}
           {group && otherFlights > 0 && (
             <div className="mt-3 border-t border-slate-800 pt-3">
-              <button
-                onClick={() => setAllFlights((v) => !v)}
-                className="text-xs text-violet-400 font-medium"
-              >
-                {allFlights ? "Hide other flights" : `All flights (${otherFlights + (group ? 1 : 0)})`}
-              </button>
-              {allFlights && (
-                <div className="mt-2">
-                  <FlightList round={round} event={event} meId={me?.id ?? null} />
-                </div>
-              )}
+              <div className="label mb-1.5">All flights</div>
+              <FlightList round={round} event={event} meId={me?.id ?? null} />
             </div>
           )}
         </div>
