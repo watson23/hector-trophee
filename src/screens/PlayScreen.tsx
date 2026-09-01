@@ -216,6 +216,20 @@ export default function PlayScreen({
         ]}
       />
 
+      {round.status !== "open" && (
+        /* Early scoring is a one-way door without this: the choice is remembered
+           for the session, so the screen itself must offer the way back. */
+        <p className="mx-4 mt-3 text-[11px] leading-relaxed text-slate-500 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
+          <span>Scoring before the round has been opened.</span>
+          <button
+            onClick={() => setScoreAnyway(null)}
+            className="shrink-0 underline underline-offset-2 text-slate-400"
+          >
+            Back to tee times
+          </button>
+        </p>
+      )}
+
       {round.provisional && (
         <p className="mx-4 mt-3 text-[11px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
           Format and tee are provisional — seeded from 2025 until the official 2026 programme lands.
