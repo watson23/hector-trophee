@@ -60,7 +60,7 @@ export default function FlightList({
         return (
           <li
             key={g.id}
-            className={`flex gap-2.5 text-xs rounded-lg px-2 py-1.5 ${
+            className={`flex items-baseline gap-2.5 text-xs rounded-lg px-2 py-1.5 ${
               mine ? "bg-violet-950/40 border border-violet-900/60" : ""
             }`}
           >
@@ -80,7 +80,7 @@ export default function FlightList({
               ))}
             </span>
             {openSlots && g.playerIds.length < MAX_PER_FLIGHT && (
-              <span className="ml-auto shrink-0 self-center text-[11px] text-emerald-400 num">
+              <span className="ml-auto shrink-0 text-[11px] text-emerald-400 num">
                 {MAX_PER_FLIGHT - g.playerIds.length} free
               </span>
             )}
