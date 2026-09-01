@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  // api/_lib holds shared modules (courses.ts defines the tee-dot classes),
+  // so it must be scanned too or those classes are purged from the build.
+  content: ["./index.html", "./src/**/*.{ts,tsx}", "./api/_lib/**/*.ts"],
   theme: {
     extend: {
       fontFamily: {
