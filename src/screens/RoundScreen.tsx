@@ -200,10 +200,8 @@ export default function RoundScreen({
                 display: `${formatToPar(t.toPar)} (${t.value})`,
                 extra:
                   t.playingHcp !== undefined
-                    ? `team HCP ${t.playingHcp}${t.birdies ? ` · ${t.birdies} birdie${t.birdies > 1 ? "s" : ""}` : ""}`
-                    : t.birdies
-                      ? `${t.birdies} net birdie${t.birdies > 1 ? "s" : ""}`
-                      : undefined,
+                    ? [`team HCP ${t.playingHcp}`, ...underParCounts(t, "")].join(" · ")
+                    : underParCounts(t, "net ").join(" · ") || undefined,
                 thru: t.thru,
                 played: t.thru > 0,
                 detail: course && (
@@ -368,4 +366,12 @@ export default function RoundScreen({
       </div>
     </div>
   );
+}
+
+/** "1 eagle · 5 birdies" — the full under-par story, not just the birdies. */
+function underParCounts(t: { birdies: number; eagles: number }, prefix: string): string[] {
+  const parts: string[] = [];
+  if (t.eagles) parts.push(`${t.eagles} ${prefix}eagle${t.eagles > 1 ? "s" : ""}`);
+  if (t.birdies) parts.push(`${t.birdies} ${prefix}birdie${t.birdies > 1 ? "s" : ""}`);
+  return parts;
 }
