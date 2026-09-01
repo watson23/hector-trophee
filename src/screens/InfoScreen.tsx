@@ -616,6 +616,9 @@ function News({
           <button type="submit" className="btn-primary w-full py-2 text-sm" disabled={!draft.trim()}>
             Post
           </button>
+          <p className="text-[11px] text-slate-500 text-center">
+            Only organisers can post — players just see the announcements.
+          </p>
         </form>
       )}
 
