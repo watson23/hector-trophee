@@ -6,7 +6,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        // Geist, not Inter: the body face the user chose for notebob — his apps
+        // share a personal type identity (Geist body + Fraunces serif).
+        sans: ["Geist", "system-ui", "sans-serif"],
         mono: ["Inconsolata", "ui-monospace", "monospace"],
         // The scoreboard face — scores are the app's content, so they get a face
         // with intent instead of the coding font.

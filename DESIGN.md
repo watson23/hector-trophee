@@ -31,7 +31,7 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 
 | Face | Class | Job |
 |---|---|---|
-| Inter | `font-sans` (default) | Body copy, names, UI |
+| Geist | `font-sans` (default) | Body copy, names, UI — the user's personal body face, shared with his other apps (notebob), pairing with Fraunces there too |
 | Barlow Semi Condensed 700 | `.score` | Big score figures — the app's headline face |
 | Inconsolata | `.num` | Tabular data: aligned digits, tee times, HCPs, micro-labels |
 | Fraunces | `font-serif` | **Ceremony only**: champions, draft night, round-finish. Never in daily UI |
