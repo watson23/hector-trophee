@@ -109,8 +109,8 @@ export default function AdminScreen({
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} saveRound={saveRound} />}
         {tab === "rounds" && (
           <>
-            <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
             <RoundsEditor rounds={rounds} players={event.players} saveRound={saveRound} />
+            <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
           </>
         )}
         {tab === "scores" && (

@@ -27,6 +27,7 @@ interface Props {
  * anything already played.
  */
 export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
+  const [open, setOpen] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "ready" | "saving">("idle");
   const [fetched, setFetched] = useState<FetchedHandicap[] | null>(null);
   const [changes, setChanges] = useState<HandicapChange[]>([]);
@@ -72,14 +73,29 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
     setBucketMoves([]);
   }
 
+  // Handicaps refresh themselves every morning (cron, 07:00) — this is the manual
+  // backup for the day that breaks, so it stays folded away.
+  if (!open) {
+    return (
+      <div className="mx-4 mt-2 mb-4 text-center">
+        <button
+          onClick={() => setOpen(true)}
+          className="text-xs text-slate-600 hover:text-slate-400 py-1"
+        >
+          Handicaps refresh automatically every morning — manual check
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <section className="mx-4 mb-4 card p-3.5">
+    <section className="mx-4 mt-2 mb-4 card p-3.5">
       <h2 className="label mb-1">Handicaps</h2>
       <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
-        hector.golf recalculates every night. Refresh before the first round of each day.
-        Rounds that have already been opened keep the handicaps they started with, so this
-        never changes a score that's already been played
-        {locked > 0 && <> — {locked} of {rounds.length} are locked in</>}.
+        These refresh from hector.golf automatically every morning at 07 — this check is
+        the backup if that ever fails. Rounds that have already been opened keep the
+        handicaps they started with, so this never changes a score that's already been
+        played{locked > 0 && <> — {locked} of {rounds.length} are locked in</>}.
       </p>
 
       {state !== "ready" ? (
