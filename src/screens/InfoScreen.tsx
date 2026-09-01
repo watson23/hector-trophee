@@ -79,9 +79,13 @@ export default function InfoScreen({
       <Header
         masthead
         title={event.name}
-        /* Just the dates — the place lives on the postcard right below, where
-           its caption says it better than a text line ever did. */
-        subtitle={<span className="text-xs whitespace-nowrap">{event.dates}</span>}
+        /* Just the days — the place lives on the postcard right below, and the
+           year is already in the masthead title. */
+        subtitle={
+          <span className="text-xs whitespace-nowrap">
+            {event.dates.replace(/,?\s*\d{4}\s*$/, "")}
+          </span>
+        }
         right={
           me && (
             /* Quiet on purpose: switching player is a rare correction, not a feature —
