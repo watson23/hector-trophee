@@ -8,6 +8,7 @@ import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/h
 import { Empty, Header, Segmented } from "../components/Chrome";
 import FlightList from "../components/FlightList";
 import HectorMark from "../components/HectorMark";
+import CourseHero from "../components/CourseHero";
 import Scorecard from "../components/Scorecard";
 
 interface Props {
@@ -189,8 +190,11 @@ export default function PlayScreen({
         title={`Round ${round.seq} · ${course.shortName}`}
         subtitle={
           <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-            <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-            {teeLabel[round.tee]} · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
+              {teeLabel[round.tee]}
+            </span>
+            · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
           </span>
         }
       />
@@ -598,9 +602,11 @@ function NextRound({
         subtitle={
           <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             {round.day}
-            <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-            {teeLabel[round.tee]} ·{" "}
-            {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
+              {teeLabel[round.tee]}
+            </span>
+            · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
           </span>
         }
         right={<span className="pill bg-slate-800 text-slate-300 shrink-0">Up next</span>}
@@ -608,6 +614,7 @@ function NextRound({
 
       <div className="px-4 space-y-3">
         <div className="card p-4">
+          <CourseHero courseId={round.courseId} />
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="label">{group ? "Your tee time" : "Tee times"}</div>

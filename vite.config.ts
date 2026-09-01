@@ -42,7 +42,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,png,svg,webp,woff2}"],
         navigateFallbackDenylist: [/^\/__/],
         // The typefaces load from Google Fonts; cache them so the app doesn't fall
         // back to system fonts on a signal-free fairway.

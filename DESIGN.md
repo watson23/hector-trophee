@@ -65,8 +65,17 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 ## Guardrails (AI-slop tells this app deliberately avoids)
 
 - No emoji as icons — draw a small SVG or use none.
-- No glassmorphism, no decorative gradients. The three gradients that exist are
-  earned: round-finish ceremony, champions plaque, TV follow strip. Do not add more.
+- No glassmorphism, no decorative gradients. The gradients that exist are earned:
+  round-finish ceremony, champions plaque, TV follow strip, and the course-hero
+  scrim (below). Do not add more.
+- **Course establishing shots** (`CourseHero`): a real photo may open a card the
+  way a broadcast opens with the venue — full-bleed at the card top, scrimmed
+  into the card's own background (`from-slate-900`), toned down
+  (`brightness-[0.88] saturate-[0.9]`), captioned in the chyron voice
+  (uppercase tracked `num`). Photos are bundled + precached (public/courses/,
+  ~900px webp), never hotlinked. This is the template for any future
+  "eye-pleaser": imagery serves as an establishing shot, integrated through
+  scrim + caption — never pasted into a layout as-is.
 - No centered-hero-with-badge layouts; the onboarding title screen is the one
   centered composition.
 - Copy tone: quiet, purposeful, no exclamation marks, no authority framing

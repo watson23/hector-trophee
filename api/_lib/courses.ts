@@ -88,6 +88,19 @@ export function courseGuideUrl(courseId: string): string | null {
   return slug ? `https://hector.golf/courses/${slug}/` : null;
 }
 
+/** The course's establishing shot — borrowed from its hector.golf page, but bundled
+    (public/courses/, resized + webp) so it's precached and works offline from install.
+    Chosen for light that sits in the app's dark world: dawn at the 18th (Radecký),
+    golden hour over the bunkers (d'Este). */
+const heroImage: Record<string, string> = {
+  radecky: "/courses/radecky.webp",
+  deste: "/courses/deste.webp",
+};
+
+export function courseHeroUrl(courseId: string): string | null {
+  return heroImage[courseId] ?? null;
+}
+
 export function holeMapUrl(courseId: string, hole: number): string | null {
   const slug = hectorSlug[courseId];
   return slug ? `https://hector.golf/images/courses/${slug}/holes/${hole}.png` : null;

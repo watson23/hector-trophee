@@ -7,6 +7,7 @@ import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
 import { Header } from "../components/Chrome";
+import CourseHero from "../components/CourseHero";
 import FlightList from "../components/FlightList";
 import { PREVIOUS } from "../data/history";
 
@@ -335,6 +336,7 @@ function CourseCard({ courseId }: { courseId: string }) {
 
   return (
     <div className="card overflow-hidden">
+      <CourseHero courseId={courseId} height="h-32" inset={false} />
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between p-3.5 text-left"
