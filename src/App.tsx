@@ -34,20 +34,23 @@ export default function App() {
   // Decided once, at mount: arriving via the shared link (/tv — plus the older
   // #watch, which is out in the wild) flips the device into Hector TV — for a fresh
   // spectator via the follow picker, and for a signed-in player as a peek that keeps
-  // their identity. The URL is consumed on entry so that leaving TV sticks: without
-  // that, every reload would bounce an exited player straight back in.
+  // their identity.
   const [enteredViaWatch] = useState(
     () => (location.pathname === "/tv" || location.hash === "#watch") && !session.spectator,
   );
   const [editFollows, setEditFollows] = useState(enteredViaWatch && !session.playerId);
   useEffect(() => {
-    if (enteredViaWatch) {
-      update({ spectator: true });
-      history.replaceState(null, "", "/");
-    }
+    if (enteredViaWatch) update({ spectator: true });
     // Once, on mount — enteredViaWatch never changes and update is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // The address bar mirrors the mode — /tv while watching, / when not. People read
+  // the URL as the "where am I" cue (they typed /tv themselves), and because exiting
+  // rewrites it back to /, a reload can trust the path completely.
+  useEffect(() => {
+    const want = session.spectator ? "/tv" : "/";
+    if (location.pathname !== want) history.replaceState(null, "", want);
+  }, [session.spectator]);
   // Which round the Round tab is on — session-scoped, so tomorrow follows the live
   // round again instead of the one browsed last night.
   const [roundSel, setRoundSel] = usePersistentState<string | null>(
