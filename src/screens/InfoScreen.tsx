@@ -79,7 +79,13 @@ export default function InfoScreen({
       <Header
         masthead
         title={event.name}
-        subtitle={`${event.venue} · ${event.dates}`}
+        /* The resort's full name earns its place on the title screen; up here it
+            wrapped the header — the place and the dates are what people check. */
+        subtitle={
+          <span className="text-xs whitespace-nowrap">
+            {event.venue.replace(/^Golf & Spa Resort /, "")} · {event.dates}
+          </span>
+        }
         right={
           me && (
             /* Quiet on purpose: switching player is a rare correction, not a feature —
