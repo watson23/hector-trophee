@@ -685,7 +685,7 @@ function NextRound({
             onClick={onScoreAnyway}
             className="text-slate-500 underline underline-offset-2 hover:text-slate-400"
           >
-            Teeing off before it opens? Start scoring
+            Teeing off before it has been opened? Start scoring
           </button>
         </p>
       </div>
