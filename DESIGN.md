@@ -18,7 +18,7 @@ them deliberately, in tokens, never ad hoc per screen.
 | Color | Job | Never |
 |---|---|---|
 | `gold` (custom scale, 400 = `#e3b341`) | Leaders, trophies, ceremony | Interactive accents, decoration |
-| `violet` scale | Interactive accent: active states, selection, "you", CTAs | Score semantics *(under review — may be replaced; swap the scale in `tailwind.config.js`, nowhere else)* |
+| `violet` scale — **remapped to Augusta green** (600 = `#1c6242`) | Interactive accent: active states, selection, "you", CTAs | Score semantics. The class names still say violet; the scale in `tailwind.config.js` is the single source of truth |
 | `emerald` | Live/now (the breathing dot), positive deltas, free slots | Backgrounds at full saturation |
 | `rose` | **Under par** (golf convention: red = under) | Errors as a habit — errors are amber |
 | `sky` | **Over par** (golf convention: blue = over) | Links |
@@ -57,7 +57,7 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 
 - Row re-ranking glides via FLIP, **gated to actual order changes** (WebKit
   renders animated `tr` transforms poorly; never animate on data-only updates).
-- Changed scores pulse violet once; the live dot breathes with `currentColor`.
+- Changed scores pulse accent-green once; the live dot breathes with `currentColor`.
 - Everything respects `prefers-reduced-motion`.
 - One orchestrated moment beats scattered effects: ceremony flourishes exist at
   round finish and map completion only.

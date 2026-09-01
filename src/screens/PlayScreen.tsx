@@ -902,7 +902,7 @@ function HoleStrip({
               h === hole
                 ? "bg-violet-600 text-white"
                 : filled(h)
-                  ? "bg-emerald-900/70 text-emerald-300"
+                  ? "bg-slate-800 text-emerald-400"
                   : partial(h)
                     ? "bg-slate-800 text-amber-400"
                     : "bg-slate-900 text-slate-600 border border-slate-800"

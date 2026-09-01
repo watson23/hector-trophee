@@ -21,6 +21,23 @@ export default {
          * the new world without touching a component. Tailwind's slate is blue-cast —
          * the single most recognizable template tell — and this replaces it wholesale.
          */
+        /*
+         * The accent: Augusta green. The app's interactive colour was born violet;
+         * the scale is remapped here (the slate remap below is the precedent) so
+         * every violet-* class in the app lands on the green world untouched.
+         * Chosen against the course photos and the gold — see DESIGN.md.
+         */
+        violet: {
+          200: "#aed6c2",
+          300: "#74b995",
+          400: "#3f9a6e",
+          500: "#2a7f57",
+          600: "#1c6242",
+          700: "#154d34",
+          800: "#103c29",
+          900: "#0b2c1e",
+          950: "#071f15",
+        },
         slate: {
           50: "#f7f7fa",
           100: "#efeef3",
