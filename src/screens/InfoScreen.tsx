@@ -147,7 +147,7 @@ export default function InfoScreen({
             )}
             {admin ? (
               <button onClick={onOpenAdmin} className="hover:text-slate-400 py-2">
-                ⚙ Admin
+                Admin
               </button>
             ) : (
               <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
@@ -680,7 +680,7 @@ function ShareTV() {
       }}
       className={`py-2 ${copied ? "text-emerald-400" : "hover:text-slate-400"}`}
     >
-      {copied ? "Link copied ✓" : "📺 Share Hector TV"}
+      {copied ? "Link copied ✓" : "Share Hector TV"}
     </button>
   );
 }
