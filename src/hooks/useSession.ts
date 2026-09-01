@@ -43,15 +43,29 @@ export function useSession() {
     setSession((prev) => {
       const next = { ...prev, ...patch };
       try {
-        if (next.playerId) {
-          const { spectator, ...device } = next;
+        // Tabs don't live-sync, so this tab's copy may be stale. Merge over what's
+        // on disk — unpatched fields (TV favourites, most likely) keep the freshest
+        // written value instead of being wiped by an older in-memory session.
+        let stored: Partial<Session> = {};
+        try {
+          stored = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<Session>;
+        } catch {
+          /* unreadable — merge over nothing */
+        }
+        // TV mode is per-tab (or per pure-spectator device) and must never be
+        // resurrected from a legacy persisted flag.
+        delete stored.spectator;
+        const merged = { ...next, ...stored, ...patch };
+        if (merged.playerId) {
+          const { spectator, ...device } = merged;
           localStorage.setItem(KEY, JSON.stringify(device));
           if (spectator) sessionStorage.setItem(PEEK_KEY, "1");
           else sessionStorage.removeItem(PEEK_KEY);
         } else {
-          localStorage.setItem(KEY, JSON.stringify(next));
+          localStorage.setItem(KEY, JSON.stringify(merged));
           sessionStorage.removeItem(PEEK_KEY);
         }
+        return merged;
       } catch {
         /* private mode or full storage — the session still works, in memory */
       }
