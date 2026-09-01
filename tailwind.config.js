@@ -1,5 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  future: {
+    // hover: variants only on devices that actually hover — on touch, hover
+    // styles stick to the last-tapped element (the un-tapped score button kept
+    // its hover grey until the next touch).
+    hoverOnlyWhenSupported: true,
+  },
   // api/_lib holds shared modules (courses.ts defines the tee-dot classes),
   // so it must be scanned too or those classes are purged from the build.
   content: ["./index.html", "./src/**/*.{ts,tsx}", "./api/_lib/**/*.ts"],
