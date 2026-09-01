@@ -125,7 +125,7 @@ export default function App() {
       <div className="min-h-dvh">
         <SpaceBanner space={space} />
         <TVBar following={following} players={t.event.players} onEdit={() => setEditFollows(true)} />
-        <main className="max-w-lg mx-auto pb-24">
+        <main className="max-w-lg mx-auto pb-32">
           {tvTab === "round" && (
             <>
               <FollowStrip
@@ -220,7 +220,7 @@ export default function App() {
       <SpaceBanner space={space} />
       <SyncBanner online={t.online} pending={t.pending} backend={t.backend} />
 
-      <main className="max-w-lg mx-auto pb-24">
+      <main className="max-w-lg mx-auto pb-32">
         {adminOpen ? (
           <AdminScreen
             event={t.event}

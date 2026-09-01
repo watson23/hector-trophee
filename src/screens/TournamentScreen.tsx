@@ -125,7 +125,6 @@ export default function TournamentScreen({
                     <span className="truncate text-slate-300">{d.label}</span>
                     <span className="shrink-0 num">
                       <span className="font-semibold text-slate-100">
-                        {d.points >= 0 ? "+" : ""}
                         {d.points.toFixed(2)}
                       </span>{" "}
                       <span className="text-slate-500">({formatToParFine(d.toPar, 2)})</span>
@@ -201,7 +200,7 @@ export default function TournamentScreen({
           Outline rather than filled: at this size a solid falcon reads as a blob. */}
       <HectorMark
         outline
-        className="absolute -top-3 right-3 w-28 h-28 text-violet-400/[0.11] pointer-events-none"
+        className="absolute -top-3 right-3 w-28 h-28 text-violet-400/[0.11] pointer-events-none [mask-image:linear-gradient(to_bottom,black_50%,transparent_82%)]"
       />
       <Header
         title="Tournament"

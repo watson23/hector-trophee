@@ -215,7 +215,7 @@ export function Header({
         >
           {title}
         </h1>
-        {subtitle && <div className="text-sm text-slate-400 truncate">{subtitle}</div>}
+        {subtitle && <div className="text-sm text-slate-400 leading-snug">{subtitle}</div>}
       </div>
       {right}
     </header>

@@ -188,7 +188,7 @@ export default function PlayScreen({
       <Header
         title={`Round ${round.seq} · ${course.shortName}`}
         subtitle={
-          <span className="flex items-center gap-1.5">
+          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
             {teeLabel[round.tee]} · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
           </span>
@@ -231,7 +231,7 @@ export default function PlayScreen({
         </div>
       ) : view === "card" ? (
         <div className="mt-4 px-4">
-          <Scorecard course={course} subjects={subjects} cards={cards} tee={round.tee} courseId={round.courseId} />
+          <Scorecard course={course} subjects={subjects} cards={cards} />
         </div>
       ) : finished ? (
         <RoundFinished
@@ -596,7 +596,7 @@ function NextRound({
       <Header
         title={`Round ${round.seq} · ${course.shortName}`}
         subtitle={
-          <span className="flex items-center gap-1.5">
+          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             {round.day}
             <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
             {teeLabel[round.tee]} ·{" "}

@@ -129,12 +129,12 @@ export default function LeaderTable({
           <col className={wideThru ? "w-12" : "w-10"} />
         </colgroup>
         <thead>
-          {/* No tracking on these: the last two headers are narrow and letter-spacing runs "DIFF" into "THRU". */}
+          {/* No tracking on these: the last two headers are narrow and letter-spacing runs "GAP" into "THRU". */}
           <tr className="text-slate-500 text-[10px] uppercase">
             <th className="text-left pl-2.5 py-2 font-semibold">#</th>
             <th className="text-left py-2 font-semibold">Name</th>
             <th className="text-right py-2 font-semibold px-1.5">{scoreHeader}</th>
-            <th className="text-right py-2 font-semibold px-0.5">Diff</th>
+            <th className="text-right py-2 font-semibold px-0.5">Gap</th>
             <th className="text-right py-2 font-semibold pl-1.5 pr-2.5">Thru</th>
           </tr>
         </thead>
@@ -173,9 +173,15 @@ export default function LeaderTable({
                         r.leader ? "text-gold-300" : "text-slate-100"
                       }`}
                     >
-                      {r.leader && leaderMark}
+                      {/* The glyph is singular by nature — on a tie every leader
+                          keeps the gold, but nobody holds the trophy yet. */}
+                      {r.leader && ranked.filter((x) => x.leader).length === 1 && leaderMark}
                       {fav && <span className="text-violet-400 shrink-0">★</span>}
-                      <span className={`truncate ${fav ? "text-violet-200 font-semibold" : ""}`}>
+                      <span
+                        className={`truncate ${fav ? "text-violet-200 font-semibold" : ""} ${
+                          r.item.label.length > 17 ? "text-[15px] tracking-tight" : ""
+                        }`}
+                      >
                         {r.item.label}
                       </span>
                       {r.item.movement !== undefined && r.item.movement !== 0 && (

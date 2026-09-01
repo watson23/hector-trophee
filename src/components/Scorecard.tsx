@@ -1,5 +1,4 @@
 import type { Card, Course } from "../types";
-import { holeMetres } from "../data/courses";
 import { netScore } from "../lib/formats";
 import ScoreMark, { ScoreLegend } from "./ScoreMark";
 
@@ -15,37 +14,17 @@ interface Subject {
  */
 export default function Scorecard({
   course,
-  courseId,
-  tee,
   subjects,
   cards,
 }: {
   course: Course;
-  courseId: string;
-  tee: string;
   subjects: Subject[];
   cards: Record<string, Card | undefined>;
 }) {
   return (
     <div className="space-y-4">
-      <Nine
-        course={course}
-        courseId={courseId}
-        tee={tee}
-        subjects={subjects}
-        cards={cards}
-        from={0}
-        label="Out"
-      />
-      <Nine
-        course={course}
-        courseId={courseId}
-        tee={tee}
-        subjects={subjects}
-        cards={cards}
-        from={9}
-        label="In"
-      />
+      <Nine course={course} subjects={subjects} cards={cards} from={0} label="Out" />
+      <Nine course={course} subjects={subjects} cards={cards} from={9} label="In" />
       <Totals course={course} subjects={subjects} cards={cards} />
       <ScoreLegend />
     </div>
@@ -54,23 +33,18 @@ export default function Scorecard({
 
 function Nine({
   course,
-  courseId,
-  tee,
   subjects,
   cards,
   from,
   label,
 }: {
   course: Course;
-  courseId: string;
-  tee: string;
   subjects: Subject[];
   cards: Record<string, Card | undefined>;
   from: number;
   label: string;
 }) {
   const holes = Array.from({ length: 9 }, (_, i) => from + i);
-  const metres = holeMetres[courseId]?.[tee];
   const parSum = holes.reduce((a, i) => a + course.par[i], 0);
 
   return (
@@ -117,9 +91,7 @@ function Nine({
                 {course.si[i]}
               </td>
             ))}
-            <td className="py-0.5 text-center">
-              {metres ? `${holes.reduce((a, i) => a + metres[i], 0)}m` : "—"}
-            </td>
+            <td className="py-0.5" />
           </tr>
           {subjects.map((s) => {
             const card = cards[s.id];
