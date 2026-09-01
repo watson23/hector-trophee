@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
-import { flightsForPairs } from "../lib/flights";
+import { flightsForPairs, MAX_PER_FLIGHT } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
@@ -408,7 +408,6 @@ function PairsEditor({
 // Flights — who plays with whom, per round
 // ---------------------------------------------------------------------------
 
-const MAX_PER_FLIGHT = 4;
 
 /**
  * A "unit" is what gets moved in and out of flights: a whole pair once the draft is

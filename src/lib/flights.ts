@@ -1,6 +1,9 @@
 import type { Pair, PlayingGroup, Round } from "../types";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups } from "../data/rounds";
 
+/** A flight holds at most four players — the physical size of a golf group. */
+export const MAX_PER_FLIGHT = 4;
+
 /**
  * Which two pairs share a flight, per round.
  *

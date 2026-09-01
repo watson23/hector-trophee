@@ -1,3 +1,4 @@
+import { MAX_PER_FLIGHT } from "../lib/flights";
 import type { EventDoc, Round } from "../types";
 
 /**
@@ -12,13 +13,17 @@ export default function FlightList({
   round,
   event,
   meId,
+  openSlots = false,
 }: {
   round: Round;
   event: EventDoc;
   meId: string | null;
+  /** Show every flight, empty ones included, with a free-slot count — the view for
+      choosing a tee time (and for watching the draw fill the sheet live). */
+  openSlots?: boolean;
 }) {
   const byId = new Map(event.players.map((p) => [p.id, p]));
-  const groups = round.groups.filter((g) => g.playerIds.length > 0);
+  const groups = openSlots ? round.groups : round.groups.filter((g) => g.playerIds.length > 0);
 
   if (groups.length === 0) {
     return (
@@ -74,6 +79,11 @@ export default function FlightList({
                 </span>
               ))}
             </span>
+            {openSlots && g.playerIds.length < MAX_PER_FLIGHT && (
+              <span className="ml-auto shrink-0 self-center text-[11px] text-emerald-400 num">
+                {MAX_PER_FLIGHT - g.playerIds.length} free
+              </span>
+            )}
           </li>
         );
       })}

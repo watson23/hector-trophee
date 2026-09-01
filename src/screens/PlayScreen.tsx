@@ -625,7 +625,7 @@ function NextRound({
           </div>
 
           <div className="mt-4 border-t border-slate-800 pt-3">
-            <div className="label mb-1.5">{group ? "Your flight" : "Flight"}</div>
+            <div className="label mb-1.5">{group ? "Your flight" : "Flights"}</div>
             {flight.length > 0 ? (
               <ul className="space-y-1">
                 {flight.map((p) => (
@@ -642,6 +642,10 @@ function NextRound({
                   </li>
                 ))}
               </ul>
+            ) : round.groups.length > 0 ? (
+              /* Not placed yet: the whole sheet, free slots and all — what you want
+                 while choosing a tee time, and the live board during the draw. */
+              <FlightList round={round} event={event} meId={me?.id ?? null} openSlots />
             ) : (
               <p className="text-xs text-slate-500 leading-relaxed">
                 Flights for this round haven't been set yet — they'll appear here once the
@@ -651,7 +655,7 @@ function NextRound({
           </div>
 
           {/* The rest of the tee sheet, for relaying "when do the others go out?". */}
-          {otherFlights > 0 && (
+          {group && otherFlights > 0 && (
             <div className="mt-3 border-t border-slate-800 pt-3">
               <button
                 onClick={() => setAllFlights((v) => !v)}
