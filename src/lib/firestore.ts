@@ -14,6 +14,8 @@ import {
   deleteField,
   writeBatch,
   type Firestore,
+  disableNetwork,
+  enableNetwork,
 } from "firebase/firestore";
 import type { Card, EventDoc, Round } from "../types";
 import { defaultRounds } from "../data/rounds";
@@ -303,6 +305,14 @@ export class FirestoreStore implements Store {
     // A whole round is always saved, so this is a replace, not a merge: merging could
     // never clear a removed field — switching course must drop a stale CR override.
     await setDoc(doc(this.roundsRef(), round.id), this.clean(round)).catch(this.reportWriteError);
+  }
+
+  async nudge(): Promise<void> {
+    // Redial the backend: writes queued behind a half-dead WebChannel flush on
+    // the fresh connection. Both calls are safe to fail quietly — worst case
+    // nothing changes and the chip keeps showing.
+    await disableNetwork(this.db).catch(() => undefined);
+    await enableNetwork(this.db).catch(() => undefined);
   }
 
   subscribePending(cb: (count: number) => void): Unsubscribe {

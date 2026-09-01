@@ -32,6 +32,8 @@ export interface TournamentState {
   saveRound: (round: Round) => Promise<void>;
   /** Copy another event's data wholesale into this one; null when the backend can't. */
   mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
+  /** Redial the backend to unstick writes queued behind a stale connection. */
+  nudge: (() => Promise<void>) | undefined;
 }
 
 /**
@@ -234,5 +236,6 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     saveEvent,
     saveRound,
     mirrorFrom,
+    nudge: store?.nudge?.bind(store),
   };
 }

@@ -115,6 +115,22 @@ export function SpaceBanner({ space }: { space: Space }) {
  * couple of seconds, which is when it carries information (one bar of signal on the
  * 14th fairway) rather than noise.
  */
+/** True once pending has persisted long enough that a stale connection is the
+    likely story rather than a slow one — the point where a retry tap earns its place. */
+function useStuckSync(pending: number, delayMs = 20000): boolean {
+  const [stuck, setStuck] = useState(false);
+  const hasPending = pending > 0;
+  useEffect(() => {
+    if (!hasPending) return;
+    const t = setTimeout(() => setStuck(true), delayMs);
+    return () => {
+      clearTimeout(t);
+      setStuck(false);
+    };
+  }, [hasPending, delayMs]);
+  return stuck && hasPending;
+}
+
 function useSlowSync(pending: number, delayMs = 2000): boolean {
   const [slow, setSlow] = useState(false);
   const hasPending = pending > 0;
@@ -139,12 +155,15 @@ export function SyncBanner({
   online,
   pending,
   backend,
+  onNudge,
 }: {
   online: boolean;
   pending: number;
   backend: "firestore" | "local" | null;
+  onNudge?: () => void;
 }) {
   const slowSync = useSlowSync(pending);
+  const stuck = useStuckSync(pending);
   if (backend === "local") {
     // On localhost this is the intended fallback. On a real domain it means the deploy is
     // missing its Firebase env vars, and every player would silently get their own private
@@ -178,14 +197,19 @@ export function SyncBanner({
     // Floating, not in flow: an in-flow banner here pushed the whole screen down and
     // back up on every score entered, making each tap look shaky.
     return (
-      <div
+      /* After 20s the connection is more likely half-dead (laptop sleep) than slow,
+         so the chip turns into a retry button that redials the backend. */
+      <button
         style={{ top: "calc(env(safe-area-inset-top) + 8px)" }}
-        className="fixed left-1/2 -translate-x-1/2 z-40 rounded-full bg-violet-950/90 border
-                   border-violet-800 text-violet-300 text-xs px-3 py-1 shadow-lg backdrop-blur
-                   pointer-events-none"
+        onClick={stuck && onNudge ? onNudge : undefined}
+        className={`fixed left-1/2 -translate-x-1/2 z-40 rounded-full bg-violet-950/90 border
+                   border-violet-800 text-violet-300 text-xs px-3 py-1 shadow-lg backdrop-blur ${
+                     stuck && onNudge ? "" : "pointer-events-none"
+                   }`}
       >
         Syncing {pending} card{pending > 1 ? "s" : ""}…
-      </div>
+        {stuck && onNudge ? " tap to retry" : ""}
+      </button>
     );
   }
   return null;

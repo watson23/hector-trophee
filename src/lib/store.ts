@@ -49,6 +49,9 @@ export interface Store {
    * Firestore backend implements it; the local demo backend has nothing to mirror from.
    */
   mirrorFrom?(sourceEventId: string): Promise<number>;
+  /** Tear the connection down and redial — unsticks writes queued behind a
+      half-dead stream (classic after a laptop sleep). No-op without a network. */
+  nudge?(): Promise<void>;
 }
 
 export interface StoreError {
