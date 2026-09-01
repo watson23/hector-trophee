@@ -1,4 +1,5 @@
 import type { Round } from "../types";
+import { EstablishingShot } from "./CourseHero";
 import type { TournamentTotals } from "../lib/engine";
 import { hectorLowerIsBetter } from "../lib/hector";
 import { rank } from "../lib/leaderboard";
@@ -47,6 +48,14 @@ export default function Champions({ rounds, hector, victor }: Props) {
      * broadcast-quiet.
      */
     <section className="mx-4 mt-2 mb-5 rounded-3xl border border-gold-400/30 bg-gradient-to-b from-[#10241a] to-[#0a1610] p-5 text-center shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
+      {/* A quiet backdrop strip, not a hero — the gold eagle stays the centrepiece.
+          The scrim lands on the plaque's own top colour so the strip melts into it. */}
+      <EstablishingShot
+        src="/courses/radecky.webp"
+        height="h-24"
+        insetClass="-mx-5 -mt-5 mb-4 rounded-t-3xl"
+        scrimClass="from-[#10241a] via-[#10241a]/30 to-[#0a1610]/40"
+      />
       <img
         src="/eagle-gold.png"
         alt=""

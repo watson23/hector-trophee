@@ -7,7 +7,7 @@ import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
 import { Header } from "../components/Chrome";
-import CourseHero from "../components/CourseHero";
+import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import FlightList from "../components/FlightList";
 import { PREVIOUS } from "../data/history";
 
@@ -104,6 +104,19 @@ export default function InfoScreen({
           )
         }
       />
+
+      {spectator && (
+        /* The folks at home don't know the place — open with it. Players see the
+           courses' own shots two taps away; the spectator view earns the postcard. */
+        <div className="card overflow-hidden mx-4 mb-4">
+          <EstablishingShot
+            src="/courses/vista.webp"
+            caption="Konopiště · Czechia"
+            height="h-36"
+            insetClass=""
+          />
+        </div>
+      )}
 
       {/* Section idents, not pills: tracked caps on a hairline, the active one
           underlined — the same voice as the chyron and the TV bar. */}

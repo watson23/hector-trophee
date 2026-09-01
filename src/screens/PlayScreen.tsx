@@ -8,7 +8,7 @@ import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/h
 import { Empty, Header, Segmented } from "../components/Chrome";
 import FlightList from "../components/FlightList";
 import HectorMark from "../components/HectorMark";
-import CourseHero from "../components/CourseHero";
+import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import Scorecard from "../components/Scorecard";
 
 interface Props {
@@ -144,6 +144,14 @@ export default function PlayScreen({
         <Waiting
           title="That's a wrap"
           body="Every round is in and the trophies are decided."
+          hero={
+            /* The closing frame: low sun over d'Este — the trip riding into it. */
+            <EstablishingShot
+              src="/courses/dusk.webp"
+              caption="Hector Trophée · 2026"
+              insetClass="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+            />
+          }
           actions={
             <>
               <button className="btn-primary w-full" onClick={onShowTrophy}>
@@ -550,14 +558,17 @@ function Waiting({
   title,
   body,
   actions,
+  hero,
 }: {
   title: string;
   body: string;
   actions?: React.ReactNode;
+  hero?: React.ReactNode;
 }) {
   return (
     <div className="px-4 pt-8">
       <div className="card p-6 text-center">
+        {hero}
         <p className="font-serif text-xl font-semibold">{title}</p>
         <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{body}</p>
         {actions && <div className="mt-5 space-y-2">{actions}</div>}
