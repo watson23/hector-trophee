@@ -17,7 +17,9 @@ const TABS: { id: Tab; label: string; icon: ReactNode | null }[] = [
     label: "Round",
     icon: <path d="M4 19V9m5 10V5m5 14v-7m5 7V8" strokeLinecap="round" />,
   },
-  { id: "tournament", label: "Trophy", icon: null },
+  /* "Trophée", as the trophy and the competition have been called since the
+     beginning — the tab continues the tradition. */
+  { id: "tournament", label: "Trophée", icon: null },
   {
     // "Info", not "More": the tab holds the schedule, tee sheet, courses and rules —
     // things people actively look for. "More" said "miscellaneous", so nobody looked.
