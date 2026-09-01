@@ -105,18 +105,15 @@ export default function InfoScreen({
         }
       />
 
-      {spectator && (
-        /* The folks at home don't know the place — open with it. Players see the
-           courses' own shots two taps away; the spectator view earns the postcard. */
-        <div className="card overflow-hidden mx-4 mb-4">
-          <EstablishingShot
-            src="/courses/vista.webp"
-            caption="Konopiště · Czechia"
-            height="h-36"
-            insetClass=""
-          />
-        </div>
-      )}
+      {/* The postcard opens the view for everyone — it earned its keep on TV. */}
+      <div className="card overflow-hidden mx-4 mb-4">
+        <EstablishingShot
+          src="/courses/vista.webp"
+          caption="Konopiště · Czechia"
+          height="h-36"
+          insetClass=""
+        />
+      </div>
 
       {/* Section idents, not pills: tracked caps on a hairline, the active one
           underlined — the same voice as the chyron and the TV bar. */}
