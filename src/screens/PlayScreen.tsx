@@ -676,10 +676,16 @@ function NextRound({
           </button>
         )}
 
-        <p className="text-[11px] text-slate-500 text-center leading-relaxed pt-1">
-          Scoring opens when the organiser opens the round.{" "}
-          <button onClick={onScoreAnyway} className="text-violet-400 underline underline-offset-2">
-            Enter scores anyway
+        {/* The escape hatch for a flight already on the tee before the round is
+            opened — worded for that case only, and kept deliberately drab: an
+            invitation to defy "the organiser" would find takers on this trip. */}
+        <p className="text-[11px] text-slate-600 text-center leading-relaxed pt-1">
+          Scoring opens with the round.{" "}
+          <button
+            onClick={onScoreAnyway}
+            className="text-slate-500 underline underline-offset-2 hover:text-slate-400"
+          >
+            Teeing off before it opens? Start scoring
           </button>
         </p>
       </div>
