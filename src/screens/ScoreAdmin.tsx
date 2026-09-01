@@ -165,6 +165,13 @@ export default function ScoreAdmin({
     setBusy("Clearing…");
     try {
       await Promise.all(subjects.map((s) => deleteCard(round.id, s.id)));
+      // Clearing a finished round un-finishes it: back to upcoming, snapshot dropped
+      // so the next open re-freezes handicaps. Without this, wiping the last round
+      // left every status final and the app stuck on "That's a wrap".
+      if (round.status === "final") {
+        const { handicaps: _dropped, ...rest } = round;
+        await saveRound({ ...rest, status: "upcoming" });
+      }
     } finally {
       setConfirmClear(false);
       setBusy(null);
