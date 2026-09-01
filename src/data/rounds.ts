@@ -1,16 +1,16 @@
 import type { FormatSpec, PlayingGroup, Round } from "../types";
 
 /**
- * The six 2026 rounds.
+ * The six 2026 rounds, per the official programme (received 1.9.2026).
  *
- * Courses and tee-time windows are confirmed. The game formats are seeded from
- * Hector Trophée 2025, which had the identical 1–2–2–1 round shape; every round is
- * marked `provisional` until the official 2026 programme is published, and all of it
- * is editable in Admin.
+ * The formats confirmed the 2025 shape exactly; only the tees were news:
+ * yellow / blue / white / white / blue / yellow. The rules committee is still
+ * mulling whether to reshuffle the schedule (two scrambles on d'Este) — if they
+ * do, courses and tees move here and in Admin, the formats travel with them.
  *
- * Tees default to yellow throughout rather than mirroring 2025's yellow/blue/yellow/
- * white/blue/white pattern — guessing an unannounced tee would silently change every
- * course handicap in the app.
+ * ⚠️ r2 and r5 play off blue, whose published CR/slope look like the ladies'
+ * rating (see courses.ts) — the suspect-tee warning stays on in Admin/Info until
+ * someone checks the club scorecard on site and sets a CR override if needed.
  */
 
 /**
@@ -104,7 +104,6 @@ export const defaultRounds: Round[] = [
     teeTimeWindow: "12:03–12:48",
     groups: defaultGroups("12:03–12:48"),
     formats: [stablefordVictor(DRAFT_ROUND_WEIGHT), strokePlayGross],
-    provisional: true,
   },
   {
     id: "r2",
@@ -112,12 +111,11 @@ export const defaultRounds: Round[] = [
     day: "Fri 25.9",
     date: "2026-09-25",
     courseId: "deste",
-    tee: "yellow",
+    tee: "blue",
     status: "upcoming",
     teeTimeWindow: "08:36–09:21",
     groups: defaultGroups("08:36–09:21"),
     formats: [betterBall, stablefordVictor()],
-    provisional: true,
   },
   {
     id: "r3",
@@ -125,12 +123,11 @@ export const defaultRounds: Round[] = [
     day: "Fri 25.9",
     date: "2026-09-25",
     courseId: "radecky",
-    tee: "yellow",
+    tee: "white",
     status: "upcoming",
     teeTimeWindow: "14:27–15:12",
     groups: defaultGroups("14:27–15:12"),
     formats: [strokePlayNet, stablefordVictor()],
-    provisional: true,
   },
   {
     id: "r4",
@@ -138,12 +135,11 @@ export const defaultRounds: Round[] = [
     day: "Sat 26.9",
     date: "2026-09-26",
     courseId: "deste",
-    tee: "yellow",
+    tee: "white",
     status: "upcoming",
     teeTimeWindow: "08:36–09:21",
     groups: defaultGroups("08:36–09:21"),
     formats: [scramble(0.5)],
-    provisional: true,
   },
   {
     id: "r5",
@@ -151,12 +147,11 @@ export const defaultRounds: Round[] = [
     day: "Sat 26.9",
     date: "2026-09-26",
     courseId: "radecky",
-    tee: "yellow",
+    tee: "blue",
     status: "upcoming",
     teeTimeWindow: "14:27–15:12",
     groups: defaultGroups("14:27–15:12"),
     formats: [betterBall, stablefordVictor()],
-    provisional: true,
   },
   {
     id: "r6",
@@ -169,6 +164,5 @@ export const defaultRounds: Round[] = [
     teeTimeWindow: "09:03–09:48",
     groups: defaultGroups("09:03–09:48"),
     formats: [scramble(1.0, { birdie: 0.5, eagle: 1 })],
-    provisional: true,
   },
 ];
