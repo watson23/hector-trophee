@@ -752,7 +752,7 @@ function SubjectRow({
     <div className="card p-3">
       <div className="flex items-baseline justify-between gap-2 mb-2.5">
         <div className="min-w-0">
-          <div className="font-semibold text-sm truncate">
+          <div className="font-semibold text-base truncate">
             {subject.name}
             {subject.mine && (
               <span className="ml-1.5 text-[10px] font-semibold text-violet-400 align-middle">
@@ -791,7 +791,7 @@ function SubjectRow({
             <button
               key={n}
               onClick={() => onScore(value === n ? null : n)}
-              className={`flex-1 h-12 rounded-xl transition-colors flex flex-col items-center
+              className={`flex-1 h-14 rounded-xl transition-colors flex flex-col items-center
                           justify-center leading-none gap-0.5 ${
                 value === n
                   ? "bg-violet-600"
@@ -801,14 +801,14 @@ function SubjectRow({
               }`}
             >
               <span
-                className={`font-bold num text-base ${
+                className={`font-bold num text-xl ${
                   value === n ? "text-white" : quickTint(diff)
                 }`}
               >
                 {n}
               </span>
               <span
-                className={`text-[8px] font-medium tracking-wide ${
+                className={`text-[9px] font-medium tracking-wide ${
                   value === n ? "text-violet-200" : "text-slate-500"
                 }`}
               >
@@ -820,7 +820,7 @@ function SubjectRow({
         <button
           onClick={() => setShowOther((v) => !v)}
           aria-label="Enter another score"
-          className={`w-11 h-12 rounded-xl font-bold text-sm shrink-0 transition-colors ${
+          className={`w-11 h-14 rounded-xl font-bold text-base shrink-0 transition-colors ${
             value !== null && !quick.includes(value)
               ? "bg-violet-600 text-white num"
               : "bg-slate-900 text-slate-500 border border-slate-700"
