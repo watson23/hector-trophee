@@ -91,12 +91,14 @@ export default function Champions({ rounds, hector, victor }: Props) {
           </span>
         </p>
       )}
-      {/* Lineage: a trophy means more with the year before under it. */}
-      <p className="mt-1.5 text-[11px] text-[#7e9186] num">
-        {hectorTied.length === 1 && pair.label === PREVIOUS.hector.label
-          ? `Title defended · won ${PREVIOUS.year} on ${PREVIOUS.hector.points.toFixed(1)}`
-          : `${PREVIOUS.year} · ${PREVIOUS.hector.label} · ${PREVIOUS.hector.points.toFixed(1)}`}
-      </p>
+      {/* Lineage only when it's the same pair again — "title defended" adds to the
+          moment. A previous champion's name under new winners just steals focus,
+          doubly so when the new score is the better one. */}
+      {hectorTied.length === 1 && pair.label === PREVIOUS.hector.label && (
+        <p className="mt-1.5 text-[11px] text-[#7e9186] num">
+          Title defended · won {PREVIOUS.year} on {PREVIOUS.hector.points.toFixed(1)}
+        </p>
+      )}
 
       <div className="mt-4 pt-4 border-t border-gold-400/20">
         <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#8fa294]">
