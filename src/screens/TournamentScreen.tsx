@@ -205,7 +205,18 @@ export default function TournamentScreen({
       <Header
         title="Tournament"
         subtitle={
-          complete ? "Final" : `Running totals across all ${rounds.length} rounds`
+          /* The subtitle states progress, not the format — "across all 6 rounds"
+             read as a claim that six rounds were counted. */
+          complete
+            ? "Final"
+            : (() => {
+                const done = rounds.filter((r) => r.status === "final").length;
+                const live = rounds.find((r) => r.status === "open");
+                if (done === 0 && !live) return `Six rounds, two trophies — nothing scored yet`;
+                return `Running totals · ${done} of ${rounds.length} rounds in${
+                  live ? ` · R${live.seq} live` : ""
+                }`;
+              })()
         }
       />
       {complete && <Champions rounds={rounds} hector={hector} victor={victor} />}
