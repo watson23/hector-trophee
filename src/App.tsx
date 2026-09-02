@@ -248,6 +248,8 @@ export default function App() {
                 round={activeRound}
                 rounds={t.rounds}
                 cards={activeRound ? (t.cards[activeRound.id] ?? {}) : {}}
+                allCards={t.cards}
+                setHcpSubmitted={t.setHcpSubmitted}
                 me={me}
                 setHole={(subjectId, hole, value) =>
                   activeRound && t.setHole(activeRound.id, subjectId, hole, value)

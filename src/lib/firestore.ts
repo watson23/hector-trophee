@@ -273,6 +273,14 @@ export class FirestoreStore implements Store {
     }).catch(this.reportWriteError);
   }
 
+  async setHcpSubmitted(roundId: string, subjectId: string, submitted: boolean): Promise<void> {
+    await setDoc(
+      doc(this.cardsRef(), cardId(roundId, subjectId)),
+      { hcpSubmitted: submitted },
+      { merge: true },
+    ).catch(this.reportWriteError);
+  }
+
   async deleteCard(roundId: string, subjectId: string): Promise<void> {
     await deleteDoc(doc(this.cardsRef(), cardId(roundId, subjectId))).catch(
       this.reportWriteError,

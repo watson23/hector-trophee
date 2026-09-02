@@ -16,6 +16,9 @@ interface Props {
   round: Round | null;
   rounds: Round[];
   cards: Record<string, Card>;
+  /** Every round's cards — the HCP checklist spans finished rounds. */
+  allCards: Record<string, Record<string, Card>>;
+  setHcpSubmitted: (roundId: string, subjectId: string, submitted: boolean) => void;
   me: FieldPlayer | null;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
   onShowRound: (roundId: string) => void;
@@ -38,8 +41,10 @@ export default function PlayScreen({
   round,
   rounds,
   cards,
+  allCards,
   me,
   setHole,
+  setHcpSubmitted,
   onShowRound,
   onShowTrophy,
 }: Props) {
@@ -139,9 +144,13 @@ export default function PlayScreen({
   if (round.status !== "open" && scoreAnyway !== round.id) {
     const complete = rounds.length > 0 && rounds.every((r) => r.status === "final");
     const lastFinal = [...rounds].reverse().find((r) => r.status === "final");
+    const hcpChecklist = me && (
+      <HcpChecklist rounds={rounds} allCards={allCards} me={me} onToggle={setHcpSubmitted} />
+    );
     if (complete) {
       return (
-        <Waiting
+        <>
+          <Waiting
           title="That's a wrap"
           body="Every round is in and the trophies are decided."
           hero={
@@ -164,19 +173,24 @@ export default function PlayScreen({
               )}
             </>
           }
-        />
+          />
+          {hcpChecklist}
+        </>
       );
     }
     return (
-      <NextRound
-        round={round}
-        course={course}
-        event={event}
-        me={me}
-        lastFinal={lastFinal ?? null}
-        onShowRound={onShowRound}
-        onScoreAnyway={() => setScoreAnyway(round.id)}
-      />
+      <>
+        <NextRound
+          round={round}
+          course={course}
+          event={event}
+          me={me}
+          lastFinal={lastFinal ?? null}
+          onShowRound={onShowRound}
+          onScoreAnyway={() => setScoreAnyway(round.id)}
+        />
+        {hcpChecklist}
+      </>
     );
   }
 
@@ -566,6 +580,73 @@ function quickTag(diff: number): string {
   if (diff === 0) return "par";
   if (diff === 1) return "bogey";
   return `+${diff}`;
+}
+
+/**
+ * Lasse's "nag Juuso at dinner" feature, the player half: the app can't submit
+ * rounds to golfliitto, so each player marks the finished individual rounds they
+ * have entered into eBirdie/GameBook themselves. Admin sees who still owes one.
+ */
+function HcpChecklist({
+  rounds,
+  allCards,
+  me,
+  onToggle,
+}: {
+  rounds: Round[];
+  allCards: Record<string, Record<string, Card>>;
+  me: FieldPlayer;
+  onToggle: (roundId: string, subjectId: string, submitted: boolean) => void;
+}) {
+  // Finished rounds played off an individual card, where this player has scores.
+  const relevant = rounds.filter(
+    (r) =>
+      r.status === "final" &&
+      !r.formats.some((f) => f.teamCard) &&
+      Object.keys(allCards[r.id]?.[me.id]?.holes ?? {}).length > 0,
+  );
+  if (relevant.length === 0) return null;
+  const missing = relevant.filter((r) => !allCards[r.id]?.[me.id]?.hcpSubmitted).length;
+
+  return (
+    <div className="px-4 mt-3">
+      <div className="card p-3.5">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="label">HCP bookkeeping</div>
+          {missing === 0 ? (
+            <span className="text-[11px] text-emerald-400 num">all entered ✓</span>
+          ) : (
+            <span className="text-[11px] text-amber-400 num">
+              {missing} round{missing > 1 ? "s" : ""} to enter
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+          The app can't send rounds to the federation — mark each one after you've
+          entered it into eBirdie or GameBook yourself.
+        </p>
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {relevant.map((r) => {
+            const done = Boolean(allCards[r.id]?.[me.id]?.hcpSubmitted);
+            return (
+              <button
+                key={r.id}
+                onClick={() => onToggle(r.id, me.id, !done)}
+                className={`pill num font-semibold transition-colors ${
+                  done
+                    ? "bg-emerald-950 text-emerald-400"
+                    : "border border-slate-700 bg-slate-900 text-slate-400"
+                }`}
+              >
+                R{r.seq}
+                {done ? " ✓" : ""}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Waiting({

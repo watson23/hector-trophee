@@ -37,6 +37,8 @@ export interface Store {
   setCard(roundId: string, subjectId: string, holes: Record<string, number>, by: string): Promise<void>;
   /** Remove a card entirely, rather than clearing eighteen fields one at a time. */
   deleteCard(roundId: string, subjectId: string): Promise<void>;
+  /** Mark a card as entered into eBirdie/GameBook for official handicap. */
+  setHcpSubmitted(roundId: string, subjectId: string, submitted: boolean): Promise<void>;
   saveEvent(patch: Partial<EventDoc>): Promise<void>;
   saveRound(round: Round): Promise<void>;
   /** Number of writes not yet acknowledged by the server. */
@@ -256,6 +258,14 @@ class LocalStore implements Store {
   async deleteCard(roundId: string, subjectId: string): Promise<void> {
     const cards = this.read<Record<string, Card>>(`cards_${roundId}`, {});
     delete cards[subjectId];
+    this.write(`cards_${roundId}`, cards);
+  }
+
+  async setHcpSubmitted(roundId: string, subjectId: string, submitted: boolean): Promise<void> {
+    const cards = this.read<Record<string, Card>>(`cards_${roundId}`, {});
+    const card = cards[subjectId];
+    if (!card) return;
+    cards[subjectId] = { ...card, hcpSubmitted: submitted };
     this.write(`cards_${roundId}`, cards);
   }
 

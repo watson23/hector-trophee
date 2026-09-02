@@ -28,6 +28,7 @@ export interface TournamentState {
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
+  setHcpSubmitted: (roundId: string, subjectId: string, submitted: boolean) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
   /** Copy another event's data wholesale into this one; null when the backend can't. */
@@ -197,6 +198,13 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     [store],
   );
 
+  const setHcpSubmitted = useCallback(
+    async (roundId: string, subjectId: string, submitted: boolean) => {
+      await store?.setHcpSubmitted(roundId, subjectId, submitted);
+    },
+    [store],
+  );
+
   const saveEvent = useCallback(
     async (patch: Partial<EventDoc>) => {
       await store?.saveEvent(patch);
@@ -233,6 +241,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     setHole,
     setCard,
     deleteCard,
+    setHcpSubmitted,
     saveEvent,
     saveRound,
     mirrorFrom,

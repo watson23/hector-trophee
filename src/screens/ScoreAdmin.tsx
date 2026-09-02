@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
-import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
+import { effectiveTee, hiFor, roundParticipants, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { generateRoundCards } from "../lib/testdata";
@@ -372,6 +372,47 @@ export default function ScoreAdmin({
         </div>
       </section>
       )}
+
+      {/* Lasse's dinner-nagging list: who still hasn't entered a finished round
+          into eBirdie/GameBook. Data comes from each player's own checkbox on
+          their Play view. */}
+      {(() => {
+        const hcpRounds = rounds.filter(
+          (r) => r.status === "final" && !r.formats.some((f) => f.teamCard),
+        );
+        const lines = hcpRounds
+          .map((r) => ({
+            r,
+            waiting: roundParticipants(r, event.players).filter((p) => {
+              const card = cards[r.id]?.[p.id];
+              return card && Object.keys(card.holes ?? {}).length > 0 && !card.hcpSubmitted;
+            }),
+          }))
+          .filter((l) => l.waiting.length > 0);
+        if (hcpRounds.length === 0) return null;
+        return (
+          <section className="card p-3.5">
+            <h2 className="label mb-1">HCP submissions</h2>
+            {lines.length === 0 ? (
+              <p className="text-xs text-emerald-400">
+                Everyone has entered every finished round. Peaceful dinner.
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {lines.map(({ r, waiting }) => (
+                  <li key={r.id} className="text-xs leading-relaxed">
+                    <span className="num font-semibold text-slate-300">R{r.seq}</span>{" "}
+                    <span className="text-amber-400">waiting:</span>{" "}
+                    <span className="text-slate-400">
+                      {waiting.map((p) => p.name).join(", ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })()}
 
       {/* ---------------- reset — available in both spaces, but never one tap ---------------- */}
       <section>

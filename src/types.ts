@@ -151,4 +151,6 @@ export interface Card {
   holes: Record<string, number>;
   updatedAt?: number;
   updatedBy?: string;
+  /** Player has entered this round into eBirdie/GameBook for official handicap. */
+  hcpSubmitted?: boolean;
 }
