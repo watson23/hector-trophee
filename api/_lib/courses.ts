@@ -4,10 +4,9 @@ import type { Course } from "../../src/types.js";
  * Golf & Spa Resort Konopiště, Czechia — the two courses used at Hector Trophée 2026.
  * Par, stroke index and per-tee CR/slope taken from the published scorecards on hector.golf.
  *
- * ⚠️ The blue tee on both courses is published with a rating HIGHER than white
- * (Radecký 76.1 vs 73.7, d'Este 75.8 vs 73.5). That is almost certainly the ladies' rating
- * carried over into the men's column. Rounds flag `suspect` so the UI can warn, and a round
- * can override CR/slope from the club scorecard in Admin.
+ * Blue and red are rated for men from mscorecard.com (2.9.2026) — the resort's own
+ * combined chart prints only the women's ratings for those tees, which is why every
+ * public source looked wrong. The `suspect` flag mechanism stays for future tees.
  */
 export const courses: Record<string, Course> = {
   radecky: {
@@ -20,8 +19,10 @@ export const courses: Record<string, Course> = {
       black: { colour: "black", cr: 75.6, slope: 147, par: 72, metres: 6484 },
       white: { colour: "white", cr: 73.7, slope: 146, par: 72, metres: 6168 },
       yellow: { colour: "yellow", cr: 72.2, slope: 142, par: 72, metres: 5859 },
-      blue: { colour: "blue", cr: 76.1, slope: 145, par: 72, metres: 5522, suspect: true },
-      red: { colour: "red", cr: 74.2, slope: 140, par: 72, metres: 5221, suspect: true },
+      // Men's ratings from mscorecard.com (found by Lasse, 2.9.2026) — the published
+      // chart's 76.1/145 and 74.2/140 are the women's ratings for these tees.
+      blue: { colour: "blue", cr: 70.2, slope: 137, par: 72, metres: 5522 },
+      red: { colour: "red", cr: 68.6, slope: 132, par: 72, metres: 5221 },
     },
   },
   deste: {
@@ -33,8 +34,10 @@ export const courses: Record<string, Course> = {
     tees: {
       white: { colour: "white", cr: 73.5, slope: 145, par: 72, metres: 6086 },
       yellow: { colour: "yellow", cr: 71.7, slope: 140, par: 72, metres: 5730 },
-      blue: { colour: "blue", cr: 75.8, slope: 145, par: 72, metres: 5372, suspect: true },
-      red: { colour: "red", cr: 73.9, slope: 139, par: 72, metres: 5011, suspect: true },
+      // Men's ratings from mscorecard.com (found by Lasse, 2.9.2026) — the published
+      // chart's 75.8/145 and 73.9/139 are the women's ratings for these tees.
+      blue: { colour: "blue", cr: 69.6, slope: 136, par: 72, metres: 5372 },
+      red: { colour: "red", cr: 67.6, slope: 131, par: 72, metres: 5011 },
     },
   },
 };
