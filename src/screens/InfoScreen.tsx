@@ -238,7 +238,11 @@ function RoundCard({
           <li key={f.id} className="text-[12px] text-slate-400 flex items-center gap-1.5">
             <span className="text-slate-600">•</span>
             <span className="truncate">{f.label}</span>
-            {f.net && <span className="text-slate-600 num">{Math.round(f.allowance * 100)}%</span>}
+            {/* Full handicap is the norm and goes unsaid — only a reduced
+                allowance is news, and it says what it means. */}
+            {f.net && f.allowance !== 1 && (
+              <span className="text-slate-500 num">{Math.round(f.allowance * 100)}% of HCP</span>
+            )}
             {f.hector && (
               <span className="pill bg-violet-950/70 text-violet-300 text-[11px]">
                 H {weightLabel(f.hector.pct)}
