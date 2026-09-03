@@ -28,7 +28,7 @@ export function TVBar({
     .join(", ");
   return (
     <div className="bg-violet-950/50 border-b border-violet-900/60 px-4 py-1.5 flex items-center justify-between gap-2">
-      <span className="flex items-center gap-1.5 text-[12px] font-semibold tracking-[0.2em] text-violet-300 num">
+      <span className="flex items-center gap-1.5 text-[12px] font-semibold tracking-[0.2em] text-gold-400 num">
         <HectorMark className="w-3.5 h-3.5" />
         HECTOR TV
         <span className="live-dot text-violet-400" />
@@ -83,8 +83,8 @@ export function FollowPicker({
   return (
     <div className="min-h-dvh flex flex-col justify-center px-5 py-10 max-w-lg mx-auto">
       <header className="mb-6 text-center">
-        <HectorMark className="w-16 h-16 mx-auto mb-2 text-violet-400" />
-        <div className="text-[12px] font-semibold uppercase tracking-[0.25em] text-violet-400">
+        <HectorMark className="w-16 h-16 mx-auto mb-2 text-gold-400" />
+        <div className="text-[12px] font-semibold uppercase tracking-[0.25em] text-gold-400">
           Hector TV
         </div>
         <h1 className="text-2xl font-extrabold tracking-tight mt-1">{event.name}</h1>

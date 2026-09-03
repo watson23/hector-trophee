@@ -786,7 +786,7 @@ function TeeTimeDraw({
         <p className="font-serif text-2xl text-center my-4 text-slate-500">{rolling}</p>
       ) : current ? (
         <>
-          <p className="finish-flourish font-serif text-2xl font-semibold text-center my-4 text-violet-200">
+          <p className="finish-flourish font-serif text-2xl font-semibold text-center my-4 text-gold-300">
             {current.label}
           </p>
           <p className="text-xs text-slate-400 mb-2 text-center">picks a tee time:</p>
