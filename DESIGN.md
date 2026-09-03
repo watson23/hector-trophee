@@ -27,6 +27,15 @@ them deliberately, in tokens, never ad hoc per screen.
 Score tinting follows golf-TV convention, not web convention: red is *good*
 (under par), blue is *mild bad* (over). Do not "fix" this.
 
+## Legibility floor (tester-driven, 3.9.2026)
+
+- Secondary text (slate-500) stays ≥5:1 on the card ground, faint text (slate-600)
+  ≥3:1 — the scale values in tailwind.config.js encode this; never dip below by
+  adding darker greys per-component.
+- Smallest UI text is 11px; body-adjacent micro-copy 12px; `text-xs` = 13px.
+  The app is read in sunlight on a moving cart — whitespace pays for type, not
+  the other way around.
+
 ## Type roles
 
 | Face | Class | Job |
