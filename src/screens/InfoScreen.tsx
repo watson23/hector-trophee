@@ -174,7 +174,9 @@ export default function InfoScreen({
         <p className="text-[12px] text-slate-600 mt-3 text-center leading-relaxed">
           {backend === "local"
             ? "Demo mode — no cloud project connected, so scores stay on this device."
-            : "Synced live via Firestore. Scores entered offline upload when signal returns."}
+            : /* The database brand is nobody's business; the offline promise is the
+               one line that stops a mid-round "no bars, do I stop scoring?" panic. */
+            "No signal? Keep scoring — everything uploads when it returns."}
         </p>
         {/* Which version this device runs — support question #1, and the way to watch
             the auto-update do its thing. */}
