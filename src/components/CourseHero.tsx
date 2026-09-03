@@ -40,7 +40,7 @@ export function EstablishingShot({
       />
       <div className={`absolute inset-0 bg-gradient-to-t ${scrimClass}`} />
       {caption && (
-        <div className="absolute bottom-2 left-4 num text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+        <div className="absolute bottom-2 left-4 num text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
           {caption}
         </div>
       )}

@@ -64,7 +64,7 @@ function Nine({
         </colgroup>
         <thead>
           {/* Hole numbers, par and SI are reference: small and quiet, so the scores lead. */}
-          <tr className="bg-slate-800 text-slate-400 text-[10px]">
+          <tr className="bg-slate-800 text-slate-400 text-[11px]">
             <th className="text-left font-semibold px-2 py-1 font-sans">Hole</th>
             {holes.map((i) => (
               <th key={i} className="py-1 font-semibold">
@@ -75,7 +75,7 @@ function Nine({
           </tr>
         </thead>
         <tbody>
-          <tr className="text-slate-500 text-[10px] border-b border-slate-800">
+          <tr className="text-slate-500 text-[11px] border-b border-slate-800">
             <td className="px-2 py-0.5 font-sans">Par</td>
             {holes.map((i) => (
               <td key={i} className="text-center py-0.5">
@@ -84,7 +84,7 @@ function Nine({
             ))}
             <td className="text-center py-0.5 font-semibold">{parSum}</td>
           </tr>
-          <tr className="text-slate-500/90 text-[10px] border-b border-slate-800">
+          <tr className="text-slate-500/90 text-[11px] border-b border-slate-800">
             <td className="px-2 py-0.5 font-sans">SI</td>
             {holes.map((i) => (
               <td key={i} className="text-center py-0.5">
@@ -98,7 +98,7 @@ function Nine({
             let sum = 0;
             return (
               <tr key={s.id} className="border-b border-slate-800 last:border-0">
-                <td className="px-2 py-1 font-sans text-[11px] font-medium text-slate-300 truncate">
+                <td className="px-2 py-1 font-sans text-[12px] font-medium text-slate-300 truncate">
                   {s.name}
                 </td>
                 {holes.map((i) => {
@@ -135,7 +135,7 @@ function Totals({
     <div className="card overflow-hidden">
       <table className="w-full text-sm num">
         <thead>
-          <tr className="bg-slate-800 text-slate-400 text-[10px]">
+          <tr className="bg-slate-800 text-slate-400 text-[11px]">
             <th className="text-left px-3 py-1.5 font-sans font-semibold">Total</th>
             <th className="px-2 py-1.5 font-semibold">Thru</th>
             <th className="px-2 py-1.5 font-semibold">Gross</th>

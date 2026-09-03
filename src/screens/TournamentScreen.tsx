@@ -113,7 +113,7 @@ export default function TournamentScreen({
           if (!entry) return null;
           return (
             <div key={r.id}>
-              <div className="flex justify-between gap-3 text-[11px] font-semibold text-slate-400 mb-0.5">
+              <div className="flex justify-between gap-3 text-[12px] font-semibold text-slate-400 mb-0.5">
                 <span>
                   Round {r.seq} · {r.day}
                 </span>
@@ -137,7 +137,7 @@ export default function TournamentScreen({
                     unreadable at this size, and percentages are how this group has
                     always talked about the weights. The engine still computes 1/3.
                   */}
-                  <div className="text-[11px] text-slate-500 leading-relaxed">
+                  <div className="text-[12px] text-slate-500 leading-relaxed">
                     {d.converted !== undefined
                       ? `${weightLabel(d.pct)} of ${d.who ?? "the better player"}'s ${d.raw} pts, which equals ${d.converted} strokes`
                       : `${weightLabel(d.pct)} of ${d.raw} strokes`}
@@ -238,7 +238,7 @@ export default function TournamentScreen({
             </p>
           ) : (
             <>
-              <p className="text-[11px] leading-relaxed text-slate-500 mb-2">
+              <p className="text-[12px] leading-relaxed text-slate-500 mb-2">
                 Weighted to par — <span className="text-slate-300 font-medium">lower wins</span>.
                 E is a level-par week (
                 <span className="num text-slate-400">{levelPar.toFixed(1)}</span> strokes).
@@ -268,7 +268,7 @@ export default function TournamentScreen({
       </div>
 
       {tab === "hector" && (
-        <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
+        <p className="mx-4 mt-4 text-[12px] leading-relaxed text-slate-500">
           Tap a pair to see what each round contributed. For scale: the {PREVIOUS.year} title
           was won on <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span>{" "}
           strokes — that is,{" "}
@@ -276,7 +276,7 @@ export default function TournamentScreen({
         </p>
       )}
       {tab === "victor" && (
-        <p className="mx-4 mt-4 text-[11px] leading-relaxed text-slate-500">
+        <p className="mx-4 mt-4 text-[12px] leading-relaxed text-slate-500">
           Victor sums your Stableford NET points across the four Stableford rounds. Ranked to
           par (in parentheses) so players mid-round compare fairly — fewest over net par is
           exactly most points.

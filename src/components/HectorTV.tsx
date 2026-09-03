@@ -28,7 +28,7 @@ export function TVBar({
     .join(", ");
   return (
     <div className="bg-violet-950/50 border-b border-violet-900/60 px-4 py-1.5 flex items-center justify-between gap-2">
-      <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.2em] text-violet-300 num">
+      <span className="flex items-center gap-1.5 text-[12px] font-semibold tracking-[0.2em] text-violet-300 num">
         <HectorMark className="w-3.5 h-3.5" />
         HECTOR TV
         <span className="live-dot text-violet-400" />
@@ -38,7 +38,7 @@ export function TVBar({
       <button
         onClick={onEdit}
         className="flex items-center gap-1.5 min-w-0 rounded-full border border-violet-800/70
-                   bg-violet-950/40 px-2.5 py-1 text-[11px] text-slate-300 active:bg-violet-900/40"
+                   bg-violet-950/40 px-2.5 py-1 text-[12px] text-slate-300 active:bg-violet-900/40"
       >
         {names ? (
           <span className="truncate">
@@ -84,7 +84,7 @@ export function FollowPicker({
     <div className="min-h-dvh flex flex-col justify-center px-5 py-10 max-w-lg mx-auto">
       <header className="mb-6 text-center">
         <HectorMark className="w-16 h-16 mx-auto mb-2 text-violet-400" />
-        <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-violet-400">
+        <div className="text-[12px] font-semibold uppercase tracking-[0.25em] text-violet-400">
           Hector TV
         </div>
         <h1 className="text-2xl font-extrabold tracking-tight mt-1">{event.name}</h1>
@@ -210,7 +210,7 @@ export function FollowStrip({
               <span className="text-violet-400 mr-1">★</span>
               {player.name}
             </div>
-            <div className="text-[11px] text-slate-400 num mt-0.5 leading-relaxed">
+            <div className="text-[12px] text-slate-400 num mt-0.5 leading-relaxed">
               {row && row.thru > 0 ? (
                 <>
                   thru <span className="text-slate-200 font-semibold">{row.thru >= 18 ? "F" : row.thru}</span> ·{" "}

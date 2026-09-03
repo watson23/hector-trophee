@@ -78,7 +78,7 @@ export default function DraftBoard({
                   {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
                 </span>
                 {pair.defending && (
-                  <span className="pill bg-amber-950 text-amber-300 shrink-0 text-[10px]">
+                  <span className="pill bg-amber-950 text-amber-300 shrink-0 text-[11px]">
                     defending
                   </span>
                 )}
@@ -100,7 +100,7 @@ export default function DraftBoard({
                     p.id === nextPlayer?.id ? "text-violet-300 font-semibold" : "text-slate-400"
                   }`}
                 >
-                  <span className="num text-[10px] text-slate-600 w-4 shrink-0">
+                  <span className="num text-[11px] text-slate-600 w-4 shrink-0">
                     {rankOf(p.id)}
                   </span>
                   <span className="truncate">{p.name}</span>
@@ -114,7 +114,7 @@ export default function DraftBoard({
         ))}
       </div>
 
-      <p className="mt-3 text-[10px] text-slate-500 leading-relaxed">
+      <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
         Order is the round 1 Stableford result. The organiser enters each pick in Admin as
         it's made.
       </p>

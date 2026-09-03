@@ -11,6 +11,12 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}", "./api/_lib/**/*.ts"],
   theme: {
     extend: {
+      /* One legibility step up (3.9.2026, tester feedback + on-the-go use):
+         xs is 13px here, and the arbitrary 10/11px literals in components were
+         raised a step in the same pass. Whitespace pays for it, gladly. */
+      fontSize: {
+        xs: ["13px", { lineHeight: "1.4" }],
+      },
       fontFamily: {
         // Geist, not Inter: the body face the user chose for notebob — his apps
         // share a personal type identity (Geist body + Fraunces serif).
@@ -52,8 +58,12 @@ export default {
           200: "#dfdde4",
           300: "#c2c0c9",
           400: "#9b99a4",
-          500: "#65636d",
-          600: "#47464f",
+          /* 500/600 lifted 2.9.2026 after tester feedback ("tumman harmaa mustalla
+             tekee tiukkaa"): the old values measured 3.2:1 and 2.0:1 on the card
+             ground — failing AA — and outdoor glare eats faint grey first.
+             500 now ≈5.0:1 (secondary text), 600 ≈3.2:1 (deliberate de-emphasis). */
+          500: "#858391",
+          600: "#666471",
           700: "#2c2b31",
           800: "#1d1c20",
           900: "#131215",

@@ -80,7 +80,7 @@ export default function FlightList({
               ))}
             </span>
             {openSlots && g.playerIds.length < MAX_PER_FLIGHT && (
-              <span className="ml-auto shrink-0 text-[11px] text-emerald-400 num">
+              <span className="ml-auto shrink-0 text-[12px] text-emerald-400 num">
                 {MAX_PER_FLIGHT - g.playerIds.length} free
               </span>
             )}

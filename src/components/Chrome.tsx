@@ -61,7 +61,7 @@ export function TabBar({
             key={t.id}
             onClick={() => onChange(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
-            className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+            className={`relative flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium transition-colors ${
               tab === t.id ? "text-violet-400" : "text-slate-500 hover:text-slate-300"
             }`}
           >

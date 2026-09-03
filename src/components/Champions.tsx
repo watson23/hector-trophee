@@ -64,7 +64,7 @@ export default function Champions({ rounds, hector, victor }: Props) {
         className="mx-auto h-36 w-auto drop-shadow-[0_6px_24px_rgba(227,179,65,0.3)]"
       />
 
-      <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.25em] text-gold-400">
+      <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.25em] text-gold-400">
         {rounds.length} rounds · complete
       </p>
 
@@ -73,7 +73,7 @@ export default function Champions({ rounds, hector, victor }: Props) {
         <div className="mt-[2px] border-t border-gold-400/15" />
       </div>
 
-      <h2 className="mt-3 text-[11px] font-semibold uppercase tracking-widest text-[#8fa294]">
+      <h2 className="mt-3 text-[12px] font-semibold uppercase tracking-widest text-[#8fa294]">
         Hector Trophée
       </h2>
       {hectorTied.length > 1 ? (
@@ -95,13 +95,13 @@ export default function Champions({ rounds, hector, victor }: Props) {
           moment. A previous champion's name under new winners just steals focus,
           doubly so when the new score is the better one. */}
       {hectorTied.length === 1 && pair.label === PREVIOUS.hector.label && (
-        <p className="mt-1.5 text-[11px] text-[#7e9186] num">
+        <p className="mt-1.5 text-[12px] text-[#7e9186] num">
           Title defended · won {PREVIOUS.year} on {PREVIOUS.hector.points.toFixed(1)}
         </p>
       )}
 
       <div className="mt-4 pt-4 border-t border-gold-400/20">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#8fa294]">
+        <h2 className="text-[12px] font-semibold uppercase tracking-widest text-[#8fa294]">
           Victor
         </h2>
         <p className="mt-1 font-serif text-xl font-semibold text-gold-300">

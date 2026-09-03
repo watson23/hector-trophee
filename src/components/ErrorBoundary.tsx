@@ -34,7 +34,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
             Something in the app crashed. Scores live in the database, not on this
             screen, so nothing entered has been lost.
           </p>
-          <p className="text-[10px] text-slate-600 mt-3 num break-words">
+          <p className="text-[11px] text-slate-600 mt-3 num break-words">
             {this.state.error.message}
           </p>
           <button className="btn-ghost w-full mt-4 text-sm" onClick={() => location.reload()}>

@@ -130,7 +130,7 @@ export default function LeaderTable({
         </colgroup>
         <thead>
           {/* No tracking on these: the last two headers are narrow and letter-spacing runs "GAP" into "THRU". */}
-          <tr className="text-slate-500 text-[10px] uppercase">
+          <tr className="text-slate-500 text-[11px] uppercase">
             <th className="text-left pl-2.5 py-2 font-semibold">#</th>
             <th className="text-left py-2 font-semibold">Name</th>
             <th className="text-right py-2 font-semibold px-1.5">{scoreHeader}</th>
@@ -186,7 +186,7 @@ export default function LeaderTable({
                       </span>
                       {r.item.movement !== undefined && r.item.movement !== 0 && (
                         <span
-                          className={`shrink-0 num text-[10px] font-bold ${
+                          className={`shrink-0 num text-[11px] font-bold ${
                             r.item.movement > 0 ? "text-emerald-400" : "text-rose-400"
                           }`}
                         >
@@ -197,7 +197,7 @@ export default function LeaderTable({
                     </div>
                     {r.item.extra && (
                       <div
-                        className={`text-[11px] num truncate ${
+                        className={`text-[12px] num truncate ${
                           r.item.extraTone === "warn" ? "text-amber-500/90" : "text-slate-500"
                         }`}
                       >
@@ -214,10 +214,10 @@ export default function LeaderTable({
                       ? (r.item.display ?? r.item.value.toFixed(decimals))
                       : "—"}
                   </td>
-                  <td className="text-right px-0.5 num text-[11px] text-slate-400 whitespace-nowrap">
+                  <td className="text-right px-0.5 num text-[12px] text-slate-400 whitespace-nowrap">
                     {r.item.played ? formatDiff(r.diff, Math.max(decimals, 1)) : "—"}
                   </td>
-                  <td className="text-right pl-1.5 pr-2.5 num text-[11px] text-slate-400 whitespace-nowrap">
+                  <td className="text-right pl-1.5 pr-2.5 num text-[12px] text-slate-400 whitespace-nowrap">
                     {r.item.thruLabel ?? formatThru(r.item.thru, totalHoles)}
                   </td>
                 </tr>

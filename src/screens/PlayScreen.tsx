@@ -235,7 +235,7 @@ export default function PlayScreen({
       {round.status !== "open" && (
         /* Early scoring is a one-way door without this: the choice is remembered
            for the session, so the screen itself must offer the way back. */
-        <p className="mx-4 mt-3 text-[11px] leading-relaxed text-slate-500 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
+        <p className="mx-4 mt-3 text-[12px] leading-relaxed text-slate-500 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
           <span>Scoring before the round has been opened.</span>
           <button
             onClick={() => setScoreAnyway(null)}
@@ -247,14 +247,14 @@ export default function PlayScreen({
       )}
 
       {round.provisional && (
-        <p className="mx-4 mt-3 text-[11px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
+        <p className="mx-4 mt-3 text-[12px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
           Format and tee are provisional — seeded from 2025 until the official 2026 programme lands.
           Confirm them in Admin.
         </p>
       )}
 
       {noFlight && subjects.length > 0 && (
-        <p className="mx-4 mt-3 text-[11px] leading-relaxed text-slate-400 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
+        <p className="mx-4 mt-3 text-[12px] leading-relaxed text-slate-400 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
           You're not assigned to a flight for this round, so this is just your own card. Ask the
           organiser to set the groups in Admin.
         </p>
@@ -364,7 +364,7 @@ function HoleEntry({
             onClick={() => setHole_((h) => Math.max(1, h - 1))}
           />
           <div className="text-center">
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
               Hole
             </div>
             <div className="score text-5xl leading-none mt-0.5">{hole}</div>
@@ -460,7 +460,7 @@ function HoleEntry({
               Finish round
             </button>
             {!complete && (
-              <p className="text-[11px] text-slate-500 text-center mt-2 num">
+              <p className="text-[12px] text-slate-500 text-center mt-2 num">
                 Still missing:{" "}
                 {Array.from({ length: 18 }, (_, i) => i + 1)
                   .filter((h) => !subjects.every((s) => cards[s.id]?.holes?.[String(h)]))
@@ -521,7 +521,7 @@ function RoundFinished({
     <div className="mt-4 px-4">
       <div className="rounded-3xl border border-gold-400/30 bg-gradient-to-b from-gold-400/[0.07] to-transparent p-6 text-center">
         <HectorMark className="finish-flourish w-14 h-14 mx-auto text-gold-400" />
-        <p className="num text-[11px] font-semibold tracking-[0.25em] uppercase text-gold-400 mt-3">
+        <p className="num text-[12px] font-semibold tracking-[0.25em] uppercase text-gold-400 mt-3">
           Round {round.seq} · in the books
         </p>
         <p className="font-serif text-xl font-semibold mt-1">Well played.</p>
@@ -536,12 +536,12 @@ function RoundFinished({
               <span className="text-sm font-medium truncate">
                 {t.subject.name}
                 {t.subject.mine && (
-                  <span className="ml-1.5 text-[10px] font-semibold text-violet-400">you</span>
+                  <span className="ml-1.5 text-[11px] font-semibold text-violet-400">you</span>
                 )}
               </span>
               <span className="shrink-0 flex items-baseline gap-2">
                 <span className="score text-lg">{t.gross}</span>
-                <span className="text-[11px] text-slate-500 num">
+                <span className="text-[12px] text-slate-500 num">
                   {t.toPar === 0 ? "E" : t.toPar > 0 ? `+${t.toPar}` : t.toPar}
                   {scramble ? ` · net ${t.net}` : ` · ${t.points} pts`}
                 </span>
@@ -559,7 +559,7 @@ function RoundFinished({
           </button>
         </div>
       </div>
-      <p className="text-[11px] text-slate-500 text-center leading-relaxed mt-3">
+      <p className="text-[12px] text-slate-500 text-center leading-relaxed mt-3">
         The organiser closes the round for everyone once all flights are in.
       </p>
     </div>
@@ -623,14 +623,14 @@ function HcpSection({
       <div className="flex items-baseline justify-between gap-3">
         <div className="label">HCP bookkeeping</div>
         {missing === 0 ? (
-          <span className="text-[11px] text-emerald-400 num">all entered ✓</span>
+          <span className="text-[12px] text-emerald-400 num">all entered ✓</span>
         ) : (
-          <span className="text-[11px] text-amber-400 num">
+          <span className="text-[12px] text-amber-400 num">
             {missing} round{missing > 1 ? "s" : ""} to enter
           </span>
         )}
       </div>
-      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+      <p className="text-[12px] text-slate-500 leading-relaxed mt-1">
         Mark each round after you've entered it into eBirdie or GameBook yourself.
       </p>
       <div className="flex flex-wrap gap-1.5 mt-2">
@@ -773,10 +773,10 @@ function NextRound({
                     <span className={p.id === me?.id ? "font-semibold" : "text-slate-300"}>
                       {p.name}
                       {p.id === me?.id && (
-                        <span className="ml-1.5 text-[10px] font-semibold text-violet-400">you</span>
+                        <span className="ml-1.5 text-[11px] font-semibold text-violet-400">you</span>
                       )}
                     </span>
-                    <span className="text-[11px] text-slate-500 num">
+                    <span className="text-[12px] text-slate-500 num">
                       HCP {hiFor(round, p).toFixed(1)}
                     </span>
                   </li>
@@ -809,7 +809,7 @@ function NextRound({
         </div>
 
         {round.provisional && (
-          <p className="text-[11px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
+          <p className="text-[12px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
             Format and tee are provisional — seeded from 2025 until the official 2026 programme
             lands.
           </p>
@@ -824,7 +824,7 @@ function NextRound({
         {/* The escape hatch for a flight already on the tee before the round is
             opened — worded for that case only, and kept deliberately drab: an
             invitation to defy "the organiser" would find takers on this trip. */}
-        <p className="text-[11px] text-slate-600 text-center leading-relaxed pt-1">
+        <p className="text-[12px] text-slate-600 text-center leading-relaxed pt-1">
           Scoring opens with the round.{" "}
           <button
             onClick={onScoreAnyway}
@@ -901,12 +901,12 @@ function SubjectRow({
           <div className="font-semibold text-base truncate">
             {subject.name}
             {subject.mine && (
-              <span className="ml-1.5 text-[10px] font-semibold text-violet-400 align-middle">
+              <span className="ml-1.5 text-[11px] font-semibold text-violet-400 align-middle">
                 you
               </span>
             )}
           </div>
-          <div className="text-[11px] text-slate-500 truncate num">{subject.detail}</div>
+          <div className="text-[12px] text-slate-500 truncate num">{subject.detail}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {strokes !== 0 && (
@@ -954,7 +954,7 @@ function SubjectRow({
                 {n}
               </span>
               <span
-                className={`text-[9px] font-medium tracking-wide ${
+                className={`text-[10px] font-medium tracking-wide ${
                   value === n ? "text-violet-200" : "text-slate-500"
                 }`}
               >
@@ -1025,7 +1025,7 @@ function HoleStrip({
           <button
             key={h}
             onClick={() => onPick(h)}
-            className={`h-8 rounded-lg text-[11px] font-semibold num transition-colors ${
+            className={`h-8 rounded-lg text-[12px] font-semibold num transition-colors ${
               h === hole
                 ? "bg-violet-600 text-white"
                 : filled(h)

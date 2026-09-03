@@ -131,7 +131,7 @@ export default function RoundScreen({
           what's on air and where, in the same tracked-caps voice as the Hector TV
           ident. The register shifts with the selected round's status: a breathing
           dot and LIVE while play is on, quiet caps otherwise. */}
-      <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-3 num text-[11px] tracking-[0.2em] uppercase">
+      <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-3 num text-[12px] tracking-[0.12em] uppercase">
         <span className="flex items-center gap-2 shrink-0 font-semibold">
           {round.status === "open" && <span className="live-dot text-emerald-400" />}
           <span className={round.status === "open" ? "text-emerald-300" : "text-slate-300"}>
@@ -175,7 +175,7 @@ export default function RoundScreen({
         (round.status === "final" ? (
           <DraftBoard event={event} result={result} />
         ) : (
-          <p className="mx-4 mt-3 text-[11px] leading-relaxed text-violet-300 bg-violet-950/40 border border-violet-900/60 rounded-xl px-3 py-2">
+          <p className="mx-4 mt-3 text-[12px] leading-relaxed text-violet-300 bg-violet-950/40 border border-violet-900/60 rounded-xl px-3 py-2">
             Round 1 is played individually. This Stableford order is the draft order — the
             winner picks first from the other bucket.
           </p>
@@ -355,7 +355,7 @@ export default function RoundScreen({
                     highlightKeys={highlightPairs}
                   />
                 </div>
-                <p className="px-4 mt-2 text-[11px] text-slate-500 leading-relaxed">
+                <p className="px-4 mt-2 text-[12px] text-slate-500 leading-relaxed">
                   {spec.hector!.source === "betterIndividual"
                     ? "The better player's round counts for the pair. The weighted share in parentheses is what goes into the trophy."
                     : "Both players count. The pair's combined to par leads; the weighted share in parentheses is what goes into the trophy."}

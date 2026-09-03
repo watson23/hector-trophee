@@ -97,7 +97,7 @@ export default function InfoScreen({
               aria-label="Change player"
             >
               <div className="text-sm font-semibold leading-tight">{me.name}</div>
-              <div className="text-[11px] text-slate-500 num leading-tight">
+              <div className="text-[12px] text-slate-500 num leading-tight">
                 HCP {me.hi.toFixed(1)} · <span className="font-sans">switch</span>
               </div>
             </button>
@@ -124,7 +124,7 @@ export default function InfoScreen({
             <button
               key={sec}
               onClick={() => setSection(sec)}
-              className={`relative shrink-0 pt-1 pb-2.5 num text-[11px] tracking-[0.14em] uppercase transition-colors ${
+              className={`relative shrink-0 pt-1 pb-2.5 num text-[12px] tracking-[0.14em] uppercase transition-colors ${
                 activeSection === sec ? "text-violet-300 font-semibold" : "text-slate-500"
               }`}
             >
@@ -171,14 +171,14 @@ export default function InfoScreen({
             )}
           </div>
         )}
-        <p className="text-[11px] text-slate-600 mt-3 text-center leading-relaxed">
+        <p className="text-[12px] text-slate-600 mt-3 text-center leading-relaxed">
           {backend === "local"
             ? "Demo mode — no cloud project connected, so scores stay on this device."
             : "Synced live via Firestore. Scores entered offline upload when signal returns."}
         </p>
         {/* Which version this device runs — support question #1, and the way to watch
             the auto-update do its thing. */}
-        <p className="text-[10px] text-slate-500 mt-1 text-center num">{__BUILD__}</p>
+        <p className="text-[11px] text-slate-500 mt-1 text-center num">{__BUILD__}</p>
       </div>
     </div>
   );
@@ -229,32 +229,32 @@ function RoundCard({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-[10px] text-slate-500">{group ? "your tee" : "tee times"}</div>
+          <div className="text-[11px] text-slate-500">{group ? "your tee" : "tee times"}</div>
           <div className="score text-base text-slate-200">
             {group?.teeTime ?? round.teeTimeWindow}
           </div>
-          {ch !== null && <div className="text-[11px] text-slate-500 num">your CH {ch}</div>}
+          {ch !== null && <div className="text-[12px] text-slate-500 num">your CH {ch}</div>}
         </div>
       </div>
       <ul className="mt-2.5 space-y-1">
         {round.formats.map((f) => (
-          <li key={f.id} className="text-[11px] text-slate-400 flex items-center gap-1.5">
+          <li key={f.id} className="text-[12px] text-slate-400 flex items-center gap-1.5">
             <span className="text-slate-600">•</span>
             <span className="truncate">{f.label}</span>
             {f.net && <span className="text-slate-600 num">{Math.round(f.allowance * 100)}%</span>}
             {f.hector && (
-              <span className="pill bg-violet-950/70 text-violet-300 text-[10px]">
+              <span className="pill bg-violet-950/70 text-violet-300 text-[11px]">
                 H {weightLabel(f.hector.pct)}
               </span>
             )}
             {f.victor && (
-              <span className="pill bg-amber-950/70 text-amber-300 text-[10px]">V</span>
+              <span className="pill bg-amber-950/70 text-amber-300 text-[11px]">V</span>
             )}
           </li>
         ))}
       </ul>
       {tee.suspect && (
-        <p className="mt-2 text-[10px] text-amber-500/80 leading-relaxed">
+        <p className="mt-2 text-[11px] text-amber-500/80 leading-relaxed">
           The published rating for this tee looks like a ladies' rating. Check it against the club
           scorecard and override it in Admin if needed.
         </p>
@@ -299,21 +299,21 @@ function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-2">
           <span className="score text-3xl">{event.players.length}</span>
-          <span className="text-[11px] uppercase tracking-wider text-slate-500">players</span>
+          <span className="text-[12px] uppercase tracking-wider text-slate-500">players</span>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="score text-3xl text-violet-300">{avg(event.players).toFixed(1)}</span>
-          <span className="text-[11px] uppercase tracking-wider text-slate-500">avg HCP</span>
+          <span className="text-[12px] uppercase tracking-wider text-slate-500">avg HCP</span>
         </div>
       </div>
 
       {buckets.map((players, i) => (
         <section key={i}>
           <div className="flex items-baseline justify-between border-b border-slate-700/70 pb-1.5">
-            <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-slate-500">
+            <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-slate-500">
               Bucket {i + 1}
             </h3>
-            <span className="text-[11px] text-slate-500 num">avg {avg(players).toFixed(1)}</span>
+            <span className="text-[12px] text-slate-500 num">avg {avg(players).toFixed(1)}</span>
           </div>
           <ul>
             {players.map((p) => (
@@ -324,17 +324,17 @@ function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
                 <span className={p.id === me?.id ? "font-semibold" : "text-slate-300"}>
                   {p.name}
                   {p.id === me?.id && (
-                    <span className="ml-1.5 text-[10px] font-semibold text-violet-400">you</span>
+                    <span className="ml-1.5 text-[11px] font-semibold text-violet-400">you</span>
                   )}
                 </span>
-                <span className="text-[11px] text-slate-500 num">{p.hi.toFixed(1)}</span>
+                <span className="text-[12px] text-slate-500 num">{p.hi.toFixed(1)}</span>
               </li>
             ))}
           </ul>
         </section>
       ))}
 
-      <p className="text-[11px] text-slate-500 leading-relaxed">
+      <p className="text-[12px] text-slate-500 leading-relaxed">
         {drafted
           ? "The draft pairs one player from each bucket."
           : "Handicaps refresh nightly from hector.golf until the draft — a moving handicap can still carry someone across the bucket line. The draft pairs one player from each bucket."}
@@ -359,7 +359,7 @@ function CourseCard({ courseId }: { courseId: string }) {
       >
         <div>
           <div className="font-semibold text-sm">{course.name}</div>
-          <div className="text-[11px] text-slate-500 num">
+          <div className="text-[12px] text-slate-500 num">
             Par {course.par.reduce((a, b) => a + b, 0)} ·{" "}
             {course.tees[tee].cr}/{course.tees[tee].slope} · {course.tees[tee].metres} m
           </div>
@@ -374,7 +374,7 @@ function CourseCard({ courseId }: { courseId: string }) {
               <button
                 key={t}
                 onClick={() => setTee(t)}
-                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${
                   tee === t
                     ? "bg-violet-600 text-white"
                     : "bg-slate-800 text-slate-400"
@@ -396,7 +396,7 @@ function CourseCard({ courseId }: { courseId: string }) {
             </a>
           )}
           {[0, 9].map((from) => (
-            <table key={from} className="w-full text-[10px] num mb-2">
+            <table key={from} className="w-full text-[11px] num mb-2">
               <tbody>
                 <tr className="text-slate-500">
                   <td className="text-left font-sans pr-1">Hole</td>
@@ -498,7 +498,7 @@ function Formats({ rounds }: { rounds: Round[] }) {
           rescore in their head without the rules in front of them. De-boxed into a
           rules sheet: hairline sections, tracked-caps headings. */}
       <div className="py-4 pt-1">
-        <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-violet-300">
+        <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-violet-300">
           The Hector · pairs
         </h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
@@ -507,7 +507,7 @@ function Formats({ rounds }: { rounds: Round[] }) {
         </p>
         <ul className="mt-2 space-y-1">
           {hectorRounds.map(({ round, f }) => (
-            <li key={`${round.id}-${f.id}`} className="text-[11px] text-slate-400 flex gap-1.5">
+            <li key={`${round.id}-${f.id}`} className="text-[12px] text-slate-400 flex gap-1.5">
               <span className="num font-bold text-violet-400 shrink-0 w-5">R{round.seq}</span>
               <span>
                 <span className="num font-semibold text-slate-300">{weightLabel(f.hector!.pct)}</span>{" "}
@@ -545,7 +545,7 @@ function Formats({ rounds }: { rounds: Round[] }) {
       </div>
 
       <div className="py-4 border-t border-slate-800">
-        <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-violet-300">
+        <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-violet-300">
           The draft
         </h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
@@ -557,7 +557,7 @@ function Formats({ rounds }: { rounds: Round[] }) {
       </div>
 
       <div className="py-4 border-t border-slate-800">
-        <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-amber-300">
+        <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-amber-300">
           The Victor · individual
         </h3>
         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
@@ -571,7 +571,7 @@ function Formats({ rounds }: { rounds: Round[] }) {
 
       {formats.map((i) => (
         <div key={i.title} className="py-4 border-t border-slate-800">
-          <h3 className="num text-[11px] tracking-[0.18em] uppercase font-semibold text-slate-300">
+          <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-slate-300">
             {i.title}
           </h3>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">{i.body}</p>
@@ -634,7 +634,7 @@ function News({
           <button type="submit" className="btn-primary w-full py-2 text-sm" disabled={!draft.trim()}>
             Post
           </button>
-          <p className="text-[11px] text-slate-500 text-center">
+          <p className="text-[12px] text-slate-500 text-center">
             Only organisers can post — players just see the announcements.
           </p>
         </form>
@@ -647,7 +647,7 @@ function News({
       {sorted.map((a) => (
         <div key={a.id} className="card p-3.5">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[11px] text-slate-500 num">{stamp(a.at)}</span>
+            <span className="text-[12px] text-slate-500 num">{stamp(a.at)}</span>
             {admin &&
               (confirmDelete === a.id ? (
                 <span className="flex gap-2 shrink-0">
@@ -657,13 +657,13 @@ function News({
                         announcements: announcements.filter((x) => x.id !== a.id),
                       }).then(() => setConfirmDelete(null))
                     }
-                    className="text-[11px] font-semibold text-white bg-rose-600 rounded px-1.5 py-0.5"
+                    className="text-[12px] font-semibold text-white bg-rose-600 rounded px-1.5 py-0.5"
                   >
                     Delete
                   </button>
                   <button
                     onClick={() => setConfirmDelete(null)}
-                    className="text-[11px] text-slate-400"
+                    className="text-[12px] text-slate-400"
                   >
                     Cancel
                   </button>
@@ -671,7 +671,7 @@ function News({
               ) : (
                 <button
                   onClick={() => setConfirmDelete(a.id)}
-                  className="text-[11px] text-slate-600 hover:text-rose-400 shrink-0"
+                  className="text-[12px] text-slate-600 hover:text-rose-400 shrink-0"
                 >
                   remove
                 </button>

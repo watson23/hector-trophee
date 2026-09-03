@@ -221,7 +221,7 @@ export default function ScoreAdmin({
                   className="card px-3 py-2.5 text-left hover:border-violet-600"
                 >
                   <div className="text-sm font-medium truncate">{s.name}</div>
-                  <div className="text-[11px] text-slate-500 num">
+                  <div className="text-[12px] text-slate-500 num">
                     {played ? `${played} holes` : "no scores"}
                   </div>
                 </button>
@@ -245,7 +245,7 @@ export default function ScoreAdmin({
           <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-1">
             Mirror the tournament
           </h2>
-          <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+          <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
             Copies the tournament's current data — scores, pairs, flights and round setup —
             into this sandbox, replacing everything here. The tournament itself is only read.
           </p>
@@ -281,12 +281,12 @@ export default function ScoreAdmin({
           Test data · whole tournament
         </h2>
         {space === "live" && backend !== "local" && (
-          <p className="text-[11px] text-rose-300/90 leading-relaxed mb-2">
+          <p className="text-[12px] text-rose-300/90 leading-relaxed mb-2">
             Temporarily enabled in the tournament space so there's data to browse — this
             gets removed before the trip.
           </p>
         )}
-        <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+        <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
           Plays all {rounds.length} rounds end to end, including the draft — round 1 is played
           first and its Stableford order decides who picks whom. No need to enter pairs by hand.
         </p>
@@ -311,7 +311,7 @@ export default function ScoreAdmin({
         <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mt-5 mb-1">
           Just round {round.seq}
         </h2>
-        <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+        <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
           Fills round {round.seq} with plausible scores for everyone playing it, so the
           leaderboards have something in them. Delete this section before the trip, or just
           clear the rounds again.
@@ -337,7 +337,7 @@ export default function ScoreAdmin({
         </div>
 
         {scored.length > 0 && (
-          <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+          <p className="text-[12px] text-slate-500 mt-2 leading-relaxed">
             This round already has scores. Clear it first — that guard is deliberate, so a
             stray tap can't overwrite a real round.
           </p>
@@ -473,7 +473,7 @@ function HoleEditor({
       <div className="flex items-center justify-between mb-3">
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate">{subject.name}</div>
-          <div className="text-[11px] text-slate-500 num">{subject.detail}</div>
+          <div className="text-[12px] text-slate-500 num">{subject.detail}</div>
         </div>
         {/* Not "Done" — the Admin header already has one, and two on a screen is a trap. */}
         <button onClick={onBack} className="btn-ghost px-3 py-1.5 text-xs shrink-0">
@@ -501,7 +501,7 @@ function HoleEditor({
           );
         })}
       </div>
-      <p className="text-[10px] text-slate-600 mt-1.5">
+      <p className="text-[11px] text-slate-600 mt-1.5">
         Cells show the score once entered, otherwise the hole number.
       </p>
 
@@ -533,7 +533,7 @@ function HoleEditor({
               ))}
             <button
               onClick={() => onSet(hole, null)}
-              className="w-12 h-11 rounded-xl text-[11px] font-semibold bg-slate-900
+              className="w-12 h-11 rounded-xl text-[12px] font-semibold bg-slate-900
                          border border-slate-700 text-slate-400"
             >
               clear

@@ -91,7 +91,7 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
   return (
     <section className="mx-4 mt-2 mb-4 card p-3.5">
       <h2 className="label mb-1">Handicaps</h2>
-      <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+      <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
         These refresh from hector.golf automatically every morning at 07 — this check is
         the backup if that ever fails. Rounds that have already been opened keep the
         handicaps they started with, so this never changes a score that's already been
@@ -142,7 +142,7 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
           )}
 
           {unmatched.length > 0 && (
-            <p className="text-[11px] text-amber-400/90 mb-2 leading-relaxed">
+            <p className="text-[12px] text-amber-400/90 mb-2 leading-relaxed">
               On hector.golf but not in this event: {unmatched.join(", ")}. Add them under
               Pairs if they're playing.
             </p>

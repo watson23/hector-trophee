@@ -117,7 +117,7 @@ function Glyph({ diff }: { diff: number }) {
 
 export function ScoreLegend() {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
       {[
         { diff: -2, label: "Eagle" },
         { diff: -1, label: "Birdie" },

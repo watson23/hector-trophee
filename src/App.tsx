@@ -361,7 +361,7 @@ function Connecting({ error }: { error: StoreError | null }) {
           {error ? error.hint : "Check your signal, then try again."}
         </p>
         {error && (
-          <p className="text-[10px] text-slate-600 mt-3 num">{error.code}</p>
+          <p className="text-[11px] text-slate-600 mt-3 num">{error.code}</p>
         )}
         <button className="btn-ghost w-full mt-4 text-sm" onClick={() => location.reload()}>
           Try again

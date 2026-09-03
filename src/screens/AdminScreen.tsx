@@ -74,7 +74,7 @@ export default function AdminScreen({
           <div className={`text-xs font-semibold ${space === "test" ? "text-sky-300" : ""}`}>
             {space === "test" ? "Test space" : "Tournament"}
           </div>
-          <p className="text-[11px] text-slate-500 leading-relaxed">
+          <p className="text-[12px] text-slate-500 leading-relaxed">
             {space === "test"
               ? "A sandbox with its own data — nothing here touches the tournament."
               : "The real data everyone sees. Switch this phone to the test space to play around safely."}
@@ -232,13 +232,13 @@ function PairsEditor({
 
       {defenceUnsettled && (
         <section className="card p-3.5 border-amber-500/30 bg-amber-500/[0.06]">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 mb-1">
+          <h2 className="text-[12px] font-semibold uppercase tracking-wider text-amber-400 mb-1">
             Defending champions
           </h2>
           <p className="text-sm font-semibold text-amber-100">
             {defenders[0].name} + {defenders[1].name}
           </p>
-          <p className="text-[11px] text-slate-400 leading-relaxed mt-1 mb-3">
+          <p className="text-[12px] text-slate-400 leading-relaxed mt-1 mb-3">
             Won in 2025, so they defend together and are not in the draft. The other{" "}
             {event.players.length - 2} pick among themselves.
           </p>
@@ -320,7 +320,7 @@ function PairsEditor({
                   <div className="text-sm font-semibold text-violet-300 truncate">
                     {pickerPlayer.name}
                   </div>
-                  <div className="text-[11px] text-slate-500 num">
+                  <div className="text-[12px] text-slate-500 num">
                     Bucket {pickerPlayer.bucket} · HCP {pickerPlayer.hi.toFixed(1)}
                     {hasResult && rankOf(pickerPlayer.id) > 0 && (
                       <> · round 1: {pointsOf(pickerPlayer.id)} pts, #{rankOf(pickerPlayer.id)}</>
@@ -348,7 +348,7 @@ function PairsEditor({
                     className="card px-3 py-2.5 text-left hover:border-violet-600"
                   >
                     <div className="text-sm font-medium truncate">{p.name}</div>
-                    <div className="text-[11px] text-slate-500 num">
+                    <div className="text-[12px] text-slate-500 num">
                       {hasResult && rankOf(p.id) > 0
                         ? `${pointsOf(p.id)} pts · #${rankOf(p.id)}`
                         : `HCP ${p.hi.toFixed(1)}`}
@@ -376,7 +376,7 @@ function PairsEditor({
                     className="card px-3 py-2.5 text-left hover:border-violet-600"
                   >
                     <div className="text-sm font-medium truncate">{p.name}</div>
-                    <div className="text-[11px] text-slate-500 num">
+                    <div className="text-[12px] text-slate-500 num">
                       B{p.bucket}
                       {hasResult && rankOf(p.id) > 0
                         ? ` · ${pointsOf(p.id)} pts · #${rankOf(p.id)}`
@@ -644,7 +644,7 @@ function GroupsEditor({
                   update(round.groups.map((x) => (x.id === g.id ? { ...x, teeTime: e.target.value } : x)))
                 }
               />
-              <span className={`text-[11px] num ${full ? "text-emerald-500" : "text-slate-500"}`}>
+              <span className={`text-[12px] num ${full ? "text-emerald-500" : "text-slate-500"}`}>
                 {g.playerIds.length} players{full ? " · full" : ""}
               </span>
             </div>
@@ -773,10 +773,10 @@ function TeeTimeDraw({
 
   return (
     <section className="card p-3.5 border-violet-800/60 bg-violet-950/20">
-      <h2 className="text-[11px] font-semibold uppercase tracking-wider text-violet-300 mb-1">
+      <h2 className="text-[12px] font-semibold uppercase tracking-wider text-violet-300 mb-1">
         Tee time draw
       </h2>
-      <p className="text-[11px] text-slate-400 leading-relaxed">
+      <p className="text-[12px] text-slate-400 leading-relaxed">
         One name at a time. The drawn player calls a tee time; tap it to lock them in,
         then draw the next.{" "}
         <span className="num">{remaining.length}</span> still in the hat.
@@ -804,7 +804,7 @@ function TeeTimeDraw({
                   className="btn-ghost py-2 text-xs num disabled:opacity-40"
                 >
                   {g.teeTime}
-                  <span className="block text-[10px] text-slate-500">
+                  <span className="block text-[11px] text-slate-500">
                     {g.playerIds.length}/{MAX_PER_FLIGHT}
                     {full ? " full" : ""}
                   </span>
@@ -983,13 +983,13 @@ function RoundEditorCard({
       </div>
 
       {tee.suspect && round.crOverride === undefined && (
-        <p className="text-[10px] text-amber-500/80 leading-relaxed">
+        <p className="text-[11px] text-amber-500/80 leading-relaxed">
           hector.golf publishes {teeLabel[round.tee]} at {tee.cr}, higher than the white tee — almost
           certainly the ladies' rating. Check the club scorecard and override CR above.
         </p>
       )}
 
-      <ul className="text-[11px] text-slate-500 space-y-0.5">
+      <ul className="text-[12px] text-slate-500 space-y-0.5">
         {round.formats.map((f) => (
           <li key={f.id}>
             {f.label} · {Math.round(f.allowance * 100)}%

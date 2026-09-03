@@ -34,7 +34,7 @@ export default function HoleByHole({
       {[0, 9].map((from) => (
         <Nine key={from} course={course} rows={rows} from={from} />
       ))}
-      {footer && <p className="text-[10px] text-slate-500 leading-relaxed">{footer}</p>}
+      {footer && <p className="text-[11px] text-slate-500 leading-relaxed">{footer}</p>}
     </div>
   );
 }
@@ -55,7 +55,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
       </colgroup>
       <tbody>
         {/* Hole numbers and par sit under the scores in weight, not over them. */}
-        <tr className="text-slate-500 text-[10px]">
+        <tr className="text-slate-500 text-[11px]">
           <td className="text-left font-sans">{from === 0 ? "Out" : "In"}</td>
           {holes.map((i) => (
             <td key={i} className="text-center">
@@ -64,7 +64,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
           ))}
           <td className="text-center font-semibold">Σ</td>
         </tr>
-        <tr className="text-slate-500/90 text-[10px]">
+        <tr className="text-slate-500/90 text-[11px]">
           <td className="text-left font-sans">Par</td>
           {holes.map((i) => (
             <td key={i} className="text-center">
@@ -78,7 +78,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
           const sum = played.reduce((a, i) => a + (row.values[i] ?? 0), 0);
           return (
             <tr key={row.label} className="border-t border-slate-800/70">
-              <td className="text-left font-sans text-[11px] text-slate-400 py-0.5 truncate">
+              <td className="text-left font-sans text-[12px] text-slate-400 py-0.5 truncate">
                 {row.label}
               </td>
               {holes.map((i) => (
