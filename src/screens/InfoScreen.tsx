@@ -223,9 +223,6 @@ function RoundCard({
             {course.shortName}
             <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
             {teeLabel[round.tee]}
-            <span className="text-slate-600 num">
-              {tee.cr}/{tee.slope}
-            </span>
           </div>
         </div>
         <div className="text-right shrink-0">

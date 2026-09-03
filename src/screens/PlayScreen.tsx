@@ -98,7 +98,7 @@ export default function PlayScreen({
         out.push({
           id: teamCardId(pair.id),
           name: `${a.name} + ${b.name}`,
-          detail: `Team playing HCP ${teamHcp}`,
+          detail: `Team HCP ${teamHcp}`,
           strokes: strokeAllocation(teamHcp, course.si),
           mine: pair.aId === me.id || pair.bId === me.id,
         });
@@ -119,7 +119,9 @@ export default function PlayScreen({
         return {
           id: p.id,
           name: p.name,
-          detail: `HCP ${hiFor(round, p).toFixed(1)} · playing ${playingHcp}`,
+          // GameBook convention: mid-round the app says plainly "HCP 17" — the
+          // playing handicap, the number that explains the stroke dots.
+          detail: `HCP ${playingHcp}`,
           strokes,
           mine: p.id === me.id,
         };
