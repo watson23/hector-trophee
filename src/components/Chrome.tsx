@@ -62,7 +62,11 @@ export function TabBar({
             onClick={() => onChange(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
             className={`relative flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium transition-colors ${
-              tab === t.id ? "text-violet-400" : "text-slate-500 hover:text-slate-300"
+              tab === t.id
+                ? t.id === "tournament"
+                  ? "text-gold-400" // the whole tab goes trophy-gold with its eagle
+                  : "text-violet-400"
+                : "text-slate-500 hover:text-slate-300"
             }`}
           >
             {badges?.[t.id] && (
