@@ -633,7 +633,7 @@ function HcpSection({
         )}
       </div>
       <p className="text-[12px] text-slate-500 leading-relaxed mt-1">
-        Mark each round after you've entered it into eBirdie or GameBook yourself.
+        Mark each round once it's in eBirdie or GameBook.
       </p>
       <div className="flex flex-wrap gap-1.5 mt-2">
         {relevant.map((r) => {
