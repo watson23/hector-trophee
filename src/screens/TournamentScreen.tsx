@@ -200,7 +200,7 @@ export default function TournamentScreen({
           Outline rather than filled: at this size a solid falcon reads as a blob. */}
       <HectorMark
         outline
-        className="absolute -top-3 right-3 w-28 h-28 text-violet-400/[0.11] pointer-events-none [mask-image:linear-gradient(to_bottom,black_50%,transparent_82%)]"
+        className="absolute -top-3 right-3 w-28 h-28 text-gold-400/[0.11] pointer-events-none [mask-image:linear-gradient(to_bottom,black_50%,transparent_82%)]"
       />
       <Header
         title="Tournament"

@@ -80,7 +80,11 @@ export function TabBar({
                 {t.icon}
               </svg>
             ) : (
-              <HectorMark className="w-6 h-6" />
+              /* The eagle is the trophy and the trophy is gold — always, active or
+                 not. Dimmed a step when the tab is inactive so tab state still reads. */
+              <HectorMark
+                className={`w-6 h-6 ${tab === t.id ? "text-gold-400" : "text-gold-400/60"}`}
+              />
             )}
             {labels?.[t.id] ?? t.label}
           </button>
