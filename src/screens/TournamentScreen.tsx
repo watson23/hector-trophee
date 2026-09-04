@@ -38,10 +38,20 @@ function tournamentThru(
   return `R${played[played.length - 1].seq} ✓`;
 }
 
-/** The rounds that have actually begun for anyone, from the data rather than status. */
-function begunRounds(rows: { perRound: Record<string, unknown> }[]): Set<string> {
+/**
+ * The rounds the field has actually begun. A round counts once it is open or final,
+ * or once more than one row has scores in it — a single stray card in an upcoming
+ * round (a tester, a flight teeing off early) must not make every other pair read
+ * "4 of 5 rounds".
+ */
+function begunRounds(rounds: Round[], rows: { perRound: Record<string, unknown> }[]): Set<string> {
+  const rowsIn = new Map<string, number>();
+  rows.forEach((r) => Object.keys(r.perRound).forEach((id) => rowsIn.set(id, (rowsIn.get(id) ?? 0) + 1)));
   const begun = new Set<string>();
-  rows.forEach((r) => Object.keys(r.perRound).forEach((id) => begun.add(id)));
+  for (const [id, n] of rowsIn) {
+    const status = rounds.find((r) => r.id === id)?.status;
+    if (status === "open" || status === "final" || n > 1) begun.add(id);
+  }
   return begun;
 }
 
@@ -103,8 +113,8 @@ export default function TournamentScreen({
   const complete = isTournamentComplete(rounds);
   const hectorRoundCount = rounds.filter((r) => r.formats.some((f) => f.hector)).length;
   const victorRoundCount = rounds.filter((r) => r.formats.some((f) => f.victor)).length;
-  const hectorBegun = begunRounds(hector);
-  const victorBegun = begunRounds(victor);
+  const hectorBegun = begunRounds(rounds, hector);
+  const victorBegun = begunRounds(rounds, victor);
   const hectorPlaces = new Map(rounds.map((r) => [r.id, placesOn(hector, r.id, (e) => e.toPar, hectorLowerIsBetter)]));
   const victorPlaces = new Map(rounds.map((r) => [r.id, placesOn(victor, r.id, (e) => e.points, false)]));
 
