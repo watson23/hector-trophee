@@ -314,7 +314,18 @@ export default function PlayScreen({
           <button className="btn-ghost w-full mb-3 text-sm" onClick={() => setView("hole")}>
             ← Back to the round
           </button>
-          <Scorecard course={course} subjects={subjects} cards={cards} />
+          <Scorecard
+            course={course}
+            subjects={subjects}
+            cards={cards}
+            mainKind={(round.formats.find((f) => f.hector) ?? round.formats[0])?.kind ?? "stableford"}
+            currentHole={hole}
+            onPickHole={(h) => {
+              setPin(h);
+              setView("hole");
+              setEntryOpen(true);
+            }}
+          />
         </div>
       ) : finished ? (
         <RoundFinished

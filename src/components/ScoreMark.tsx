@@ -13,13 +13,15 @@
  * the ring rather than tucked into its corner.
  */
 
-export type ScoreSize = "sm" | "md";
+export type ScoreSize = "sm" | "md" | "lg";
 
 const GEOM = {
   /** Inside an expanded leaderboard row — about 25px of column to work with. */
   sm: { box: "w-6 h-6", text: "text-[12px]", dot: "w-[3px] h-[3px]", lane: "h-[5px]" },
   /** The Scorecard tab, which has the full width of the card. */
   md: { box: "w-[25px] h-[25px]", text: "text-[13px]", dot: "w-[3.5px] h-[3.5px]", lane: "h-[6px]" },
+  /** The scorecard showing one nine — nine cells across the full card width. */
+  lg: { box: "w-[30px] h-[30px]", text: "text-[15px]", dot: "w-1 h-1", lane: "h-[6px]" },
 } as const;
 
 export interface MarkStyle {
