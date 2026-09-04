@@ -783,20 +783,34 @@ function RoundFinished({
 }
 
 /** The scorecard's colour for each result, so entry and card speak the same language. */
-type HoleArc = { w: number; h: number; arcs: Record<string, Record<string, { d: string; mid: [number, number] }>> };
+type HoleArc = {
+  w: number;
+  h: number;
+  tees: Record<string, { x: number; y: number }>;
+  arcs: Record<string, Record<string, { d: string; mid: [number, number] }>>;
+};
 const HOLE_ARCS = holeArcs as unknown as Record<string, Record<string, HoleArc>>;
 
 /**
- * The hole illustration with a distance arc from the round's tee. hector.golf draws
+ * The hole illustration with distance arcs from the round's tee. hector.golf draws
  * the maps to scale (~2.1 px/m, checked against the tee-to-tee metre differences), so
- * scripts/hole-arcs.py can place "200 m from this tee" as a real arc across the hole —
- * the number a tee shot is planned around. Par 3s don't get one: the green is the target.
+ * scripts/hole-arcs.py can place "150 / 200 / 250 m from this tee" as real arcs across
+ * the hole — 200 m, the number a tee shot is planned around, drawn solid; the others
+ * dashed. A marker on the tee shows where the measuring starts. Par 3s don't get arcs:
+ * the green is the target. The overlay can be switched off for anyone who finds it
+ * distracting; the choice sticks.
  */
 function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number; tee: string; par: number }) {
+  const [showArcs, setShowArcs] = usePersistentState("hectro_ui.holearcs", true);
   const data = HOLE_ARCS[courseId]?.[String(hole)];
-  const arc = par >= 4 ? data?.arcs[tee]?.["200"] : undefined;
+  const teePos = data?.tees[tee];
+  const arcs = par >= 4 && data ? data.arcs[tee] : undefined;
+  const hasArcs = Boolean(arcs && teePos && Object.keys(arcs).length > 0);
+  // Marker sizes are in image pixels; the map is drawn ~280px tall, so scale them up
+  // for tall images to land at the same size on screen.
+  const k = data ? Math.max(1, data.h / 280) : 1;
   return (
-    <div className="mt-3 flex justify-center">
+    <div className="mt-3 flex flex-col items-center">
       <div className="relative inline-block">
         <img
           src={holeMapUrl(courseId, hole)!}
@@ -804,25 +818,68 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
           loading="eager"
           className="block max-h-[280px] w-auto max-w-[80vw]"
         />
-        {arc && data && (
+        {hasArcs && showArcs && data && teePos && arcs && (
           <>
             <svg
               viewBox={`0 0 ${data.w} ${data.h}`}
               className="absolute inset-0 w-full h-full pointer-events-none"
               aria-hidden="true"
             >
-              <path d={arc.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={4} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-              <path d={arc.d} fill="none" stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+              {["150", "200", "250"].map((m) => {
+                const a = arcs[m];
+                if (!a) return null;
+                const main = m === "200";
+                return (
+                  <g key={m}>
+                    <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                    <path
+                      d={a.d}
+                      fill="none"
+                      stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
+                      strokeWidth={main ? 1.5 : 1}
+                      strokeDasharray={main ? undefined : "3 3"}
+                      vectorEffect="non-scaling-stroke"
+                      strokeLinecap="round"
+                    />
+                  </g>
+                );
+              })}
+              <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
+              <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="#fff" stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
             </svg>
+            {["150", "200", "250"].map((m) => {
+              const a = arcs[m];
+              if (!a) return null;
+              const main = m === "200";
+              return (
+                <span
+                  key={m}
+                  className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] ${
+                    main ? "font-semibold text-slate-200" : "text-slate-500"
+                  }`}
+                  style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
+                >
+                  {m}{main ? " m" : ""}
+                </span>
+              );
+            })}
             <span
-              className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] font-semibold text-slate-300"
-              style={{ top: `${(arc.mid[1] / data.h) * 100}%` }}
+              className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] text-slate-500"
+              style={{ top: `${(teePos.y / data.h) * 100}%` }}
             >
-              200 m
+              0 m
             </span>
           </>
         )}
       </div>
+      {hasArcs && (
+        <button
+          onClick={() => setShowArcs((v) => !v)}
+          className="mt-2 text-[12px] font-medium text-slate-500 underline underline-offset-4 py-1"
+        >
+          {showArcs ? "Hide distances" : "Show distances"}
+        </button>
+      )}
     </div>
   );
 }

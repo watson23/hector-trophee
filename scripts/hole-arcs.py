@@ -20,8 +20,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, ".cache", "holes")
 OUT = os.path.join(ROOT, "src", "data", "holeArcs.json")
-# 200 m is the one people plan a tee shot around; 150/250 can be added here at ~25 KB each.
-DISTANCES = [200]
+DISTANCES = [150, 200, 250]
 
 COURSES = {
     "radecky": {
@@ -165,7 +164,7 @@ def analyse(course, hole):
             run = max(runs, key=len)
             if len(run) < 6:
                 continue
-            step = max(1, len(run) // 14)
+            step = max(1, len(run) // 12)
             sampled = run[::step] + [run[-1]]
             path = "M" + " L".join(f"{x:.0f} {y:.0f}" for x, y in sampled)
             mid = run[len(run) // 2]
