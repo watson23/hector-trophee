@@ -109,6 +109,7 @@ export default function ScoreAdmin({
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmMirror, setConfirmMirror] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmSimulate, setConfirmSimulate] = useState<18 | 7 | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   // Simulation belongs in the sandbox. In the tournament space, filling rounds with
   // fake scores is exactly the button nobody should be able to fat-finger — fixing a
@@ -296,31 +297,38 @@ export default function ScoreAdmin({
           Plays all {rounds.length} rounds end to end, including the draft — round 1 is played
           first and its Stableford order decides who picks whom. No need to enter pairs by hand.
         </p>
+        {/* Two taps, like every other button here that overwrites scores: the first
+            names what is about to happen, the second does it. */}
         <div className="grid grid-cols-2 gap-2">
-          <button
-            disabled={Boolean(busy)}
-            onClick={() =>
-              run("Simulating…", async (d) => {
-                await backup("Before simulating a week").catch(() => {});
-                await simulateTournament(d, 18);
-              })
-            }
-            className="btn-ghost py-2 text-xs disabled:opacity-40"
-          >
-            Play whole tournament
-          </button>
-          <button
-            disabled={Boolean(busy)}
-            onClick={() =>
-              run("Simulating…", async (d) => {
-                await backup("Before simulating a week").catch(() => {});
-                await simulateTournament(d, 7);
-              })
-            }
-            className="btn-ghost py-2 text-xs disabled:opacity-40"
-          >
-            …with last round live
-          </button>
+          {([18, 7] as const).map((holes) => {
+            const asking = confirmSimulate === holes;
+            return (
+              <button
+                key={holes}
+                disabled={Boolean(busy)}
+                onClick={() => {
+                  if (!asking) {
+                    setConfirmSimulate(holes);
+                    return;
+                  }
+                  setConfirmSimulate(null);
+                  void run("Simulating…", async (d) => {
+                    await backup("Before simulating a week").catch(() => {});
+                    await simulateTournament(d, holes);
+                  });
+                }}
+                className={`py-2 text-xs disabled:opacity-40 ${
+                  asking ? "rounded-xl bg-rose-600 text-white font-semibold" : "btn-ghost"
+                }`}
+              >
+                {asking
+                  ? "Yes, overwrite all scores"
+                  : holes === 18
+                    ? "Play whole tournament"
+                    : "…with last round live"}
+              </button>
+            );
+          })}
         </div>
         {busy && <p className="text-xs text-violet-300 mt-2 num">{busy}</p>}
 
