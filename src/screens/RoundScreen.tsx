@@ -306,6 +306,7 @@ export default function RoundScreen({
                   rows={rows}
                   lowerIsBetter
                   scoreHeader="To par"
+                  gapDecimals={0}
                   leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                 />

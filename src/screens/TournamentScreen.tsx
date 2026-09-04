@@ -324,6 +324,7 @@ export default function TournamentScreen({
             lowerIsBetter
             scoreHeader="Pts"
             decimals={0}
+            gapDecimals={0}
             wideThru
             leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
             highlightKeys={highlightPlayers}

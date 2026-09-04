@@ -25,6 +25,7 @@ export default function LeaderTable({
   lowerIsBetter,
   scoreHeader,
   decimals = 0,
+  gapDecimals,
   totalHoles = 18,
   leaderMark,
   wideThru = false,
@@ -34,6 +35,8 @@ export default function LeaderTable({
   lowerIsBetter: boolean;
   scoreHeader: string;
   decimals?: number;
+  /** Decimals in the Gap column; defaults to at least one. Whole-number tables pass 0. */
+  gapDecimals?: number;
   totalHoles?: number;
   /** Shown beside whoever is leading — a pair of falcons for pairs, one for an individual. */
   leaderMark?: ReactNode;
@@ -214,8 +217,8 @@ export default function LeaderTable({
                       ? (r.item.display ?? r.item.value.toFixed(decimals))
                       : "—"}
                   </td>
-                  <td className="text-right px-0.5 num text-[12px] text-slate-400 whitespace-nowrap">
-                    {r.item.played ? formatDiff(r.diff, Math.max(decimals, 1)) : "—"}
+                  <td className="text-right pl-2 pr-0.5 num text-[12px] text-slate-400 whitespace-nowrap">
+                    {r.item.played ? formatDiff(r.diff, gapDecimals ?? Math.max(decimals, 1)) : "—"}
                   </td>
                   <td className="text-right pl-1.5 pr-2.5 num text-[12px] text-slate-400 whitespace-nowrap">
                     {r.item.thruLabel ?? formatThru(r.item.thru, totalHoles)}

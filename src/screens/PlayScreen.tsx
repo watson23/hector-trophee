@@ -480,7 +480,7 @@ function OnCourse({
         strokes: [sub.strokes[hole - 1]],
         // To par (or points) alone: the stroke total mid-round says little, and the
         // scorecard is one tap away for anyone who wants it.
-        figure: !p || p.thru === 0 ? "—" : fr!.spec.kind === "stableford" ? String(p.value) : formatToPar(toPar),
+        figure: !p || p.thru === 0 ? "—" : formatToPar(toPar),
       });
     }
   }
