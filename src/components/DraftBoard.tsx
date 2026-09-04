@@ -103,22 +103,24 @@ export default function DraftBoard({
         {([1, 2] as const).map((bucket) => (
           <div key={bucket}>
             <p className="label mb-1.5">Bucket {bucket}</p>
-            <ul className="space-y-1">
+            <ul className="space-y-1.5">
               {remaining(bucket).map((p) => (
+                {/* Big enough for four heads over one phone: who is still there is
+                    the question the whole room asks the board. */}
                 <li
                   key={p.id}
-                  className={`text-xs flex items-baseline gap-1.5 ${
-                    p.id === nextPlayer?.id ? "text-violet-300 font-semibold" : "text-slate-400"
+                  className={`text-base leading-snug flex items-baseline gap-2 ${
+                    p.id === nextPlayer?.id ? "text-violet-300 font-semibold" : "text-slate-200"
                   }`}
                 >
-                  <span className="num text-[11px] text-slate-600 w-4 shrink-0">
+                  <span className="num text-[12px] text-slate-500 w-5 shrink-0">
                     {rankOf(p.id)}
                   </span>
                   <span className="truncate">{p.name}</span>
                 </li>
               ))}
               {remaining(bucket).length === 0 && (
-                <li className="text-xs text-slate-600">all picked</li>
+                <li className="text-sm text-slate-600">all picked</li>
               )}
             </ul>
           </div>

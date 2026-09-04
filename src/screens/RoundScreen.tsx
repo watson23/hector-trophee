@@ -15,6 +15,7 @@ import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HectorMark from "../components/HectorMark";
 import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
 import DraftBoard from "../components/DraftBoard";
+import { draftRoundOf, isDraftNight } from "../lib/draftNight";
 import { Empty, Segmented } from "../components/Chrome";
 
 interface Props {
@@ -179,6 +180,9 @@ export default function RoundScreen({
             }`}
           >
             R{r.seq}
+            {/* Draft night: the chip says where the board is, for anyone who arrives
+                here sitting on another round. */}
+            {isDraftNight(event, rounds) && draftRoundOf(rounds)?.id === r.id && " · Draft"}
             {r.status === "open" && r.id !== round.id && (
               <span className="live-dot ml-1 align-middle" />
             )}

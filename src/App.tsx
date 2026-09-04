@@ -5,7 +5,7 @@ import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, type Tab } from "./components/Chrome";
 import { currentSpace, eventIdFor } from "./lib/space";
-import { isDraftNight } from "./lib/draftNight";
+import { draftRoundOf, isDraftNight } from "./lib/draftNight";
 
 /* Draft night's tab icon: two people, the pairing being made. */
 const DRAFT_ICON = (
@@ -380,6 +380,12 @@ export default function App() {
           tab={tab}
           onChange={(next) => {
             setReturnToCard(false);
+            // Draft night: the Draft! tab lands on the draft round, wherever the
+            // viewer last browsed — the board lives on round 1, not on R5.
+            if (next === "round" && isDraftNight(t.event, t.rounds)) {
+              const draft = draftRoundOf(t.rounds);
+              if (draft) setRoundSel(draft.id);
+            }
             setTab(next);
           }}
           badges={{ info: newsUnread }}
