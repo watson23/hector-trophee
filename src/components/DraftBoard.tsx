@@ -103,10 +103,10 @@ export default function DraftBoard({
         {([1, 2] as const).map((bucket) => (
           <div key={bucket}>
             <p className="label mb-1.5">Bucket {bucket}</p>
+            {/* Big enough for four heads over one phone: who is still there is the
+                question the whole room asks the board. */}
             <ul className="space-y-1.5">
               {remaining(bucket).map((p) => (
-                {/* Big enough for four heads over one phone: who is still there is
-                    the question the whole room asks the board. */}
                 <li
                   key={p.id}
                   className={`text-base leading-snug flex items-baseline gap-2 ${

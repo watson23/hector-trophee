@@ -382,7 +382,7 @@ export default function App() {
             setReturnToCard(false);
             // Draft night: the Draft! tab lands on the draft round, wherever the
             // viewer last browsed — the board lives on round 1, not on R5.
-            if (next === "round" && isDraftNight(t.event, t.rounds)) {
+            if (next === "round" && t.event && isDraftNight(t.event, t.rounds)) {
               const draft = draftRoundOf(t.rounds);
               if (draft) setRoundSel(draft.id);
             }
