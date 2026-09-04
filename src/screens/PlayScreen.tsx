@@ -511,13 +511,13 @@ function OnCourse({
         {holeMapUrl(round.courseId, hole) && (
           <button
             onClick={() => setShowMap((v) => !v)}
-            className={`mt-3 mx-auto flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold ${
+            className={`mt-2.5 mx-auto flex h-8 items-center justify-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold ${
               showMap
                 ? "bg-slate-800 text-slate-300"
                 : "bg-violet-600 text-white shadow-[0_2px_12px_rgba(83,64,173,0.35)]"
             }`}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5" aria-hidden="true">
               <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
             </svg>
             {showMap ? "Hide map" : "Hole map"}
