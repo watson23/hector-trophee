@@ -254,12 +254,16 @@ export default function RoundScreen({
                 key: p.playerId,
                 label: p.name,
                 value: p.thru > 0 ? (p.toPar ?? 0) : 0,
-                // Ranked to par (net par = 2 points) so mid-round comparison is fair —
-                // but points are the display, because "40 points!" is how Stableford
-                // is actually spoken. Stroke formats show to par for the same reason:
-                // "twelve under" is how those are spoken. Thru explains the ordering.
-                display: f.spec.kind === "stableford" ? String(p.value) : formatToPar(p.toPar ?? 0),
-                extra: f.spec.net ? `playing HCP ${p.playingHcp}` : undefined,
+                // The column is to par for every format — on Stableford that is points
+                // against two a hole, which is also what the ranking uses. The points
+                // total, the number people actually say, sits on the line beneath.
+                display: formatToPar(p.toPar ?? 0),
+                extra: [
+                  f.spec.kind === "stableford" && p.thru > 0 ? `${p.value} pts` : null,
+                  f.spec.net ? `playing HCP ${p.playingHcp}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || undefined,
                 thru: p.thru,
                 played: p.thru > 0,
                 detail: course && (
@@ -301,7 +305,7 @@ export default function RoundScreen({
                 <LeaderTable
                   rows={rows}
                   lowerIsBetter
-                  scoreHeader={f.spec.kind === "stableford" ? "Pts" : "To par"}
+                  scoreHeader="To par"
                   leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                 />
