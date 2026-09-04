@@ -215,18 +215,18 @@ export default function TournamentScreen({
                 if (done === 0 && !live) return `Six rounds, two trophies — nothing scored yet`;
                 // The on-air mark, in the Round chyron's own language: emerald and a
                 // breathing dot, so "live" reads as scores moving under the table.
-                return (
-                  <>
-                    Running totals · {done} of {rounds.length} rounds in
-                    {live && (
-                      <>
-                        {" · "}
-                        <span className="inline-flex items-center gap-1.5 text-emerald-300 font-semibold">
-                          <span className="live-dot" />R{live.seq} live
-                        </span>
-                      </>
-                    )}
-                  </>
+                // One line on a phone: with a live round the on-air mark leads and
+                // "Running totals" goes — wrapped onto its own line it looked stranded.
+                return live ? (
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-300 font-semibold">
+                      <span className="live-dot" />R{live.seq} live
+                    </span>
+                    <span className="text-slate-600">·</span>
+                    {done} of {rounds.length} rounds in
+                  </span>
+                ) : (
+                  `Running totals · ${done} of ${rounds.length} rounds in`
                 );
               })()
         }
