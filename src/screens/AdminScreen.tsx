@@ -24,6 +24,8 @@ interface Props {
   saveRound: (round: Round) => Promise<void>;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   onClose: () => void;
+  /** Hand the organiser role back: the pill goes, the PIN is needed to return. */
+  onSignOut: () => void;
 }
 
 export default function AdminScreen({
@@ -40,6 +42,7 @@ export default function AdminScreen({
   saveRound,
   setHole,
   onClose,
+  onSignOut,
 }: Props) {
   // Rounds first: it and Flights are the daily workspace, while Pairs is essentially
   // never touched again after Thursday's draft. Session-persisted, like the rest of the
@@ -146,6 +149,21 @@ export default function AdminScreen({
             saveRound={saveRound}
           />
         )}
+      </div>
+
+      {/* A formal way out of the role, for someone who wants to play a round as a
+          plain player — no hovering pill, no accidental edits. Bottom of the page,
+          under everything: an exit, not a control you reach for daily. */}
+      <div className="px-4 mt-10 text-center">
+        <button
+          onClick={onSignOut}
+          className="text-[13px] font-medium text-slate-500 underline underline-offset-4 py-2"
+        >
+          Sign out of organiser role
+        </button>
+        <p className="mt-1 text-[12px] text-slate-600">
+          The Admin button disappears from your screen. The organiser PIN lets you back in.
+        </p>
       </div>
     </div>
   );

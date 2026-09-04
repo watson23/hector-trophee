@@ -242,6 +242,10 @@ export default function App() {
             saveRound={t.saveRound}
             setHole={t.setHole}
             onClose={() => setAdminOpen(false)}
+            onSignOut={() => {
+              update({ admin: false });
+              setAdminOpen(false);
+            }}
           />
         ) : (
           <>
