@@ -859,7 +859,7 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
                   }`}
                   style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
                 >
-                  {m}{main ? " m" : ""}
+                  ≈{m}{main ? " m" : ""}
                 </span>
               );
             })}
@@ -872,21 +872,18 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
           </>
         )}
       </div>
+      {/* One quiet line: the toggle, and while the arcs are on, the caveat — the "≈"
+          on every label already says "estimate"; this says from what. */}
       {hasArcs && (
-        <>
-          {showArcs && (
-            <p className="mt-2 max-w-[17rem] text-center text-[11px] leading-snug text-slate-600">
-              Distances generated from measurements on the course drawing, not on the ground —
-              a guide for club choice, not a rangefinder.
-            </p>
-          )}
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600">
           <button
             onClick={() => setShowArcs((v) => !v)}
-            className="mt-1 text-[12px] font-medium text-slate-500 underline underline-offset-4 py-1"
+            className="font-medium text-slate-500 underline underline-offset-4 py-1"
           >
             {showArcs ? "Hide distances" : "Show distances"}
           </button>
-        </>
+          {showArcs && <span>· estimated from the course drawing</span>}
+        </div>
       )}
     </div>
   );
