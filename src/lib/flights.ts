@@ -1,6 +1,20 @@
 import type { Pair, PlayingGroup, Round } from "../types";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups } from "../data/rounds";
 
+/**
+ * The round's tee-time window as it actually stands: derived from the flights
+ * whenever they exist, so edited tee times show everywhere immediately. The
+ * seeded `teeTimeWindow` string is only the fallback for a round with no
+ * flights yet — tee times change in real life, the seed does not.
+ */
+export function teeWindow(round: Round): string {
+  const times = round.groups.map((g) => g.teeTime).filter(Boolean).sort();
+  if (times.length === 0) return round.teeTimeWindow;
+  const first = times[0];
+  const last = times[times.length - 1];
+  return first === last ? first : `${first}–${last}`;
+}
+
 /** A flight holds at most four players — the physical size of a golf group. */
 export const MAX_PER_FLIGHT = 4;
 

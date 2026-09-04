@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
-import { flightsForPairs, MAX_PER_FLIGHT } from "../lib/flights";
+import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
@@ -904,7 +904,7 @@ function RoundEditorCard({
         <div>
           <span className="text-xs font-bold text-violet-400 num">R{round.seq}</span>
           <span className="text-sm font-semibold ml-2">{round.day}</span>
-          <span className="text-xs text-slate-500 ml-2 num">{round.teeTimeWindow}</span>
+          <span className="text-xs text-slate-500 ml-2 num">{teeWindow(round)}</span>
         </div>
         {round.provisional && (
           <button

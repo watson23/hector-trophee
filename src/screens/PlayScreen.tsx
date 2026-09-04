@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeLabel } from "../data/courses";
@@ -755,7 +756,7 @@ function NextRound({
             <div>
               <div className="label">{group ? "Your tee time" : "Tee times"}</div>
               <div className="score text-4xl mt-1">
-                {group?.teeTime ?? round.teeTimeWindow}
+                {group?.teeTime ?? teeWindow(round)}
               </div>
             </div>
             {ch !== null && (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Announcement, EventDoc, FieldPlayer, Round } from "../types";
 import { courseGuideUrl, courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
@@ -230,7 +231,7 @@ function RoundCard({
         <div className="text-right shrink-0">
           <div className="text-[11px] text-slate-500">{group ? "your tee" : "tee times"}</div>
           <div className="score text-base text-slate-200">
-            {group?.teeTime ?? round.teeTimeWindow}
+            {group?.teeTime ?? teeWindow(round)}
           </div>
           {ch !== null && <div className="text-[12px] text-slate-500 num">your CH {ch}</div>}
         </div>
