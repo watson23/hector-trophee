@@ -140,6 +140,11 @@ export interface EventDoc {
    * draft pool, because the draft runs among everyone else.
    */
   defendingPair?: [string, string] | null;
+  /**
+   * Thursday night's draft board stays up — Round tab relabelled "Draft", the board
+   * shown even once all pairs stand — until the organiser concludes it in Admin.
+   */
+  draftConcluded?: boolean;
 }
 
 /** A single scorecard. `holes` is a sparse map so per-hole writes merge. */

@@ -189,6 +189,7 @@ export default function RoundScreen({
       {/* The draft round: before it's in, a note about what the order will mean; once
           it's final, the live draft board — until the ten pairs stand. */}
       {round.formats.some((f) => f.hector?.source === "betterIndividual") &&
+        !event.draftConcluded &&
         (round.status === "final" ? (
           <DraftBoard event={event} result={result} />
         ) : (

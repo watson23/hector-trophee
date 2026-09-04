@@ -7,7 +7,8 @@ import type { RoundResult } from "../lib/engine";
  * what's left in each bucket. This is the read-only board; the picks themselves are
  * entered in Admin as they happen, and every phone watching sees the board move.
  *
- * Hidden again once the pairs are complete — the Hector table takes over from there.
+ * Stays up once the pairs are complete — "all set" — until the organiser concludes the
+ * draft in Admin; RoundScreen decides when to show it.
  */
 export default function DraftBoard({
   event,
@@ -33,7 +34,7 @@ export default function DraftBoard({
   if (order.length === 0) return null;
 
   const target = Math.floor(event.players.length / 2);
-  if (event.pairs.length >= target) return null;
+  const complete = event.pairs.length >= target;
 
   const next = order.find((p) => !paired.has(p.playerId) && !outOfDraft.has(p.playerId));
   const nextPlayer = next ? byId.get(next.playerId) : null;
@@ -51,7 +52,16 @@ export default function DraftBoard({
     <section className="mx-4 mt-3 rounded-2xl border border-violet-800/60 bg-violet-950/25 p-4">
       <p className="label text-violet-300">Draft night</p>
 
-      {nextPlayer && (
+      {complete && (
+        <p className="mt-1.5 font-serif text-xl font-semibold leading-tight">
+          All {target} pairs are set
+          <span className="block text-xs font-normal text-slate-400 mt-0.5">
+            The Hector starts tomorrow — the organiser closes this board when the night is done.
+          </span>
+        </p>
+      )}
+
+      {!complete && nextPlayer && (
         <p className="mt-1.5 font-serif text-xl font-semibold leading-tight">
           {nextPlayer.name} picks next
           <span className="block text-xs font-normal text-slate-400 mt-0.5">
@@ -88,6 +98,7 @@ export default function DraftBoard({
         </div>
       )}
 
+      {!complete && (
       <div className="mt-3 grid grid-cols-2 gap-3">
         {([1, 2] as const).map((bucket) => (
           <div key={bucket}>
@@ -113,11 +124,14 @@ export default function DraftBoard({
           </div>
         ))}
       </div>
+      )}
 
-      <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
-        Order is the round 1 Stableford result. The organiser enters each pick in Admin as
-        it's made.
-      </p>
+      {!complete && (
+        <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
+          Order is the round 1 Stableford result. The organiser enters each pick in Admin as
+          it's made.
+        </p>
+      )}
     </section>
   );
 }

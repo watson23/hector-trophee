@@ -323,6 +323,34 @@ function PairsEditor({
         </section>
       )}
 
+      {/* Draft night's on/off switch. The board on everyone's Round tab — relabelled
+          "Draft" — stays up after the last pick so the room can look at the result;
+          this is where the organiser brings the app back to its normal shape. */}
+      {draftRound?.status === "final" && (
+        <section className="card p-3.5 border-violet-800/60 bg-violet-950/25">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-[12px] font-semibold uppercase tracking-wider text-violet-300">
+                Draft night
+              </h2>
+              <p className="text-[12px] text-slate-400 leading-relaxed mt-0.5">
+                {event.draftConcluded
+                  ? "Concluded — the Round tab and board are back to normal."
+                  : event.pairs.length >= target
+                    ? "All pairs set. The board stays on every phone until you conclude the draft."
+                    : `The Round tab reads "Draft" and shows the board on every phone.`}
+              </p>
+            </div>
+            <button
+              onClick={() => saveEvent({ draftConcluded: !event.draftConcluded })}
+              className={`${event.draftConcluded ? "btn-ghost" : "btn-primary"} px-3 py-2 text-xs shrink-0`}
+            >
+              {event.draftConcluded ? "Reopen draft" : "Conclude draft"}
+            </button>
+          </div>
+        </section>
+      )}
+
       <section>
         <h2 className="label mb-2">
           Pairs ({event.pairs.length} of {target})

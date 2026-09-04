@@ -5,6 +5,7 @@ import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, type Tab } from "./components/Chrome";
 import { currentSpace, eventIdFor } from "./lib/space";
+import { isDraftNight } from "./lib/draftNight";
 import PlayScreen from "./screens/PlayScreen";
 import RoundScreen from "./screens/RoundScreen";
 import TournamentScreen from "./screens/TournamentScreen";
@@ -194,7 +195,7 @@ export default function App() {
           tab={tvTab}
           onChange={setTab}
           visible={["round", "tournament", "info"]}
-          labels={{ round: "Live" }}
+          labels={{ round: isDraftNight(t.event, t.rounds) ? "Draft" : "Live" }}
         />
       </div>
     );
@@ -362,6 +363,7 @@ export default function App() {
             setTab(next);
           }}
           badges={{ info: newsUnread }}
+          labels={isDraftNight(t.event, t.rounds) ? { round: "Draft" } : undefined}
         />
       )}
     </div>
