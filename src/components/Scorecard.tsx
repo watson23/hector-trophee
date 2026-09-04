@@ -186,7 +186,7 @@ export default function Scorecard({
           left (zoom in), the whole round on the right (zoom out). */}
       <div className="mt-4 flex gap-2">
         <button className="btn-ghost basis-1/2 py-3" onClick={onBack}>
-          ← Back to the round
+          ← Back
         </button>
         {onShowWholeRound && board && (
           <button className="btn-ghost basis-1/2 py-3" onClick={() => onShowWholeRound(board.id)}>
