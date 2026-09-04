@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFENDING_PAIR } from "../lib/store";
 import { usePersistentState } from "../hooks/usePersistentState";
-import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
-import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course } from "../types";
+import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/flights";
+import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair } from "../types";
 import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
@@ -147,6 +147,7 @@ export default function AdminScreen({
             rounds={rounds}
             roundResults={roundResults}
             saveEvent={saveEvent}
+            patchRound={patchRound}
           />
         )}
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} patchRound={patchRound} />}
@@ -233,12 +234,61 @@ function PairsEditor({
   rounds,
   roundResults,
   saveEvent,
+  patchRound,
 }: {
   event: EventDoc;
   rounds: Round[];
   roundResults: Record<string, RoundResult>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
+  /*
+   * Draft-night tradition: a pair, once formed, picks its tee time for the morning.
+   * So the first pair round's flights are set right here, under each pair, and appear
+   * on the Flights tab and everyone's schedule as they are chosen.
+   */
+  const draftSeq = rounds.find((r) => r.formats.some((f) => f.hector?.source === "betterIndividual"))?.seq;
+  const nextRound = draftSeq !== undefined
+    ? rounds.find((r) => r.seq === draftSeq + 1 && r.status !== "final")
+    : undefined;
+  const flightOf = (pair: Pair) =>
+    nextRound?.groups.find((g) => g.playerIds.includes(pair.aId) || g.playerIds.includes(pair.bId));
+  // The pair just formed, until its tee time is picked: the question is asked right
+  // where the pick was made, so the two of them answer it while they are still standing there.
+  const [justPaired, setJustPaired] = useState<string | null>(null);
+  const placePair = (pair: Pair, groupId: string | null) => {
+    if (!nextRound) return;
+    const groups = placeUnit(nextRound.groups, [pair.aId, pair.bId], groupId);
+    if (groups) void patchRound(nextRound.id, { groups });
+    if (groupId) setJustPaired((v) => (v === pair.id ? null : v));
+  };
+  const teeChips = (pair: Pair) =>
+    nextRound && (
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] uppercase tracking-wider text-slate-500 mr-0.5">R{nextRound.seq} tee</span>
+        {nextRound.groups.map((g) => {
+          const mine = flightOf(pair)?.id === g.id;
+          const others = g.playerIds.filter((id) => id !== pair.aId && id !== pair.bId).length;
+          const full = !mine && others + 2 > MAX_PER_FLIGHT;
+          return (
+            <button
+              key={g.id}
+              disabled={full}
+              onClick={() => placePair(pair, mine ? null : g.id)}
+              className={`num rounded-lg px-2 py-1 text-[12px] font-semibold ${
+                mine ? "bg-violet-600 text-white" : full ? "bg-slate-900 text-slate-600" : "bg-slate-800 text-slate-300"
+              }`}
+              title={full ? "Full" : undefined}
+            >
+              {g.teeTime}
+              <span className={`ml-1 font-normal ${mine ? "text-violet-200" : "text-slate-500"}`}>
+                {others + (mine ? 2 : 0)}/{MAX_PER_FLIGHT}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
   const [picking, setPicking] = useState<string | null>(null);
   const [chooseAny, setChooseAny] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
@@ -298,11 +348,11 @@ function PairsEditor({
   const pointsOf = (id: string) => order.find((p) => p.playerId === id)?.value;
 
   async function addPair(aId: string, bId: string) {
-    await saveEvent({
-      pairs: [...event.pairs, { id: `pair-${event.pairs.length + 1}-${aId}`, aId, bId }],
-    });
+    const id = `pair-${event.pairs.length + 1}-${aId}`;
+    await saveEvent({ pairs: [...event.pairs, { id, aId, bId }] });
     setPicking(null);
     setChooseAny(false);
+    setJustPaired(id);
   }
 
   async function removePair(id: string) {
@@ -389,6 +439,28 @@ function PairsEditor({
         </section>
       )}
 
+      {(() => {
+        const pair = justPaired ? event.pairs.find((p) => p.id === justPaired) : undefined;
+        if (!pair || !nextRound || flightOf(pair)) return null;
+        return (
+          <section className="card p-3.5 border-violet-800/60 bg-violet-950/25">
+            <h2 className="text-[12px] font-semibold uppercase tracking-wider text-violet-300">
+              New pair — pick their tee time
+            </h2>
+            <p className="text-sm font-semibold mt-0.5">
+              {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
+            </p>
+            {teeChips(pair)}
+            <button
+              onClick={() => setJustPaired(null)}
+              className="mt-2 text-[12px] text-slate-500 underline underline-offset-2"
+            >
+              Decide later
+            </button>
+          </section>
+        );
+      })()}
+
       <section>
         <h2 className="label mb-2">
           Pairs ({event.pairs.length} of {target})
@@ -398,7 +470,8 @@ function PairsEditor({
         ) : (
           <ol className="space-y-2">
             {event.pairs.map((pair, i) => (
-              <li key={pair.id} className="card p-3 flex items-center justify-between gap-2">
+              <li key={pair.id} className="card p-3">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xs num text-slate-600 w-4">{i + 1}</span>
                   <span className="text-sm font-medium truncate">
@@ -436,6 +509,8 @@ function PairsEditor({
                     Remove
                   </button>
                 )}
+              </div>
+              {nextRound && teeChips(pair)}
               </li>
             ))}
           </ol>
@@ -635,17 +710,8 @@ function GroupsEditor({
   const update = (groups: Round["groups"]) => patchRound(round.id, { groups });
 
   function moveUnit(unit: FlightUnit, toGroupId: string | null) {
-    const groups = round.groups.map((g) => ({
-      ...g,
-      playerIds: g.playerIds.filter((id) => !unit.playerIds.includes(id)),
-    }));
-    if (toGroupId) {
-      const target = groups.find((g) => g.id === toGroupId);
-      // Four to a flight is a hard fact of golf, not a preference — never overfill.
-      if (!target || target.playerIds.length + unit.playerIds.length > MAX_PER_FLIGHT) return;
-      target.playerIds.push(...unit.playerIds);
-    }
-    void update(groups);
+    const groups = placeUnit(round.groups, unit.playerIds, toGroupId);
+    if (groups) void update(groups);
   }
 
   /**

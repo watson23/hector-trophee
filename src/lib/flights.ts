@@ -19,6 +19,25 @@ export function teeWindow(round: Round): string {
 export const MAX_PER_FLIGHT = 4;
 
 /**
+ * Move a unit (a player, or a pair's two players) into one flight, out of any other.
+ * Returns the new groups, or null when the target would go over four — a hard fact of
+ * golf, not a preference, so callers never overfill.
+ */
+export function placeUnit(
+  groups: PlayingGroup[],
+  playerIds: string[],
+  toGroupId: string | null,
+): PlayingGroup[] | null {
+  const next = groups.map((g) => ({ ...g, playerIds: g.playerIds.filter((id) => !playerIds.includes(id)) }));
+  if (toGroupId) {
+    const target = next.find((g) => g.id === toGroupId);
+    if (!target || target.playerIds.length + playerIds.length > MAX_PER_FLIGHT) return null;
+    target.playerIds.push(...playerIds);
+  }
+  return next;
+}
+
+/**
  * Which two pairs share a flight, per round.
  *
  * This used to be "pairs in draft order, two per flight" — deterministic, so every
