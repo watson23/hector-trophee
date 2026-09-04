@@ -65,7 +65,7 @@ export default function Scorecard({
   mainId: string | undefined;
   currentHole: number;
   onPickHole: (hole: number) => void;
-  /** Back to the course view — the same footer slot the course view's Scorecard button uses. */
+  /** Straight into the entry sheet on the current hole — the card's natural next step. */
   onBack: () => void;
   /** Zoom out to the Round tab on this board — the third step of hole → group → field. */
   onShowWholeRound?: (boardId: string) => void;
@@ -182,15 +182,15 @@ export default function Scorecard({
         </div>
       )}
 
-      {/* Navigation lives at the bottom, in the same slot on every view: back on the
-          left (zoom in), the whole round on the right (zoom out). */}
+      {/* Navigation lives at the bottom, in the same slot on every view: scoring on the
+          left (zoom in), the round's leaderboard on the right (zoom out). */}
       <div className="mt-4 flex gap-2">
         <button className="btn-ghost basis-1/2 py-3" onClick={onBack}>
-          ← Back
+          ← Enter scores
         </button>
         {onShowWholeRound && board && (
           <button className="btn-ghost basis-1/2 py-3" onClick={() => onShowWholeRound(board.id)}>
-            Whole round →
+            Leaderboard →
           </button>
         )}
       </div>

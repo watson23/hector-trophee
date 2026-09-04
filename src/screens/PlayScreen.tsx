@@ -321,7 +321,10 @@ export default function PlayScreen({
               setView("hole");
               setEntryOpen(true);
             }}
-            onBack={() => setView("hole")}
+            onBack={() => {
+              setView("hole");
+              setEntryOpen(true);
+            }}
             onShowWholeRound={(boardId) => onShowRoundBoard(round.id, boardId)}
           />
         </div>
