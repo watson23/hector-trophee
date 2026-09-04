@@ -6,7 +6,7 @@ import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
-import { spaceLink, switchSpace, type Space } from "../lib/space";
+import { SPACES, spaceLink, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import BackupAdmin, { type BackupApi } from "./BackupAdmin";
 import HandicapRefresh from "../components/HandicapRefresh";
@@ -68,49 +68,41 @@ export default function AdminScreen({
         }
       />
       {/* Which copy of the event this device edits — visible on every admin tab, since
-          it changes what all the buttons below actually touch. */}
-      <div
-        className={`mx-4 mb-3 rounded-2xl border p-3 ${
-          space === "test"
-            ? "border-sky-900 bg-sky-950/30"
-            : space === "field"
-              ? "border-amber-900 bg-amber-950/20"
-              : "border-slate-800 bg-slate-900"
-        }`}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div
-              className={`text-xs font-semibold ${
-                space === "test" ? "text-sky-300" : space === "field" ? "text-amber-300" : ""
+          it changes what all the buttons below actually touch. One row per space; the
+          current one is marked, any other is one tap (and a reload) away. */}
+      <div className="mx-4 mb-3 rounded-2xl border border-slate-800 bg-slate-900 p-2">
+        {SPACES.map((s) => {
+          const active = s.id === space;
+          const tone =
+            s.tone === "test" ? "text-sky-300" : s.tone === "field" ? "text-amber-300" : "text-slate-100";
+          return (
+            <button
+              key={s.id}
+              onClick={() => !active && switchSpace(s.id)}
+              className={`w-full text-left rounded-xl px-3 py-2 flex items-start gap-3 ${
+                active ? "bg-slate-800" : "hover:bg-slate-800/50"
               }`}
             >
-              {space === "test" ? "Test space" : space === "field" ? "Field test · Hirsala" : "Tournament"}
-            </div>
-            <p className="text-[12px] text-slate-500 leading-relaxed">
-              {space === "test"
-                ? "A sandbox with its own data — nothing here touches the tournament."
-                : space === "field"
-                  ? "Real rounds at Hirsala, fully separate from the tournament and sandbox."
-                  : "The real data everyone sees. Switch this phone to the test space to play around safely."}
-            </p>
+              <span
+                className={`mt-1.5 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
+                  active ? "bg-violet-400" : "border border-slate-600"
+                }`}
+              />
+              <span className="min-w-0">
+                <span className={`block text-xs font-semibold ${tone}`}>
+                  {s.label}
+                  {active && <span className="text-slate-500 font-normal"> · this phone</span>}
+                </span>
+                <span className="block text-[12px] text-slate-500 leading-relaxed">{s.description}</span>
+              </span>
+            </button>
+          );
+        })}
+        {space !== "live" && (
+          <div className="px-3 pb-1">
+            <InviteLink space={space} />
           </div>
-          <button
-            onClick={() => switchSpace(space === "live" ? "test" : "live")}
-            className="btn-ghost px-3 py-1.5 text-xs shrink-0"
-          >
-            {space === "live" ? "To test space" : "To tournament"}
-          </button>
-        </div>
-        {space === "live" && (
-          <button
-            onClick={() => switchSpace("field")}
-            className="mt-2 text-xs text-amber-400/90 underline underline-offset-2"
-          >
-            Field test space (Hirsala)
-          </button>
         )}
-        {space !== "live" && <InviteLink space={space} />}
       </div>
       <Segmented
         value={tab}

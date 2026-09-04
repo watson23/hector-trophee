@@ -53,6 +53,19 @@ export const courses: Record<string, Course> = {
       yellow: { colour: "yellow", cr: 70.8, slope: 127, par: 73, metres: 5596 },
     },
   },
+  tapiola: {
+    id: "tapiola",
+    name: "Tapiola Golf",
+    shortName: "Tapiola",
+    /* Field-test course (Espoo). Par + SI from the user's hector-scores app; yellow
+       ("57") CR/slope from the same source; total length from the club's site
+       (5629 m from yellow). No per-hole metres: the club publishes its card as an image. */
+    par: [5, 3, 4, 3, 5, 4, 4, 4, 4, 4, 5, 4, 3, 4, 4, 4, 4, 4],
+    si: [14, 18, 12, 8, 6, 10, 4, 16, 2, 3, 17, 11, 9, 15, 1, 7, 13, 5],
+    tees: {
+      yellow: { colour: "yellow", cr: 70.5, slope: 123, par: 72, metres: 5629 },
+    },
+  },
 };
 
 /** Hole lengths in metres per tee, for the scorecard view. */
@@ -129,6 +142,7 @@ const heroImage: Record<string, string> = {
   radecky: "/courses/radecky.webp",
   deste: "/courses/deste.webp",
   hirsala: "/courses/hirsala.webp",
+  tapiola: "/courses/tapiola.webp",
 };
 
 /** The chyron caption under each hero — place · course, in the course's own terms. */
@@ -136,6 +150,7 @@ const heroCaption: Record<string, string> = {
   radecky: "Konopiště · Radecký",
   deste: "Konopiště · d'Este",
   hirsala: "Hirsala · Kirkkonummi",
+  tapiola: "Tapiola · Espoo",
 };
 
 export function courseHeroCaption(courseId: string): string | null {

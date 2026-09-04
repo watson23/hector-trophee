@@ -166,3 +166,29 @@ export const defaultRounds: Round[] = [
     formats: [scramble(1.0, { birdie: 0.5, eagle: 1 })],
   },
 ];
+
+
+/**
+ * Field-test events get their own single round instead of the Konopiště programme:
+ * seeded when the event's rounds collection is empty, editable in Admin like any round.
+ */
+export function defaultRoundsFor(eventId: string): Round[] {
+  if (eventId === "TAPIOLA-FIELD") {
+    return [
+      {
+        id: "r1",
+        seq: 1,
+        day: "Sat 5.9",
+        date: "2026-09-05",
+        courseId: "tapiola",
+        tee: "yellow",
+        status: "upcoming",
+        teeTimeWindow: "06:30–06:30",
+        // Lasse is already in the 06:30 flight, so the round is playable the moment it opens.
+        groups: [{ ...defaultGroups("06:30–06:30", 1)[0], playerIds: ["lasse-k"] }],
+        formats: [stablefordVictor(), strokePlayGross],
+      },
+    ];
+  }
+  return defaultRounds;
+}

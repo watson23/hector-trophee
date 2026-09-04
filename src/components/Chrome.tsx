@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import HectorMark from "./HectorMark";
-import { switchSpace, type Space } from "../lib/space";
+import { switchSpace, type Space, spaceMeta } from "../lib/space";
 
 export type Tab = "play" | "round" | "tournament" | "info";
 
@@ -107,10 +107,15 @@ export function TabBar({
  * return to the tournament without hunting for the admin toggle.
  */
 export function SpaceBanner({ space }: { space: Space }) {
-  if (space !== "test") return null;
+  if (space === "live") return null;
+  const meta = spaceMeta(space);
+  const tone =
+    meta.tone === "test"
+      ? "bg-sky-950/80 border-sky-900 text-sky-300"
+      : "bg-amber-950/70 border-amber-900 text-amber-300";
   return (
-    <div className="bg-sky-950/80 border-b border-sky-900 text-sky-300 text-xs px-4 py-1.5 text-center">
-      Test space — a sandbox, not the real tournament.{" "}
+    <div className={`${tone} border-b text-xs px-4 py-1.5 text-center`}>
+      {meta.label} — not the real tournament.{" "}
       <button
         onClick={() => switchSpace("live")}
         className="underline underline-offset-2 font-semibold"

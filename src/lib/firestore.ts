@@ -22,7 +22,7 @@ import {
 } from "firebase/firestore";
 import type { Card, EventDoc, Round } from "../types";
 import { BACKUP_SEP, type Snapshot } from "./backup";
-import { defaultRounds } from "../data/rounds";
+import { defaultRoundsFor } from "../data/rounds";
 import {
   buildDefaultEvent,
   cardId,
@@ -187,7 +187,7 @@ export class FirestoreStore implements Store {
           // from that would queue a default event that overwrites the real one (pairs
           // and all) when signal returns. The server snapshot follows and decides.
           if (snap.metadata.fromCache) return;
-          void buildDefaultEvent().then((e) => setDoc(this.eventRef(), e));
+          void buildDefaultEvent(this.eventId).then((e) => setDoc(this.eventRef(), e));
           return;
         }
         this.setError(null);
@@ -205,7 +205,7 @@ export class FirestoreStore implements Store {
           // Same guard as the event doc: an empty cached snapshot is not evidence
           // that the rounds don't exist.
           if (snap.metadata.fromCache) return;
-          void Promise.all(defaultRounds.map((r) => setDoc(doc(this.roundsRef(), r.id), r)));
+          void Promise.all(defaultRoundsFor(this.eventId).map((r) => setDoc(doc(this.roundsRef(), r.id), r)));
           return;
         }
         const rounds = snap.docs

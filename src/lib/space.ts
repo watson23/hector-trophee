@@ -13,11 +13,43 @@ import { EVENT_ID } from "../data/field";
  * cache and subscriptions are all built for one event id, and a clean restart is
  * simpler and safer than trying to swap them live.
  */
-export type Space = "live" | "test" | "field";
+export type Space = "live" | "test" | "field" | "tapiola";
+
+/** Every space the app knows, in the order Admin lists them. */
+export const SPACES: { id: Space; label: string; description: string; tone: "live" | "test" | "field" }[] = [
+  {
+    id: "live",
+    label: "Tournament",
+    description: "The real data everyone sees at Konopiště.",
+    tone: "live",
+  },
+  {
+    id: "test",
+    label: "Test sandbox",
+    description: "Same structure as the tournament, separate data — for playing around and for mirroring the live event.",
+    tone: "test",
+  },
+  {
+    id: "field",
+    label: "Field test · Hirsala",
+    description: "Real rounds at Hirsala Golf (Sep 2026), fully separate from the tournament.",
+    tone: "field",
+  },
+  {
+    id: "tapiola",
+    label: "Field test · Tapiola",
+    description: "Lasse's nine at Tapiola Golf, Sat 5.9 06:30 — its own event, nothing shared.",
+    tone: "field",
+  },
+];
+
+export function spaceMeta(space: Space) {
+  return SPACES.find((s) => s.id === space) ?? SPACES[0];
+}
 
 const KEY = "hectro_space";
 
-const isSpace = (v: string | null): v is Space => v === "live" || v === "test" || v === "field";
+const isSpace = (v: string | null): v is Space => SPACES.some((s) => s.id === v);
 
 export function currentSpace(): Space {
   try {
@@ -58,5 +90,6 @@ export function eventIdFor(space: Space): string {
   // The field space is a fully separate event for real-world test rounds
   // (Hirsala, Sep 2026) — same app, different data, nothing shared.
   if (space === "field") return "HIRSALA-FIELD";
+  if (space === "tapiola") return "TAPIOLA-FIELD";
   return space === "test" ? `${EVENT_ID}-test` : EVENT_ID;
 }

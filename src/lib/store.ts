@@ -1,7 +1,7 @@
 import type { Card, EventDoc, Round } from "../types";
 import type { Snapshot } from "./backup";
 import { EVENT_ID, field } from "../data/field";
-import { defaultRounds } from "../data/rounds";
+import { defaultRoundsFor } from "../data/rounds";
 import { hashPin } from "./pin";
 
 /**
@@ -78,12 +78,19 @@ export const DEFENDING_PAIR: [string, string] = ["lasse-k", "jari-k"];
 export const EVENT_PIN = import.meta.env?.VITE_EVENT_PIN || "HEC26";
 export const ADMIN_PIN = import.meta.env?.VITE_ADMIN_PIN || "1874";
 
-export async function buildDefaultEvent(): Promise<EventDoc> {
+/** What a field-test event says about itself on the PIN screen and Info masthead. */
+const FIELD_EVENTS: Record<string, Pick<EventDoc, "name" | "venue" | "dates">> = {
+  "HIRSALA-FIELD": { name: "Hector field test", venue: "Hirsala Golf, Kirkkonummi", dates: "September 2026" },
+  "TAPIOLA-FIELD": { name: "Hector field test", venue: "Tapiola Golf, Espoo", dates: "September 5, 2026" },
+};
+
+export async function buildDefaultEvent(eventId: string = EVENT_ID): Promise<EventDoc> {
+  const fieldEvent = FIELD_EVENTS[eventId] as (typeof FIELD_EVENTS)[string] | undefined;
   return {
-    id: EVENT_ID,
-    name: "Hector Trophée 2026",
-    venue: "Golf & Spa Resort Konopiště, Czechia",
-    dates: "September 24–27, 2026",
+    id: eventId,
+    name: fieldEvent?.name ?? "Hector Trophée 2026",
+    venue: fieldEvent?.venue ?? "Golf & Spa Resort Konopiště, Czechia",
+    dates: fieldEvent?.dates ?? "September 24–27, 2026",
     pinHash: await hashPin(EVENT_PIN),
     adminPinHash: await hashPin(ADMIN_PIN),
     players: field,
@@ -161,8 +168,10 @@ class LocalStore implements Store {
   private channel: BroadcastChannel | null = null;
   /** Keys are per event id, so the live and test spaces stay separate in demo too. */
   private prefix: string;
+  private eventId: string;
 
   constructor(eventId: string) {
+    this.eventId = eventId;
     this.prefix = `hectro_${eventId}_`;
     if (typeof BroadcastChannel !== "undefined") {
       this.channel = new BroadcastChannel(`hectro_sync_${eventId}`);
@@ -198,7 +207,7 @@ class LocalStore implements Store {
     return this.watch(() => {
       const stored = this.read<EventDoc | null>("event", null);
       if (stored) cb(stored);
-      else void buildDefaultEvent().then((e) => this.write("event", e));
+      else void buildDefaultEvent(this.eventId).then((e) => this.write("event", e));
     });
   }
 
@@ -206,14 +215,14 @@ class LocalStore implements Store {
     return this.watch(() => {
       const stored = this.read<Round[] | null>("rounds", null);
       if (stored) cb(stored);
-      else this.write("rounds", defaultRounds);
+      else this.write("rounds", defaultRoundsFor(this.eventId));
     });
   }
 
   subscribeCards(cb: (byRound: Record<string, Record<string, Card>>) => void): Unsubscribe {
     return this.watch(() => {
       const byRound: Record<string, Record<string, Card>> = {};
-      for (const round of this.read<Round[]>("rounds", defaultRounds)) {
+      for (const round of this.read<Round[]>("rounds", defaultRoundsFor(this.eventId))) {
         byRound[round.id] = this.read<Record<string, Card>>(`cards_${round.id}`, {});
       }
       cb(byRound);
@@ -274,12 +283,12 @@ class LocalStore implements Store {
   }
 
   async saveEvent(patch: Partial<EventDoc>): Promise<void> {
-    const current = this.read<EventDoc>("event", await buildDefaultEvent());
+    const current = this.read<EventDoc>("event", await buildDefaultEvent(this.eventId));
     this.write("event", { ...current, ...patch });
   }
 
   async saveRound(round: Round): Promise<void> {
-    const rounds = this.read<Round[]>("rounds", defaultRounds);
+    const rounds = this.read<Round[]>("rounds", defaultRoundsFor(this.eventId));
     this.write(
       "rounds",
       rounds.map((r) => (r.id === round.id ? round : r)),
