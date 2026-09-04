@@ -50,6 +50,13 @@ export interface TournamentState {
  * Single subscription point for the whole app: event, rounds and every card, run
  * through the scoring engine to produce per-round results and the running totals.
  */
+/**
+ * The store reports every failed write on its error channel (the banner) and then
+ * rethrows; at this boundary the rethrow is swallowed, so a failure surfaces once —
+ * not also as an unhandled rejection from a fire-and-forget Admin button.
+ */
+const swallow = () => {};
+
 export function useTournament(identity: string, eventId: string): TournamentState {
   const [store, setStore] = useState<Store | null>(null);
   const [event, setEvent] = useState<EventDoc | null>(null);
@@ -214,28 +221,28 @@ export function useTournament(identity: string, eventId: string): TournamentStat
 
   const setCard = useCallback(
     async (roundId: string, subjectId: string, holes: Record<string, number>) => {
-      await store?.setCard(roundId, subjectId, holes, identity);
+      await store?.setCard(roundId, subjectId, holes, identity).catch(swallow);
     },
     [store, identity],
   );
 
   const deleteCard = useCallback(
     async (roundId: string, subjectId: string) => {
-      await store?.deleteCard(roundId, subjectId);
+      await store?.deleteCard(roundId, subjectId).catch(swallow);
     },
     [store],
   );
 
   const setHcpSubmitted = useCallback(
     async (roundId: string, subjectId: string, submitted: boolean) => {
-      await store?.setHcpSubmitted(roundId, subjectId, submitted);
+      await store?.setHcpSubmitted(roundId, subjectId, submitted).catch(swallow);
     },
     [store],
   );
 
   const saveEvent = useCallback(
     async (patch: Partial<EventDoc>) => {
-      await store?.saveEvent(patch);
+      await store?.saveEvent(patch).catch(swallow);
     },
     [store],
   );
@@ -285,7 +292,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
       const prev = latest.current.rounds.find((r) => r.id === round.id);
       const next = { ...round, ...withFreeze(prev, round) };
       await beforeStatusChange(prev, next);
-      await store?.saveRound(next);
+      await store?.saveRound(next).catch(swallow);
       afterStatusChange(prev, next);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -297,7 +304,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
       const prev = latest.current.rounds.find((r) => r.id === roundId);
       const next = withFreeze(prev, patch);
       await beforeStatusChange(prev, next);
-      await store?.patchRound(roundId, next);
+      await store?.patchRound(roundId, next).catch(swallow);
       if (prev) afterStatusChange(prev, { ...prev, ...next } as Round);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
