@@ -310,12 +310,11 @@ function PairsEditor({
 
   async function lockInDefenders() {
     if (defenders.length !== 2) return;
+    const id = `pair-defending-${defenders[0].id}`;
     await saveEvent({
-      pairs: [
-        { id: `pair-defending-${defenders[0].id}`, aId: defenders[0].id, bId: defenders[1].id, defending: true },
-        ...event.pairs,
-      ],
+      pairs: [{ id, aId: defenders[0].id, bId: defenders[1].id, defending: true }, ...event.pairs],
     });
+    setJustPaired(id);
   }
 
   /**
@@ -450,6 +449,17 @@ function PairsEditor({
             <p className="text-sm font-semibold mt-0.5">
               {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
             </p>
+            {pair.defending && (
+              <p className="text-[12px] text-slate-400 leading-relaxed mt-1">
+                Defenders pick their time when the draft reaches their turn — the better of
+                their round-1 placings
+                {(() => {
+                  const best = Math.min(...[pair.aId, pair.bId].map(rankOf).filter((r) => r > 0));
+                  return Number.isFinite(best) ? `, #${best}` : "";
+                })()}
+                . "Decide later" keeps the chips on their card for then.
+              </p>
+            )}
             {teeChips(pair)}
             <button
               onClick={() => setJustPaired(null)}
