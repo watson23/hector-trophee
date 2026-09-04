@@ -66,6 +66,12 @@ export interface Store {
   /** Whole-tournament snapshots — see lib/backup.ts. Newest first. */
   listBackups(): Promise<Snapshot[]>;
   saveBackup(snap: Snapshot): Promise<void>;
+  /**
+   * Put a round back in one atomic write: the round document, these cards, and the
+   * removal of any current card not among them. All or nothing — a restore that stalls
+   * halfway on a weak signal must not leave the round with half its cards gone.
+   */
+  restoreRound(round: Round, cards: Card[], removeSubjectIds: string[], by: string): Promise<void>;
 }
 
 export interface StoreError {
@@ -314,6 +320,15 @@ class LocalStore implements Store {
         return next as unknown as Round;
       }),
     );
+  }
+
+  async restoreRound(round: Round, cards: Card[], removeSubjectIds: string[], by: string): Promise<void> {
+    const rounds = this.read<Round[]>("rounds", defaultRoundsFor(this.eventId));
+    this.write("rounds", rounds.map((r) => (r.id === round.id ? round : r)));
+    const current = this.read<Record<string, Card>>(`cards_${round.id}`, {});
+    for (const id of removeSubjectIds) delete current[id];
+    for (const c of cards) current[c.subjectId] = { ...c, updatedAt: Date.now(), updatedBy: by };
+    this.write(`cards_${round.id}`, current);
   }
 
   async listBackups(): Promise<Snapshot[]> {

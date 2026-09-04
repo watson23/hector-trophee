@@ -101,14 +101,11 @@ export async function restoreRound(
   if (!round) throw new Error(`Snapshot has no round ${roundId}`);
   const cards = snap.cards.filter((c) => c.roundId === roundId);
   const keep = new Set(cards.map((c) => c.subjectId));
-  await store.saveRound(round);
-  for (const c of Object.values(currentCards)) {
-    if (!keep.has(c.subjectId)) await store.deleteCard(roundId, c.subjectId);
-  }
-  for (const c of cards) {
-    await store.setCard(roundId, c.subjectId, c.holes, by);
-    if (c.hcpSubmitted) await store.setHcpSubmitted(roundId, c.subjectId, true);
-  }
+  const remove = Object.values(currentCards)
+    .map((c) => c.subjectId)
+    .filter((id) => !keep.has(id));
+  // One batched write: round, cards and removals land together or not at all.
+  await store.restoreRound(round, cards, remove, by);
 }
 
 /** The whole tournament back to the snapshot: pairs and draft state, every round, every card. */

@@ -351,6 +351,16 @@ export class FirestoreStore implements Store {
     );
   }
 
+  async restoreRound(round: Round, cards: Card[], removeSubjectIds: string[], by: string): Promise<void> {
+    const batch = writeBatch(this.db);
+    batch.set(doc(this.roundsRef(), round.id), this.clean(round));
+    for (const id of removeSubjectIds) batch.delete(doc(this.cardsRef(), cardId(round.id, id)));
+    for (const c of cards) {
+      batch.set(doc(this.cardsRef(), cardId(round.id, c.subjectId)), this.clean({ ...c, updatedAt: Date.now(), updatedBy: by }));
+    }
+    await batch.commit().catch(this.reportWriteError);
+  }
+
   async nudge(): Promise<void> {
     // Redial the backend: writes queued behind a half-dead WebChannel flush on
     // the fresh connection. Both calls are safe to fail quietly — worst case
