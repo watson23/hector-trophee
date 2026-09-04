@@ -226,7 +226,7 @@ export default function App() {
     return (
       <div className="min-h-dvh">
         <SpaceBanner space={space} />
-        <SyncBanner online={t.online} pending={t.pending} backend={t.backend} onNudge={t.nudge} />
+        <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
         <Onboarding
           event={t.event}
           unlocked={session.unlocked}
@@ -244,7 +244,7 @@ export default function App() {
   return (
     <div className="min-h-dvh">
       <SpaceBanner space={space} />
-      <SyncBanner online={t.online} pending={t.pending} backend={t.backend} onNudge={t.nudge} />
+      <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
 
       <main className="max-w-lg mx-auto pb-32">
         {adminOpen ? (

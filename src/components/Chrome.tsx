@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import HectorMark from "./HectorMark";
 import { switchSpace, type Space, spaceMeta } from "../lib/space";
+import type { StoreError } from "../lib/store";
 
 export type Tab = "play" | "round" | "tournament" | "info";
 
@@ -173,15 +174,34 @@ export function SyncBanner({
   online,
   pending,
   backend,
+  error,
   onNudge,
 }: {
   online: boolean;
   pending: number;
   backend: "firestore" | "local" | null;
+  /** The store's last failed read or write; clears on the next good snapshot. */
+  error?: StoreError | null;
   onNudge?: () => void;
 }) {
   const slowSync = useSlowSync(pending);
   const stuck = useStuckSync(pending);
+  // A backend error once the app is up — rules rejecting a write, a dead stream — used to
+  // show only on the connecting screen. Here it stays until the store reports a good
+  // snapshot again, with the retry that most often clears it.
+  if (backend === "firestore" && error) {
+    return (
+      <div className="bg-rose-950 border-b border-rose-800 text-rose-200 text-xs px-4 py-2 text-center leading-relaxed">
+        <strong className="font-semibold">Sync problem:</strong> {error.message}
+        {error.hint ? ` ${error.hint}` : ""}{" "}
+        {onNudge && (
+          <button onClick={onNudge} className="underline underline-offset-2 font-semibold">
+            Retry
+          </button>
+        )}
+      </div>
+    );
+  }
   if (backend === "local") {
     // On localhost this is the intended fallback. On a real domain it means the deploy is
     // missing its Firebase env vars, and every player would silently get their own private
