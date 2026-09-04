@@ -876,8 +876,8 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
         <>
           {showArcs && (
             <p className="mt-2 max-w-[17rem] text-center text-[11px] leading-snug text-slate-600">
-              Distances are estimated by the app from the course drawing, not measured on the
-              ground — a guide for club choice, not a rangefinder.
+              Distances generated from measurements on the course drawing, not on the ground —
+              a guide for club choice, not a rangefinder.
             </p>
           )}
           <button
