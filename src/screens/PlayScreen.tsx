@@ -523,7 +523,7 @@ function OnCourse({
             src={holeMapUrl(round.courseId, hole)!}
             alt={`Hole ${hole} layout`}
             loading="eager"
-            className="mt-3 mx-auto max-h-[340px] w-auto max-w-[80%]"
+            className="mt-3 mx-auto max-h-[280px] w-auto max-w-[80%]"
           />
         )}
 
