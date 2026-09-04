@@ -349,8 +349,11 @@ export default function PlayScreen({
           event={event}
           me={me}
           flightIds={flightIds}
+          subjects={subjects}
+          cards={cards}
           result={result}
           hole={hole}
+          setHoleNo={(h) => setPin(h)}
           complete={complete}
           onEnter={() => setEntryOpen(true)}
           onFinish={() => setFinishedRound(round.id)}
@@ -372,8 +375,11 @@ function OnCourse({
   event,
   me,
   flightIds,
+  subjects,
+  cards,
   result,
   hole,
+  setHoleNo,
   complete,
   onEnter,
   onFinish,
@@ -383,8 +389,11 @@ function OnCourse({
   event: EventDoc;
   me: FieldPlayer | null;
   flightIds: string[];
+  subjects: Subject[];
+  cards: Record<string, Card>;
   result: RoundResult | undefined;
   hole: number;
+  setHoleNo: (h: number) => void;
   complete: boolean;
   onEnter: () => void;
   onFinish: () => void;
@@ -437,11 +446,20 @@ function OnCourse({
 
   return (
     <div className="mt-3 px-4 space-y-3">
-      <div className="card px-4 py-4 text-center">
-        <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
-          Hole
+      {/* Browsable: step back to see what happened, ahead to see what's coming.
+          The hole in view is the one Enter scores opens on — fixing hole 6 is
+          just browsing there first. */}
+      <div className="card px-3 py-4 text-center">
+        <div className="flex items-center justify-between gap-2">
+          <NavButton dir="prev" disabled={hole === 1} onClick={() => setHoleNo(Math.max(1, hole - 1))} />
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
+              Hole
+            </div>
+            <div className="score text-6xl leading-none mt-0.5">{hole}</div>
+          </div>
+          <NavButton dir="next" disabled={hole === 18} onClick={() => setHoleNo(Math.min(18, hole + 1))} />
         </div>
-        <div className="score text-6xl leading-none mt-0.5">{hole}</div>
         <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-400 num">
           <span>
             Par {par} · SI {si}
@@ -471,6 +489,34 @@ function OnCourse({
             className="mt-3 mx-auto max-w-[min(60%,260px)]"
           />
         )}
+
+        {/* This hole, card by card: the score entered (or not yet), and who gets
+            strokes here — the two things you check on the tee and the green. */}
+        <ul className="mt-3 border-t border-slate-800 pt-2 text-left divide-y divide-slate-800/70">
+          {subjects.map((sub) => {
+            const gross = cards[sub.id]?.holes?.[String(hole)];
+            const strokes = sub.strokes[hole - 1];
+            return (
+              <li key={sub.id} className="flex items-center justify-between gap-2 py-1.5">
+                <span className={`text-base truncate ${sub.mine ? "font-semibold text-violet-300" : "text-slate-200"}`}>
+                  {sub.name}
+                </span>
+                <span className="shrink-0 flex items-center gap-2">
+                  {strokes !== 0 && (
+                    <span className={`pill num ${strokes > 0 ? "bg-emerald-950 text-emerald-400" : "bg-rose-950 text-rose-400"}`}>
+                      {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`}
+                    </span>
+                  )}
+                  {gross ? (
+                    <span className={`score text-2xl w-8 text-right ${quickTint(gross - par)}`}>{gross}</span>
+                  ) : (
+                    <span className="score text-2xl w-8 text-right text-slate-600">–</span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {/* Where the flight stands — in the round's own language, as the Round tab
