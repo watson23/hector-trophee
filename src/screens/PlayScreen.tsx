@@ -961,7 +961,7 @@ function NextRound({
               <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
               {teeText(round.tee)}
             </span>
-            · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
+            · {(round.formats.find((f) => f.hector) ?? round.formats[0])?.label.replace(/^(Better Ball|Scramble) Stroke Play/, "$1")}
           </span>
         }
         right={<span className="pill bg-slate-800 text-slate-300 shrink-0">Up next</span>}
