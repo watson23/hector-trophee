@@ -259,16 +259,6 @@ export default function PlayScreen({
             {teeLabel[round.tee]}
           </span>
         }
-        right={
-          !entryOpen && view !== "card" && subjects.length > 0 ? (
-            <button
-              onClick={() => setView("card")}
-              className="pill border border-slate-700 bg-slate-900 text-slate-300 font-semibold shrink-0"
-            >
-              Scorecard
-            </button>
-          ) : undefined
-        }
       />
 
       {round.status !== "open" && (
@@ -319,7 +309,10 @@ export default function PlayScreen({
             course={course}
             subjects={subjects}
             cards={cards}
-            mainKind={(round.formats.find((f) => f.hector) ?? round.formats[0])?.kind ?? "stableford"}
+            event={event}
+            flightIds={flightIds}
+            formats={result?.formats ?? []}
+            mainId={(round.formats.find((f) => f.hector) ?? round.formats[0])?.id}
             currentHole={hole}
             onPickHole={(h) => {
               setPin(h);
@@ -368,6 +361,7 @@ export default function PlayScreen({
           complete={complete}
           onEnter={() => setEntryOpen(true)}
           onFinish={() => setFinishedRound(round.id)}
+          onShowCard={() => setView("card")}
         />
       )}
       <p className="sr-only">Tee {teeLabel[round.tee]}, course rating {tee.cr}, slope {tee.slope}.</p>
@@ -393,6 +387,7 @@ function OnCourse({
   complete,
   onEnter,
   onFinish,
+  onShowCard,
 }: {
   round: Round;
   course: NonNullable<(typeof courses)[string]>;
@@ -406,6 +401,7 @@ function OnCourse({
   complete: boolean;
   onEnter: () => void;
   onFinish: () => void;
+  onShowCard: () => void;
 }) {
   const [showMap, setShowMap] = usePersistentState("hectro_ui.holemap", false);
   const par = course.par[hole - 1];
@@ -415,29 +411,70 @@ function OnCourse({
   // The round's main format: the one that feeds the Hector, else the first listed.
   const main = round.formats.find((f) => f.hector) ?? round.formats[0];
   const fr = result?.formats.find((f) => f.spec.id === main?.id);
-  /** A card's running figure in the main format, spoken as the Round tab speaks it. */
-  const figureFor = (sub: Subject): string => {
-    if (!fr) return "—";
-    if (fr.teams.length > 0) {
-      // Team formats: a player row shows its pair's figure (partners share it).
-      const pairId = sub.id.startsWith("team__")
-        ? sub.id.slice("team__".length)
-        : event.pairs.find((p) => p.aId === sub.id || p.bId === sub.id)?.id;
-      const t = fr.teams.find((t) => t.pairId === pairId);
-      return t && t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—";
-    }
-    const p = fr.players.find((p) => p.playerId === sub.id);
-    if (!p || p.thru === 0) return "—";
-    const toPar = p.toPar ?? 0;
-    return fr.spec.kind === "stableford"
-      ? `${p.value} (${formatToPar(toPar)})`
-      : `${formatToPar(toPar)} (${p.value})`;
+  /*
+   * Rows follow the main format's units: pairs on a Better Ball or scramble day,
+   * players otherwise — because "how are we doing" means the game being played, not
+   * the raw cards. Order is flight order, the same as the entry sheet.
+   */
+  type Row = {
+    key: string;
+    label: string;
+    mine: boolean;
+    /** What the format counted on the hole in view, or null if not played yet. */
+    holeValue: number | null;
+    /** Gross card cell (individual formats) draws a real score mark. */
+    gross: boolean;
+    /** Strokes to show before the hole is played (per partner for a pair). */
+    strokes: number[];
+    figure: string;
   };
-  const flightRows = subjects.filter((sub) => {
-    // Cards in the flight — the same set and order as the entry sheet.
-    if (sub.id.startsWith("team__")) return true;
-    return flightIds.includes(sub.id);
-  });
+  const rows: Row[] = [];
+  if (fr && fr.teams.length > 0) {
+    const teams = fr.teams
+      .map((t) => ({ t, pair: event.pairs.find((p) => p.id === t.pairId) }))
+      .filter(({ pair }) => pair && (flightIds.includes(pair.aId) || flightIds.includes(pair.bId)))
+      .sort((a, b) => {
+        const idx = (pr: NonNullable<typeof a.pair>) =>
+          Math.min(...[pr.aId, pr.bId].map((id) => (flightIds.indexOf(id) < 0 ? 99 : flightIds.indexOf(id))));
+        return idx(a.pair!) - idx(b.pair!);
+      });
+    for (const { t, pair } of teams) {
+      const teamSubject = subjects.find((s) => s.id === `team__${pair!.id}`);
+      const partners = [pair!.aId, pair!.bId].map((id) => subjects.find((s) => s.id === id));
+      rows.push({
+        key: t.pairId,
+        label: t.label,
+        mine: Boolean(teamSubject?.mine || partners.some((p) => p?.mine)),
+        holeValue: t.perHole[hole - 1] ?? null,
+        gross: false,
+        strokes: teamSubject
+          ? [teamSubject.strokes[hole - 1]]
+          : partners.map((p) => p?.strokes[hole - 1] ?? 0),
+        figure: t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—",
+      });
+    }
+  } else {
+    for (const sub of subjects) {
+      if (!sub.id.startsWith("team__") && !flightIds.includes(sub.id)) continue;
+      const p = fr?.players.find((p) => p.playerId === sub.id);
+      const toPar = p?.toPar ?? 0;
+      rows.push({
+        key: sub.id,
+        label: sub.name,
+        mine: Boolean(sub.mine),
+        holeValue: cards[sub.id]?.holes?.[String(hole)] ?? null,
+        gross: true,
+        strokes: [sub.strokes[hole - 1]],
+        figure:
+          !p || p.thru === 0
+            ? "—"
+            : fr!.spec.kind === "stableford"
+              ? `${p.value} (${formatToPar(toPar)})`
+              : `${formatToPar(toPar)} (${p.value})`,
+      });
+    }
+  }
+  const strokeText = (n: number) => (n > 0 ? `−${n}` : n < 0 ? `+${Math.abs(n)}` : "0");
 
   return (
     <div className="mt-3 px-4 space-y-3">
@@ -493,35 +530,42 @@ function OnCourse({
         <div className="mt-3 border-t border-slate-800 pt-2 text-left">
           <div className="grid grid-cols-[1fr_3rem_auto] items-end gap-x-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
             <span className="truncate">Your flight</span>
-            <span className="text-center">Hole {hole}</span>
+            <span className="text-center">Hole</span>
             <span className="text-right">Round</span>
           </div>
           <ul className="divide-y divide-slate-800/70">
-            {flightRows.map((sub) => {
-              const gross = cards[sub.id]?.holes?.[String(hole)];
-              const strokes = sub.strokes[hole - 1];
-              return (
-                <li key={sub.id} className="grid grid-cols-[1fr_3rem_auto] items-center gap-x-3 py-1.5">
-                  <span className={`text-lg truncate ${sub.mine ? "font-semibold text-violet-300" : "text-slate-200"}`}>
-                    {sub.name}
-                  </span>
-                  <span className="flex justify-center">
-                    {gross ? (
-                      <ScoreMark value={gross} par={par} strokes={strokes} size="lg" />
-                    ) : strokes !== 0 ? (
-                      <span className={`num text-base font-semibold ${strokes > 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                        {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`}
-                      </span>
+            {rows.map((r) => (
+              <li key={r.key} className="grid grid-cols-[1fr_3rem_auto] items-center gap-x-3 py-1.5">
+                <span
+                  className={`truncate ${r.label.length > 16 ? "text-base" : "text-lg"} ${
+                    r.mine ? "font-semibold text-violet-300" : "text-slate-200"
+                  }`}
+                >
+                  {r.label}
+                </span>
+                <span className="flex justify-center">
+                  {r.holeValue !== null ? (
+                    r.gross ? (
+                      <ScoreMark value={r.holeValue} par={par} strokes={r.strokes[0]} size="lg" />
                     ) : (
-                      <span className="num text-base text-slate-600">0</span>
-                    )}
-                  </span>
-                  <span className={`score text-2xl text-right ${sub.mine ? "text-violet-300" : ""}`}>
-                    {figureFor(sub)}
-                  </span>
-                </li>
-              );
-            })}
+                      /* The format's counted score for the hole — net for a pair. */
+                      <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
+                    )
+                  ) : (
+                    <span
+                      className={`num text-base font-semibold whitespace-nowrap ${
+                        r.strokes.some((n) => n !== 0) ? "text-emerald-400" : "text-slate-600"
+                      }`}
+                    >
+                      {r.strokes.map(strokeText).join("·")}
+                    </span>
+                  )}
+                </span>
+                <span className={`score text-2xl text-right ${r.mine ? "text-violet-300" : ""}`}>
+                  {r.figure}
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -535,6 +579,9 @@ function OnCourse({
           Enter scores · hole {hole}
         </button>
       )}
+      <button className="btn-ghost w-full py-3" onClick={onShowCard}>
+        Scorecard
+      </button>
     </div>
   );
 }
