@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
@@ -531,23 +531,27 @@ function OnCourse({
             filled: the score once played (a real score mark), otherwise the stroke
             allocation for the hole (−1, or a dim 0), GameBook-style. A result is
             always a positive count and a stroke never is, so the two can't blur. */}
-        <div className="mt-3 border-t border-slate-800 pt-2 text-left">
-          <div className="grid grid-cols-[1fr_3rem_auto] items-end gap-x-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            <span className="truncate">Your flight</span>
-            <span className="text-center">Hole</span>
-            <span className="text-right">Round</span>
-          </div>
-          <ul className="divide-y divide-slate-800/70">
-            {rows.map((r) => (
-              <li key={r.key} className="grid grid-cols-[1fr_3rem_auto] items-center gap-x-3 py-1.5">
+        {/* One grid for the caption and every row: the third column is `auto`, so
+            separate per-row grids let it vary and shifted the hole column sideways
+            row by row. Shared grid, shared columns, everything lines up. */}
+        <div className="mt-3 border-t border-slate-800 pt-2 text-left grid grid-cols-[1fr_3rem_auto] items-center gap-x-3">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 truncate">Your flight</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 text-center">Hole</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 text-right">Round</span>
+          {rows.map((r, i) => {
+            const cell = "py-1.5";
+            return (
+              <Fragment key={r.key}>
+                {/* A continuous hairline between rows — per-cell borders broke at the gaps. */}
+                {i > 0 && <span className="col-span-3 border-t border-slate-800/70" />}
                 <span
-                  className={`truncate ${r.label.length > 16 ? "text-base" : "text-lg"} ${
+                  className={`${cell} truncate ${r.label.length > 16 ? "text-base" : "text-lg"} ${
                     r.mine ? "font-semibold text-violet-300" : "text-slate-200"
                   }`}
                 >
                   {r.label}
                 </span>
-                <span className="flex justify-center">
+                <span className={`${cell} flex justify-center`}>
                   {r.holeValue !== null ? (
                     /* The hole's result, big and tinted against par — the same for a
                        gross card and a pair's counted net. (The scorecard keeps the
@@ -563,12 +567,12 @@ function OnCourse({
                     </span>
                   )}
                 </span>
-                <span className={`score text-2xl text-right ${r.mine ? "text-violet-300" : ""}`}>
+                <span className={`${cell} score text-2xl text-right ${r.mine ? "text-violet-300" : ""}`}>
                   {r.figure}
                 </span>
-              </li>
-            ))}
-          </ul>
+              </Fragment>
+            );
+          })}
         </div>
       </div>
 
