@@ -24,7 +24,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt": the new worker waits, and main.tsx decides when to swap it in — at a
+      // quiet moment, never mid-tap or with a confirm dialog open.
+      registerType: "prompt",
       includeAssets: ["icons/*.png", "icons/*.svg"],
       manifest: {
         name: "Hector Trophée 2026",
