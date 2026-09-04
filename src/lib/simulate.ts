@@ -1,4 +1,5 @@
 import type { Card, EventDoc, Pair, Round } from "../types";
+import { DEFENDING_PAIR } from "./store";
 import { courses } from "../data/courses";
 import { effectiveTee, evaluateRound } from "../lib/engine";
 import { defaultGroups } from "../data/rounds";
@@ -136,6 +137,8 @@ export async function resetTournament(deps: SimulateDeps, cards: Record<string, 
     );
     await saveRound({ ...round, status: "upcoming", groups: defaultGroups(round.teeTimeWindow) });
   }
-  await saveEvent({ pairs: [], draftConcluded: false });
+  // A clean event also has its defending champions back: "they're not defending" is a
+  // decision about one year's draft, and a reset means starting that year over.
+  await saveEvent({ pairs: [], draftConcluded: false, defendingPair: DEFENDING_PAIR });
   onProgress?.(null as unknown as string);
 }

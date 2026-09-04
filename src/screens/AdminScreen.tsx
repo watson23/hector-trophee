@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DEFENDING_PAIR } from "../lib/store";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course } from "../types";
@@ -317,6 +318,20 @@ function PairsEditor({
           Round 1 hasn't been played yet, so there's no draft order. Pairs don't exist until
           it has been — you can still enter them by hand below if you're setting up ahead of
           time.
+        </p>
+      )}
+
+      {/* The other answer is reversible too: until pairs exist, "not defending" can be
+          taken back — a stray tap here used to be permanent, surviving even a full reset. */}
+      {defending === null && event.pairs.length === 0 && (
+        <p className="text-[12px] text-slate-500 leading-relaxed flex items-center justify-between gap-3 px-1">
+          <span>Last year's winners are marked as not defending — everyone is in the draft.</span>
+          <button
+            onClick={() => saveEvent({ defendingPair: DEFENDING_PAIR })}
+            className="shrink-0 underline underline-offset-2 text-slate-300"
+          >
+            Undo
+          </button>
         </p>
       )}
 
