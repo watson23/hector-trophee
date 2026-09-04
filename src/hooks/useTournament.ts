@@ -184,8 +184,27 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     return out;
   }, [event, rounds, roundResults, totals.hector]);
 
+  // The latest state, readable from callbacks without re-creating them on every change.
+  const latest = useRef({ event, rounds, cards });
+  useEffect(() => {
+    latest.current = { event, rounds, cards };
+  }, [event, rounds, cards]);
+  // Rounds whose handicap freeze is in flight, so a burst of taps writes it once.
+  const freezing = useRef(new Set<string>());
   const setHole = useCallback(
     (roundId: string, subjectId: string, hole: number, value: number | null) => {
+      // The first score into a round that was never opened ("teeing off before it has
+      // been opened") freezes the handicaps it is being played off, exactly as opening
+      // would have — otherwise tomorrow's handicap update rescores today's holes.
+      const round = latest.current.rounds.find((r) => r.id === roundId);
+      const event = latest.current.event;
+      if (store && round && event && !round.handicaps && !freezing.current.has(roundId)) {
+        freezing.current.add(roundId);
+        void store
+          .patchRound(roundId, { handicaps: snapshotHandicaps(round, event.players).handicaps })
+          .catch(() => {})
+          .finally(() => freezing.current.delete(roundId));
+      }
       // Fire-and-forget by contract. The store has already put the failure on the
       // error channel; the rethrow only needs swallowing so it doesn't surface twice.
       void store?.setHole(roundId, subjectId, hole, value, identity).catch(() => {});
@@ -221,11 +240,6 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     [store],
   );
 
-  // The latest state, readable from callbacks without re-creating them on every change.
-  const latest = useRef({ event, rounds, cards });
-  useEffect(() => {
-    latest.current = { event, rounds, cards };
-  }, [event, rounds, cards]);
   const lastAutoFingerprint = useRef<string | null>(null);
 
   const takeBackup = useCallback(
