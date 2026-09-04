@@ -36,21 +36,22 @@ export default {
          * the single most recognizable template tell — and this replaces it wholesale.
          */
         /*
-         * The accent: Augusta green. The app's interactive colour was born violet;
-         * the scale is remapped here (the slate remap below is the precedent) so
-         * every violet-* class in the app lands on the green world untouched.
-         * Chosen against the course photos and the gold — see DESIGN.md.
+         * The accent: Hector purple, deep royal. hector.golf's wordmark is stock
+         * violet; this ramp sits a clear step darker and bluer than that (600 =
+         * #5340ad) so it reads as the brand's colour without the template look.
+         * Chosen in Sep 2026 over Augusta green (which lived here 1.9–4.9) after
+         * side-by-side shots of Play, Scorecard, Round and Trophée — see DESIGN.md.
          */
         violet: {
-          200: "#aed6c2",
-          300: "#74b995",
-          400: "#3f9a6e",
-          500: "#2a7f57",
-          600: "#1c6242",
-          700: "#154d34",
-          800: "#103c29",
-          900: "#0b2c1e",
-          950: "#071f15",
+          200: "#cfc6f0",
+          300: "#ada0e6",
+          400: "#8b79d8",
+          500: "#6d58c6",
+          600: "#5340ad",
+          700: "#41328a",
+          800: "#322769",
+          900: "#241c4b",
+          950: "#15102e",
         },
         slate: {
           50: "#f7f7fa",

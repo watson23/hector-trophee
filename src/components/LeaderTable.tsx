@@ -95,7 +95,7 @@ export default function LeaderTable({
         const before = prevVals.current.get(r.key);
         if (before !== undefined && before !== now) {
           rowEls.current.get(r.key)?.animate(
-            [{ backgroundColor: "rgba(42, 127, 87, 0.2)" }, { backgroundColor: "transparent" }],
+            [{ backgroundColor: "rgba(109, 88, 198, 0.22)" }, { backgroundColor: "transparent" }],
             { duration: 900, easing: "ease-out" },
           );
         }

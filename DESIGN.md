@@ -18,7 +18,7 @@ them deliberately, in tokens, never ad hoc per screen.
 | Color | Job | Never |
 |---|---|---|
 | `gold` (custom scale, 400 = `#e3b341`) | Leaders, trophies, ceremony | Interactive accents, decoration |
-| `violet` scale — **remapped to Augusta green** (600 = `#1c6242`) | Interactive accent: active states, selection, "you", CTAs | Score semantics. The class names still say violet; the scale in `tailwind.config.js` is the single source of truth |
+| `violet` scale — **remapped to Hector purple, deep royal** (600 = `#5340ad`) | Interactive accent: active states, selection, "you", CTAs | Score semantics. hector.golf's wordmark is stock violet; ours is a clear step darker and bluer so it is the brand's colour without the template tell. The scale in `tailwind.config.js` is the single source of truth — change the palette only there |
 | `emerald` | Live/now (the breathing dot), positive deltas, free slots | Backgrounds at full saturation |
 | `rose` | **Under par** (golf convention: red = under) | Errors as a habit — errors are amber |
 | `sky` / `blue` | **Over par**, two steps as on golf TV: sky-300 for a bogey, blue-400 (ring blue-500) for double or worse — deep enough to read as worse, light enough for black | Links |
@@ -86,7 +86,7 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 
 - Row re-ranking glides via FLIP, **gated to actual order changes** (WebKit
   renders animated `tr` transforms poorly; never animate on data-only updates).
-- Changed scores pulse accent-green once; the live dot breathes with `currentColor`.
+- Changed scores pulse the accent once (`LeaderTable` hardcodes the rgba of violet-500 — keep it in step with the scale); the live dot breathes with `currentColor`.
 - Everything respects `prefers-reduced-motion`.
 - One orchestrated moment beats scattered effects: ceremony flourishes exist at
   round finish and map completion only.
