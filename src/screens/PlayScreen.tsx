@@ -1124,7 +1124,9 @@ function SubjectRow({
               onClick={() => onScore(value === n ? null : n)}
               /* No ring on par: it read as already selected. Selection is the only
                  highlight; the "par" tag underneath says which one it is. */
-              className={`flex-1 h-16 rounded-xl transition-colors flex flex-col items-center
+              /* No colour transition: on a hole change the digits redraw at once
+                 and a fading highlight lagged behind them, reading as a jump. */
+              className={`flex-1 h-16 rounded-xl flex flex-col items-center
                           justify-center leading-none gap-0.5 ${
                 value === n ? "bg-violet-600" : "bg-slate-800/70 hover:bg-slate-700"
               }`}
@@ -1149,7 +1151,7 @@ function SubjectRow({
         <button
           onClick={() => setShowOther((v) => !v)}
           aria-label="Enter another score"
-          className={`w-12 h-16 rounded-xl font-bold text-lg shrink-0 transition-colors ${
+          className={`w-12 h-16 rounded-xl font-bold text-lg shrink-0 ${
             value !== null && !quick.includes(value)
               ? "bg-violet-600 text-white num"
               : "bg-slate-900 text-slate-500 border border-slate-700"
