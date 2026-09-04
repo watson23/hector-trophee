@@ -12,6 +12,7 @@ import FlightList from "../components/FlightList";
 import HectorMark from "../components/HectorMark";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import Scorecard from "../components/Scorecard";
+import ScoreMark from "../components/ScoreMark";
 
 interface Props {
   event: EventDoc;
@@ -358,7 +359,6 @@ export default function PlayScreen({
           round={round}
           course={course}
           event={event}
-          me={me}
           flightIds={flightIds}
           subjects={subjects}
           cards={cards}
@@ -384,7 +384,6 @@ function OnCourse({
   round,
   course,
   event,
-  me,
   flightIds,
   subjects,
   cards,
@@ -398,7 +397,6 @@ function OnCourse({
   round: Round;
   course: NonNullable<(typeof courses)[string]>;
   event: EventDoc;
-  me: FieldPlayer | null;
   flightIds: string[];
   subjects: Subject[];
   cards: Record<string, Card>;
@@ -417,43 +415,29 @@ function OnCourse({
   // The round's main format: the one that feeds the Hector, else the first listed.
   const main = round.formats.find((f) => f.hector) ?? round.formats[0];
   const fr = result?.formats.find((f) => f.spec.id === main?.id);
-  const flight = new Set(flightIds);
-  const rows: { key: string; label: string; mine: boolean; display: string; thru: number; sort: number }[] = [];
-  if (fr) {
+  /** A card's running figure in the main format, spoken as the Round tab speaks it. */
+  const figureFor = (sub: Subject): string => {
+    if (!fr) return "—";
     if (fr.teams.length > 0) {
-      for (const t of fr.teams) {
-        const pair = event.pairs.find((p) => p.id === t.pairId);
-        if (!pair || !(flight.has(pair.aId) || flight.has(pair.bId))) continue;
-        rows.push({
-          key: t.pairId,
-          label: t.label,
-          mine: pair.aId === me?.id || pair.bId === me?.id,
-          display: t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—",
-          thru: t.thru,
-          sort: t.thru > 0 ? t.toPar : Infinity,
-        });
-      }
-    } else {
-      for (const p of fr.players) {
-        if (!flight.has(p.playerId)) continue;
-        const toPar = p.toPar ?? 0;
-        rows.push({
-          key: p.playerId,
-          label: p.name,
-          mine: p.playerId === me?.id,
-          display:
-            p.thru > 0
-              ? fr.spec.kind === "stableford"
-                ? `${p.value} pts (${formatToPar(toPar)})`
-                : `${formatToPar(toPar)} (${p.value})`
-              : "—",
-          thru: p.thru,
-          sort: p.thru > 0 ? toPar : Infinity,
-        });
-      }
+      // Team formats: a player row shows its pair's figure (partners share it).
+      const pairId = sub.id.startsWith("team__")
+        ? sub.id.slice("team__".length)
+        : event.pairs.find((p) => p.aId === sub.id || p.bId === sub.id)?.id;
+      const t = fr.teams.find((t) => t.pairId === pairId);
+      return t && t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—";
     }
-    rows.sort((a, b) => a.sort - b.sort);
-  }
+    const p = fr.players.find((p) => p.playerId === sub.id);
+    if (!p || p.thru === 0) return "—";
+    const toPar = p.toPar ?? 0;
+    return fr.spec.kind === "stableford"
+      ? `${p.value} (${formatToPar(toPar)})`
+      : `${formatToPar(toPar)} (${p.value})`;
+  };
+  const flightRows = subjects.filter((sub) => {
+    // Cards in the flight — the same set and order as the entry sheet.
+    if (sub.id.startsWith("team__")) return true;
+    return flightIds.includes(sub.id);
+  });
 
   return (
     <div className="mt-3 px-4 space-y-3">
@@ -501,61 +485,45 @@ function OnCourse({
           />
         )}
 
-        {/* This hole, card by card: the score entered (or not yet), and who gets
-            strokes here — the two things you check on the tee and the green. */}
-        <ul className="mt-3 border-t border-slate-800 pt-2 text-left divide-y divide-slate-800/70">
-          {subjects.map((sub) => {
-            const gross = cards[sub.id]?.holes?.[String(hole)];
-            const strokes = sub.strokes[hole - 1];
-            return (
-              <li key={sub.id} className="flex items-center justify-between gap-2 py-1.5">
-                <span className={`text-base truncate ${sub.mine ? "font-semibold text-violet-300" : "text-slate-200"}`}>
-                  {sub.name}
-                </span>
-                <span className="shrink-0 flex items-center gap-2">
-                  {strokes !== 0 && (
-                    <span className={`pill num ${strokes > 0 ? "bg-emerald-950 text-emerald-400" : "bg-rose-950 text-rose-400"}`}>
-                      {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`}
-                    </span>
-                  )}
-                  {gross ? (
-                    <span className={`score text-2xl w-8 text-right ${quickTint(gross - par)}`}>{gross}</span>
-                  ) : (
-                    <span className="score text-2xl w-8 text-right text-slate-600">–</span>
-                  )}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      {/* Where the flight stands — in the round's own language, as the Round tab
-          speaks it: stroke formats lead with to-par, Stableford with points. */}
-      <div className="card px-4 py-3">
-        <div className="flex items-baseline justify-between">
-          <div className="label">Your flight</div>
-          {main && <div className="text-[12px] text-slate-500 num">{main.label.replace(/ (NET|SCR)$/, "")}</div>}
-        </div>
-        {rows.length === 0 ? (
-          <p className="text-sm text-slate-500 mt-2">Nothing scored yet.</p>
-        ) : (
-          <ul className="mt-2 divide-y divide-slate-800">
-            {rows.map((r) => (
-              <li key={r.key} className="flex items-baseline justify-between gap-3 py-2">
-                <span className={`text-lg truncate ${r.mine ? "font-semibold text-violet-300" : "text-slate-200"}`}>
-                  {r.label}
-                </span>
-                <span className="shrink-0 flex items-baseline gap-2">
-                  <span className={`score text-2xl ${r.mine ? "text-violet-300" : ""}`}>{r.display}</span>
-                  <span className="text-[12px] text-slate-500 num w-9 text-right">
-                    {r.thru > 0 ? (r.thru === 18 ? "F" : `${r.thru}`) : ""}
+        {/* One row per card, in flight order — the same order as the entry sheet, so
+            "third row down" is the same person in both. The hole cell is always
+            filled: the score once played (a real score mark), otherwise the stroke
+            allocation for the hole (−1, or a dim 0), GameBook-style. A result is
+            always a positive count and a stroke never is, so the two can't blur. */}
+        <div className="mt-3 border-t border-slate-800 pt-2 text-left">
+          <div className="grid grid-cols-[1fr_3rem_auto] items-end gap-x-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+            <span className="truncate">Your flight</span>
+            <span className="text-center">Hole {hole}</span>
+            <span className="text-right">Round</span>
+          </div>
+          <ul className="divide-y divide-slate-800/70">
+            {flightRows.map((sub) => {
+              const gross = cards[sub.id]?.holes?.[String(hole)];
+              const strokes = sub.strokes[hole - 1];
+              return (
+                <li key={sub.id} className="grid grid-cols-[1fr_3rem_auto] items-center gap-x-3 py-1.5">
+                  <span className={`text-lg truncate ${sub.mine ? "font-semibold text-violet-300" : "text-slate-200"}`}>
+                    {sub.name}
                   </span>
-                </span>
-              </li>
-            ))}
+                  <span className="flex justify-center">
+                    {gross ? (
+                      <ScoreMark value={gross} par={par} strokes={strokes} size="lg" />
+                    ) : strokes !== 0 ? (
+                      <span className={`num text-base font-semibold ${strokes > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`}
+                      </span>
+                    ) : (
+                      <span className="num text-base text-slate-600">0</span>
+                    )}
+                  </span>
+                  <span className={`score text-2xl text-right ${sub.mine ? "text-violet-300" : ""}`}>
+                    {figureFor(sub)}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
-        )}
+        </div>
       </div>
 
       {complete ? (
