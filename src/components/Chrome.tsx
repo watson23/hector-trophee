@@ -270,8 +270,10 @@ export function Header({
       <div className="min-w-0">
         <h1
           className={
+            // The masthead may wrap ("Hector Trophée / 2026" on a 360px phone beside the
+            // identity block) — a cut-off trophy name is worse than a second line.
             masthead
-              ? "font-serif text-[22px] font-semibold tracking-tight truncate"
+              ? "font-serif text-[22px] font-semibold tracking-tight leading-tight text-balance"
               : "text-xl font-bold tracking-tight truncate"
           }
         >

@@ -158,8 +158,10 @@ export default function RoundScreen({
           </span>
         </span>
         <span className="flex items-center gap-1.5 min-w-0 truncate text-slate-500">
+          {/* On a 360px phone the day is what gives — the course name and tee must stay whole. */}
           <span className="truncate">
-            {round.day} · {course?.shortName}
+            <span className="hidden min-[380px]:inline">{round.day} · </span>
+            {course?.shortName}
           </span>
           <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${teeDotClass[round.tee]}`} />
           <span className="shrink-0">{teeText(round.tee)}</span>

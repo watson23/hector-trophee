@@ -1247,7 +1247,8 @@ function SubjectRow({
         )}
       </div>
 
-      <div className="flex gap-1.5">
+      {/* Tighter gaps and a narrower "…" on a 360px phone, so seven buttons keep their width. */}
+      <div className="flex gap-1 min-[380px]:gap-1.5">
         {quick.map((n) => {
           const diff = n - par;
           return (
@@ -1283,7 +1284,7 @@ function SubjectRow({
         <button
           onClick={() => setOtherFor(showOther ? null : hole)}
           aria-label="Enter another score"
-          className={`w-12 ${h} rounded-xl font-bold text-lg shrink-0 ${
+          className={`w-10 min-[380px]:w-12 ${h} rounded-xl font-bold text-lg shrink-0 ${
             value !== null && !quick.includes(value)
               ? "bg-violet-600 text-white num"
               : "bg-slate-900 text-slate-500 border border-slate-700"
