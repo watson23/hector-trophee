@@ -6,7 +6,7 @@ import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
-import { switchSpace, type Space } from "../lib/space";
+import { spaceLink, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import HandicapRefresh from "../components/HandicapRefresh";
 
@@ -107,6 +107,7 @@ export default function AdminScreen({
             Field test space (Hirsala)
           </button>
         )}
+        {space !== "live" && <InviteLink space={space} />}
       </div>
       <Segmented
         value={tab}
@@ -172,6 +173,36 @@ export default function AdminScreen({
 // ---------------------------------------------------------------------------
 // Pairs — entered manually after Thursday night's draft
 // ---------------------------------------------------------------------------
+
+/**
+ * Inviting another phone into this space: a link that sets the space on arrival, so a
+ * tester goes straight to the PIN and their name — no organiser access needed.
+ */
+function InviteLink({ space }: { space: Space }) {
+  const [copied, setCopied] = useState(false);
+  const link = spaceLink(space);
+  return (
+    <div className="mt-2.5 flex items-center justify-between gap-3 text-[12px]">
+      <span className="min-w-0 truncate text-slate-500">
+        Invite a tester: <span className="num text-slate-400">{link.replace(/^https?:\/\//, "")}</span>
+      </span>
+      <button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(link);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            /* clipboard unavailable — the link is written out beside the button */
+          }
+        }}
+        className="btn-ghost px-2.5 py-1 text-xs shrink-0"
+      >
+        {copied ? "Copied" : "Copy link"}
+      </button>
+    </div>
+  );
+}
 
 function PairsEditor({
   event,

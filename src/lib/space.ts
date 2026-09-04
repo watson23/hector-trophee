@@ -17,13 +17,32 @@ export type Space = "live" | "test" | "field";
 
 const KEY = "hectro_space";
 
+const isSpace = (v: string | null): v is Space => v === "live" || v === "test" || v === "field";
+
 export function currentSpace(): Space {
   try {
+    // A shared link can carry the space — app.hector.golf/?space=field — so a test
+    // user lands in the field event without needing the organiser PIN to switch.
+    // The choice is stored for the device and the parameter dropped from the URL.
+    const params = new URLSearchParams(location.search);
+    const fromLink = params.get("space");
+    if (isSpace(fromLink)) {
+      localStorage.setItem(KEY, fromLink);
+      params.delete("space");
+      const qs = params.toString();
+      history.replaceState(null, "", `${location.pathname}${qs ? `?${qs}` : ""}${location.hash}`);
+      return fromLink;
+    }
     const v = localStorage.getItem(KEY);
-    return v === "test" || v === "field" ? v : "live";
+    return isSpace(v) ? v : "live";
   } catch {
     return "live";
   }
+}
+
+/** The link that puts another phone into a space — for inviting a tester. */
+export function spaceLink(space: Space): string {
+  return `${location.origin}/?space=${space}`;
 }
 
 export function switchSpace(space: Space): void {
