@@ -2,7 +2,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import type { Round } from "../types";
 import type { TournamentTotals } from "../lib/engine";
 import { hectorLowerIsBetter, levelParTotal, weightLabel } from "../lib/hector";
-import { formatToPar, formatToParFine } from "../lib/leaderboard";
+import { formatToPar, formatToParFine, rank } from "../lib/leaderboard";
 import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
@@ -45,6 +45,44 @@ function begunRounds(rows: { perRound: Record<string, unknown> }[]): Set<string>
   return begun;
 }
 
+/** "1st", "T3", "10th" — a round's placing, the way it's said. */
+function placeText(label: string): string {
+  if (label.startsWith("T")) return label;
+  const n = Number(label);
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : (["th", "st", "nd", "rd"][n % 10] ?? "th");
+  return `${n}${suffix}`;
+}
+
+/**
+ * Where every row placed on one round. The breakdown's figures explain the total's
+ * arithmetic; the placings explain its shape — a week of "1st, T3, 10th" and a week
+ * of "4th, 4th, 4th" can add up to the same number.
+ */
+function placesOn<E extends { thru: number }>(
+  table: { key: string; perRound: Record<string, E> }[],
+  roundId: string,
+  value: (e: E) => number,
+  lowerIsBetter: boolean,
+): Map<string, string> {
+  const entries = table.flatMap((r) => (r.perRound[roundId] ? [{ key: r.key, e: r.perRound[roundId] }] : []));
+  const ranked = rank(entries, (x) => value(x.e), lowerIsBetter, (x) => x.e.thru > 0);
+  return new Map(ranked.filter((x) => x.position > 0).map((x) => [x.item.key, x.label]));
+}
+
+function Place({ label }: { label?: string }) {
+  if (!label) return null;
+  const first = label === "1" || label === "T1";
+  return (
+    <span
+      className={`ml-1.5 inline-block rounded-md px-1.5 py-px text-[11px] num font-semibold align-middle ${
+        first ? "bg-gold-400/15 text-gold-400" : "bg-slate-800 text-slate-300"
+      }`}
+    >
+      {placeText(label)}
+    </span>
+  );
+}
+
 function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): string {
   const parts = [];
   if (birdies) parts.push(`${birdies} birdie${birdies > 1 ? "s" : ""}`);
@@ -67,6 +105,8 @@ export default function TournamentScreen({
   const victorRoundCount = rounds.filter((r) => r.formats.some((f) => f.victor)).length;
   const hectorBegun = begunRounds(hector);
   const victorBegun = begunRounds(victor);
+  const hectorPlaces = new Map(rounds.map((r) => [r.id, placesOn(hector, r.id, (e) => e.toPar, hectorLowerIsBetter)]));
+  const victorPlaces = new Map(rounds.map((r) => [r.id, placesOn(victor, r.id, (e) => e.points, false)]));
 
   // What a pair going round in level par every round would total — a bare "231.4"
   // means nothing without something to measure it against.
@@ -116,6 +156,7 @@ export default function TournamentScreen({
               <div className="flex justify-between gap-3 text-[12px] font-semibold text-slate-400 mb-0.5">
                 <span>
                   Round {r.seq} · {r.day}
+                  <Place label={hectorPlaces.get(r.id)?.get(row.key)} />
                 </span>
                 <span className="num text-slate-300">{formatToParFine(entry.toPar, 2)}</span>
               </div>
@@ -182,6 +223,7 @@ export default function TournamentScreen({
             <div key={r.id} className="flex justify-between text-xs text-slate-400 num">
               <span className="font-sans">
                 Round {r.seq} · {r.day}
+                <Place label={victorPlaces.get(r.id)?.get(row.key)} />
               </span>
               <span className="font-semibold text-slate-200">
                 {entry.points.toFixed(0)} pts{" "}
