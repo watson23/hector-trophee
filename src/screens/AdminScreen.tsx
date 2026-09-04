@@ -371,7 +371,18 @@ function PairsEditor({
   }
 
   async function removePair(id: string) {
+    const pair = event.pairs.find((p) => p.id === id);
     await saveEvent({ pairs: event.pairs.filter((p) => p.id !== id) });
+    // A dissolved pair gives its tee times back: a mispick (two Ollis…) must not leave
+    // two ghosts holding seats in tomorrow's flight — or in any later pair round not yet final.
+    if (!pair || draftSeq === undefined) return;
+    for (const r of rounds) {
+      if (r.seq <= draftSeq || r.status === "final") continue;
+      const groups = placeUnit(r.groups, [pair.aId, pair.bId], null);
+      if (groups && groups.some((g, i) => g.playerIds.length !== r.groups[i].playerIds.length)) {
+        await patchRound(r.id, { groups });
+      }
+    }
   }
 
   const target = Math.floor(event.players.length / 2);
