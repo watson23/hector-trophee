@@ -1224,8 +1224,18 @@ function SubjectRow({
   cap: number | null;
   onScore: (value: number | null) => void;
 }) {
+  // A 1 is checked before it is written: it announces itself to everyone, and a thumb
+  // one button to the left of "2" must not send champagne to twenty phones.
+  const [confirmAce, setConfirmAce] = useState<number | null>(null);
+  const askingAce = confirmAce === hole;
   // Anything above the cap is stored as the cap — the rule, applied at the source.
-  const score = (n: number | null) => onScore(n === null ? null : applyCap(n, cap));
+  const score = (n: number | null) => {
+    if (n === 1 && value !== 1) {
+      setConfirmAce(hole);
+      return;
+    }
+    onScore(n === null ? null : applyCap(n, cap));
+  };
   // Tagged by hole: paging to the next hole with the "…" box open closes it, instead of
   // showing the previous hole's number over the new hole.
   const [otherFor, setOtherFor] = useState<number | null>(null);
@@ -1257,6 +1267,23 @@ function SubjectRow({
         )}
       </div>
 
+      {askingAce && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-gold-400/40 bg-gold-400/10 px-3 py-2">
+          <span className="text-sm font-semibold text-gold-300 flex-1">Hole-in-one? Really?</span>
+          <button
+            onClick={() => {
+              onScore(1);
+              setConfirmAce(null);
+            }}
+            className="rounded-lg bg-gold-400 text-slate-950 px-3 py-1.5 text-xs font-bold"
+          >
+            Yes, it happened!
+          </button>
+          <button onClick={() => setConfirmAce(null)} className="text-xs text-slate-400 px-1.5 py-1.5">
+            No
+          </button>
+        </div>
+      )}
       {/* Tighter gaps and a narrower "…" on a 360px phone, so seven buttons keep their width. */}
       <div className="flex gap-1 min-[380px]:gap-1.5">
         {quick.map((n) => {

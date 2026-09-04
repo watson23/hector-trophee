@@ -496,7 +496,15 @@ function HoleEditor({
 }) {
   const [hole, setHole] = useState<number | null>(null);
   const cap = hole ? capFor(hole) : null;
-  const set = (h: number, n: number | null) => onSet(h, n === null ? null : applyCap(n, cap));
+  // A 1 announces itself to everyone, so it is confirmed before it is written.
+  const [confirmAce, setConfirmAce] = useState<number | null>(null);
+  const set = (h: number, n: number | null) => {
+    if (n === 1 && value !== 1) {
+      setConfirmAce(h);
+      return;
+    }
+    onSet(h, n === null ? null : applyCap(n, cap));
+  };
   const value = hole ? (card?.holes?.[String(hole)] ?? null) : null;
   const holePar = hole ? par[hole - 1] : 4;
   const strokes = hole ? subject.strokes[hole - 1] : 0;
@@ -573,6 +581,23 @@ function HoleEditor({
               clear
             </button>
           </div>
+          {confirmAce === hole && (
+            <div className="mt-2 flex items-center gap-2 rounded-xl border border-gold-400/40 bg-gold-400/10 px-3 py-2">
+              <span className="text-sm font-semibold text-gold-300 flex-1">Hole-in-one? Really?</span>
+              <button
+                onClick={() => {
+                  onSet(hole, 1);
+                  setConfirmAce(null);
+                }}
+                className="rounded-lg bg-gold-400 text-slate-950 px-3 py-1.5 text-xs font-bold"
+              >
+                Yes, it happened!
+              </button>
+              <button onClick={() => setConfirmAce(null)} className="text-xs text-slate-400 px-1.5 py-1.5">
+                No
+              </button>
+            </div>
+          )}
           {/* Beyond the quick row: any score, and the tournament's max for the hole. */}
           <div className="mt-2 flex items-center gap-2">
             <input
