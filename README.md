@@ -19,7 +19,7 @@ With no Firebase config the app runs against a localStorage backend that broadca
 browser tabs. Everything works — scoring, leaderboards, admin — but scores stay on the device.
 A banner says so. This is what you get straight after `npm install`.
 
-Default PINs: event `HEC26`, admin `1874` — see **Access codes** below.
+Access codes are configured per deployment — see **Access codes** below.
 
 ## Setting up Firebase
 
@@ -93,18 +93,15 @@ Permanent fix (needs your password): `sudo chown -R $(id -u):$(id -g) ~/.npm`
 
 ## Access codes
 
-Event code `HEC26` and admin PIN `1874` by default. Override with `VITE_EVENT_PIN` and
-`VITE_ADMIN_PIN` — locally in `.env.local`, on Vercel as environment variables. The app
-reconciles the stored hashes on load, so changing a PIN and redeploying takes effect on an
-already-seeded event.
+Two codes gate the app: the event code every player types once, and the admin PIN for the
+organiser screens. Both are set as `VITE_EVENT_PIN` and `VITE_ADMIN_PIN` — locally in
+`.env.local`, on Vercel as environment variables — and are handed out in person or in the
+group chat, never written down here. The app reconciles the stored hashes on load, so
+changing a code and redeploying takes effect on an already-seeded event: everyone simply
+needs the new code the next time they are asked for it.
 
-> **This repo is public, so those defaults are public too.** Set both to something else in the
-> Vercel environment variables before sharing the link with the group, or anyone who finds the
-> URL can walk in and edit scores.
-
-Even then they are **gates, not secrets**. Whatever you set is compiled into the client bundle,
-and `firestore.rules` only requires that a client be signed in anonymously. That keeps the open
-internet out of the database; it does not stop one of the twenty from poking around in devtools.
+They are gates, not secrets — the values end up in the client bundle either way — but this
+repo is public, so the codes stay out of it, and out of the example env file.
 
 ## Contributing
 
