@@ -125,21 +125,24 @@ export default function Scorecard({
               key={h}
               onClick={() => onPickHole(h)}
               aria-label={`Score hole ${h}`}
-              className={`num text-[13px] font-semibold py-1 rounded-md ${
-                current ? "text-violet-300 bg-violet-950/60" : "text-slate-300"
+              /* The hole number is an index, so it is set as a caption; the par
+                 beneath is data — in the score face, at the scores' colour for par,
+                 so it reads as the row every result is measured against. */
+              className={`num text-[11px] font-semibold py-1 rounded-md ${
+                current ? "text-violet-300 bg-violet-950/60" : "text-slate-500"
               }`}
             >
               {h}
             </button>
           );
         })}
-        <div className="num text-[12px] font-semibold text-slate-400 text-center py-1">{nineLabel}</div>
+        <div className="num text-[11px] font-semibold text-slate-500 text-center py-1">{nineLabel}</div>
         {holes.map((i) => (
-          <div key={`p${i}`} className="num text-[13px] text-slate-400 text-center">
+          <div key={`p${i}`} className="score text-[17px] text-slate-300 text-center">
             {course.par[i]}
           </div>
         ))}
-        <div className="num text-[13px] text-slate-400 text-center">{nineParSum}</div>
+        <div className="score text-[17px] text-slate-400 text-center">{nineParSum}</div>
       </div>
 
       {board?.rows.map((r) => {
