@@ -780,7 +780,8 @@ function quickTint(diff: number): string {
   if (diff === -1) return "text-rose-400";
   if (diff === 0) return "text-slate-100";
   if (diff === 1) return "text-sky-300";
-  return "text-slate-300";
+  // Double or worse: the deeper blue, as on the scorecard marks.
+  return "text-blue-400";
 }
 
 /** Result names under the quick-row numbers — nobody counts buttons from the left. */

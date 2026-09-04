@@ -21,7 +21,7 @@ them deliberately, in tokens, never ad hoc per screen.
 | `violet` scale — **remapped to Augusta green** (600 = `#1c6242`) | Interactive accent: active states, selection, "you", CTAs | Score semantics. The class names still say violet; the scale in `tailwind.config.js` is the single source of truth |
 | `emerald` | Live/now (the breathing dot), positive deltas, free slots | Backgrounds at full saturation |
 | `rose` | **Under par** (golf convention: red = under) | Errors as a habit — errors are amber |
-| `sky` | **Over par** (golf convention: blue = over) | Links |
+| `sky` / `blue` | **Over par**, two steps as on golf TV: sky-300 for a bogey, blue-400 (ring blue-500) for double or worse — deep enough to read as worse, light enough for black | Links |
 | `amber` | Warnings (suspect tee, provisional), the yellow tee dot | — |
 
 Score tinting follows golf-TV convention, not web convention: red is *good*
@@ -60,7 +60,8 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   ("−12 (60)"); Stableford leads with points ("40 (−4)").
 - Weight labels are percentages ("H 50%"), never fraction glyphs.
 - Score marks: shape encodes result (ring = birdie, square = bogey, doubled =
-  eagle/double), numeral stays bright. Legend lives on the scorecard.
+  eagle/double), numeral stays bright; on the one-nine scorecard the `lg` mark is a
+  32px cell with a 20px scoreboard-face numeral. Legend lives on the scorecard.
 
 ## In-round Play: two modes, never one screen
 

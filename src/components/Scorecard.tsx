@@ -183,8 +183,10 @@ export default function Scorecard({
 function Cell({ kind, value, par, strokes }: { kind: CellKind; value: number | null; par: number; strokes: number }) {
   if (kind === "gross") return <ScoreMark value={value} par={par} strokes={strokes} size="lg" />;
   if (value === null) {
-    return <span className="inline-flex w-[30px] h-[30px] items-center justify-center text-slate-700">·</span>;
+    return <span className="inline-flex w-8 h-8 items-center justify-center text-slate-700">·</span>;
   }
+  // Net cells tint against par like gross marks; points map onto the same scale
+  // (3 = birdie-red, 2 = par-white, 1 = bogey-blue, 0 = the deeper blue).
   const tint =
     kind === "net"
       ? value - par <= -2
@@ -193,7 +195,9 @@ function Cell({ kind, value, par, strokes }: { kind: CellKind; value: number | n
           ? "text-rose-300"
           : value - par === 0
             ? "text-slate-50"
-            : "text-sky-200"
+            : value - par === 1
+              ? "text-sky-300"
+              : "text-blue-400"
       : value >= 4
         ? "text-amber-200"
         : value === 3
@@ -201,10 +205,10 @@ function Cell({ kind, value, par, strokes }: { kind: CellKind; value: number | n
           : value === 2
             ? "text-slate-50"
             : value === 1
-              ? "text-sky-200"
-              : "text-slate-500";
+              ? "text-sky-300"
+              : "text-blue-400";
   return (
-    <span className={`inline-flex w-[30px] h-[30px] items-center justify-center num font-bold text-[15px] ${tint}`}>
+    <span className={`inline-flex w-8 h-8 items-center justify-center score text-[20px] ${tint}`}>
       {value}
     </span>
   );

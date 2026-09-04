@@ -17,11 +17,12 @@ export type ScoreSize = "sm" | "md" | "lg";
 
 const GEOM = {
   /** Inside an expanded leaderboard row — about 25px of column to work with. */
-  sm: { box: "w-6 h-6", text: "text-[12px]", dot: "w-[3px] h-[3px]", lane: "h-[5px]" },
-  /** The Scorecard tab, which has the full width of the card. */
-  md: { box: "w-[25px] h-[25px]", text: "text-[13px]", dot: "w-[3.5px] h-[3.5px]", lane: "h-[6px]" },
-  /** The scorecard showing one nine — nine cells across the full card width. */
-  lg: { box: "w-[30px] h-[30px]", text: "text-[15px]", dot: "w-1 h-1", lane: "h-[6px]" },
+  sm: { box: "w-6 h-6", text: "text-[12px]", face: "num font-bold", dot: "w-[3px] h-[3px]", lane: "h-[5px]" },
+  /** Round-tab breakdowns, which have the full width of the card. */
+  md: { box: "w-[25px] h-[25px]", text: "text-[13px]", face: "num font-bold", dot: "w-[3.5px] h-[3.5px]", lane: "h-[6px]" },
+  /** The scorecard showing one nine — nine cells across the card, in the scoreboard
+      face so the numbers read from a cart. */
+  lg: { box: "w-8 h-8", text: "text-[20px]", face: "score", dot: "w-1 h-1", lane: "h-[6px]" },
 } as const;
 
 export interface MarkStyle {
@@ -38,10 +39,11 @@ export function markStyle(diff: number): MarkStyle {
     return { ring: "border-amber-300", radius: "rounded-full", double: true, text: "text-amber-200" };
   if (diff === -1) return { ring: "border-rose-400", radius: "rounded-full", text: "text-rose-200" };
   if (diff === 0) return { radius: "rounded-full", text: "text-slate-50" };
-  // A bogey ring sits quiet — for this field most holes are one over, and a box on every
-  // hole is the wall of numbers this was meant to break up. Doubles get the heavier mark.
-  if (diff === 1) return { ring: "border-sky-500/50", radius: "rounded", text: "text-sky-100" };
-  return { ring: "border-sky-400/80", radius: "rounded", double: true, text: "text-sky-100" };
+  // Over par goes blue in two steps, as golf TV does: light for a bogey, a deeper blue
+  // for double or worse — deep enough to read as "worse", light enough for black. The
+  // bogey ring sits quiet since for this field most holes are one over.
+  if (diff === 1) return { ring: "border-sky-500/50", radius: "rounded", text: "text-sky-300" };
+  return { ring: "border-blue-500/80", radius: "rounded", double: true, text: "text-blue-400" };
 }
 
 export default function ScoreMark({
@@ -89,7 +91,7 @@ export default function ScoreMark({
             )}
           </>
         )}
-        <span className={`relative num font-bold ${g.text} ${text}`}>{value}</span>
+        <span className={`relative ${g.face} ${g.text} ${text}`}>{value}</span>
       </span>
       {strokes > 0 && <span className="sr-only">{strokes} handicap stroke</span>}
     </span>
