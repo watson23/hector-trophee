@@ -496,33 +496,34 @@ function OnCourse({
           </div>
           <NavButton dir="next" disabled={hole === 18} onClick={() => setHoleNo(Math.min(18, hole + 1))} />
         </div>
-        <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-400 num">
-          <span>
-            Par {par} · SI {si}
-            {metres ? ` · ${metres} m` : ""}
-          </span>
-          {holeMapUrl(round.courseId, hole) && (
-            <button
-              onClick={() => setShowMap((v) => !v)}
-              className={`pill transition-colors font-semibold ${
-                showMap
-                  ? "bg-violet-600 text-white"
-                  : "border border-violet-700/70 bg-violet-950/30 text-violet-300"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3" aria-hidden="true">
-                <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
-              </svg>
-              Map
-            </button>
-          )}
+        <div className="mt-2 text-sm text-slate-400 num">
+          Par {par} · SI {si}
+          {metres ? ` · ${metres} m` : ""}
         </div>
+        {/* The hole map is the feature for a course most of the field has played
+            once or never: a real button, not a pill in the meta line. The choice
+            persists, so once opened it stays open hole after hole. */}
+        {holeMapUrl(round.courseId, hole) && (
+          <button
+            onClick={() => setShowMap((v) => !v)}
+            className={`mt-3 mx-auto flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold ${
+              showMap
+                ? "bg-slate-800 text-slate-300"
+                : "bg-violet-600 text-white shadow-[0_2px_12px_rgba(83,64,173,0.35)]"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4" aria-hidden="true">
+              <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
+            </svg>
+            {showMap ? "Hide map" : "Hole map"}
+          </button>
+        )}
         {showMap && holeMapUrl(round.courseId, hole) && (
           <img
             src={holeMapUrl(round.courseId, hole)!}
             alt={`Hole ${hole} layout`}
-            loading="lazy"
-            className="mt-3 mx-auto max-w-[min(60%,260px)]"
+            loading="eager"
+            className="mt-3 mx-auto max-w-[min(80%,340px)]"
           />
         )}
 
