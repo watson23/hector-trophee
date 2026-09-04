@@ -904,6 +904,9 @@ function quickTag(diff: number): string {
   if (diff === -1) return "birdie";
   if (diff === 0) return "par";
   if (diff === 1) return "bogey";
+  if (diff === 2) return "double";
+  if (diff === 3) return "triple";
+  // No standard shorthand past triple: the number says it.
   return `+${diff}`;
 }
 
