@@ -51,6 +51,7 @@ export default function Scorecard({
   mainId,
   currentHole,
   onPickHole,
+  onShowWholeRound,
 }: {
   course: Course;
   subjects: Subject[];
@@ -63,6 +64,8 @@ export default function Scorecard({
   mainId: string | undefined;
   currentHole: number;
   onPickHole: (hole: number) => void;
+  /** Zoom out to the Round tab on this board — the third step of hole → group → field. */
+  onShowWholeRound?: (boardId: string) => void;
 }) {
   const boards = buildBoards(course, subjects, cards, event, flightIds, formats);
   const [boardSel, setBoardSel] = useState<string | null>(null);
@@ -174,6 +177,12 @@ export default function Scorecard({
         <div className="mt-4">
           <ScoreLegend />
         </div>
+      )}
+
+      {onShowWholeRound && board && (
+        <button className="btn-ghost w-full py-3 mt-4" onClick={() => onShowWholeRound(board.id)}>
+          See the whole round →
+        </button>
       )}
     </div>
   );

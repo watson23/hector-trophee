@@ -28,6 +28,8 @@ interface Props {
   /** Hector TV: followed players (and their pairs) get the violet star treatment. */
   highlightPlayers?: Set<string>;
   highlightPairs?: Set<string>;
+  /** Present only when the viewer arrived from their scorecard — a breadcrumb back. */
+  onBackToCard?: () => void;
 }
 
 export default function RoundScreen({
@@ -39,6 +41,7 @@ export default function RoundScreen({
   onRoundChange,
   highlightPlayers,
   highlightPairs,
+  onBackToCard,
 }: Props) {
   // Fully controlled: no local copy to fall out of sync when the Play tab sends the
   // viewer here at a specific round.
@@ -131,6 +134,16 @@ export default function RoundScreen({
           what's on air and where, in the same tracked-caps voice as the Hector TV
           ident. The register shifts with the selected round's status: a breathing
           dot and LIVE while play is on, quiet caps otherwise. */}
+      {onBackToCard && (
+        <div className="px-4 pt-3">
+          <button
+            onClick={onBackToCard}
+            className="pill bg-violet-950/70 border border-violet-800 text-violet-300 font-semibold"
+          >
+            ← Back to your card
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-3 num text-[12px] tracking-[0.12em] uppercase">
         <span className="flex items-center gap-2 shrink-0 font-semibold">
           {round.status === "open" && <span className="live-dot text-emerald-400" />}

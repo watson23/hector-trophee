@@ -26,6 +26,8 @@ interface Props {
   result: RoundResult | undefined;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
   onShowRound: (roundId: string) => void;
+  /** From the scorecard: the Round tab on this round, on the same board, with a way back. */
+  onShowRoundBoard: (roundId: string, boardId: string) => void;
   onShowTrophy: () => void;
 }
 
@@ -51,6 +53,7 @@ export default function PlayScreen({
   setHole,
   setHcpSubmitted,
   onShowRound,
+  onShowRoundBoard,
   onShowTrophy,
 }: Props) {
   const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
@@ -321,6 +324,7 @@ export default function PlayScreen({
               setView("hole");
               setEntryOpen(true);
             }}
+            onShowWholeRound={(boardId) => onShowRoundBoard(round.id, boardId)}
           />
         </div>
       ) : finished ? (

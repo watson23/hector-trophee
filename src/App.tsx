@@ -58,6 +58,9 @@ export default function App() {
     null,
     "session",
   );
+  // Set when the scorecard sends the viewer to the Round tab; the Round screen then
+  // shows a breadcrumb back. Any tab tap clears it — it is a path, not a control.
+  const [returnToCard, setReturnToCard] = useState(false);
   // Timestamp of the newest announcement this device has seen; the Info tab gets an
   // amber dot while something newer exists.
   const [newsSeen, setNewsSeen] = usePersistentState("hectro_ui.newsSeen", 0);
@@ -259,6 +262,18 @@ export default function App() {
                   setRoundSel(roundId);
                   setTab("round");
                 }}
+                onShowRoundBoard={(roundId, boardId) => {
+                  // Land on the same board the card was showing; the Round screen
+                  // reads its persisted picker on mount.
+                  try {
+                    sessionStorage.setItem("hectro_ui.roundboard", JSON.stringify(boardId));
+                  } catch {
+                    /* no storage — the round's default board is fine */
+                  }
+                  setRoundSel(roundId);
+                  setReturnToCard(true);
+                  setTab("round");
+                }}
                 onShowTrophy={() => setTab("tournament")}
               />
             )}
@@ -270,6 +285,14 @@ export default function App() {
                 cards={t.cards}
                 roundId={roundSel ?? activeRound?.id ?? null}
                 onRoundChange={setRoundSel}
+                onBackToCard={
+                  returnToCard
+                    ? () => {
+                        setReturnToCard(false);
+                        setTab("play");
+                      }
+                    : undefined
+                }
               />
             )}
             {tab === "tournament" && (
@@ -327,7 +350,16 @@ export default function App() {
         </button>
       )}
 
-      {!adminOpen && <TabBar tab={tab} onChange={setTab} badges={{ info: newsUnread }} />}
+      {!adminOpen && (
+        <TabBar
+          tab={tab}
+          onChange={(next) => {
+            setReturnToCard(false);
+            setTab(next);
+          }}
+          badges={{ info: newsUnread }}
+        />
+      )}
     </div>
   );
 }
