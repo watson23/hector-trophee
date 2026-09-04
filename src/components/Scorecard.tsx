@@ -213,7 +213,9 @@ function Cell({ kind, value, par, strokes }: { kind: CellKind; value: number | n
   // (3 = birdie-red, 2 = par-white, 1 = bogey-blue, 0 = the deeper blue).
   const tint =
     kind === "net"
-      ? value - par <= -2
+      ? value <= 0
+        ? "text-gold-300"
+        : value - par <= -2
         ? "text-amber-200"
         : value - par === -1
           ? "text-rose-300"

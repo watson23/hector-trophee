@@ -70,8 +70,14 @@ export default function ScoreMark({
     );
   }
 
-  const style = plain ? null : markStyle(value - par);
-  const text = plain ? (emphasis ? "text-slate-100" : "text-slate-300") : style!.text;
+  // A hole-in-one is gold whatever the row — the one score that outranks eagle colour.
+  const ace = value === 1;
+  const style = ace
+    ? { ring: "border-gold-400", radius: "rounded-full", double: true, text: "text-gold-300" }
+    : plain
+      ? null
+      : markStyle(value - par);
+  const text = style ? style.text : emphasis ? "text-slate-100" : "text-slate-300";
 
   return (
     <span className="inline-flex flex-col items-center">
