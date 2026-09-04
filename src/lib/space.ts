@@ -13,13 +13,14 @@ import { EVENT_ID } from "../data/field";
  * cache and subscriptions are all built for one event id, and a clean restart is
  * simpler and safer than trying to swap them live.
  */
-export type Space = "live" | "test";
+export type Space = "live" | "test" | "field";
 
 const KEY = "hectro_space";
 
 export function currentSpace(): Space {
   try {
-    return localStorage.getItem(KEY) === "test" ? "test" : "live";
+    const v = localStorage.getItem(KEY);
+    return v === "test" || v === "field" ? v : "live";
   } catch {
     return "live";
   }
@@ -35,5 +36,8 @@ export function switchSpace(space: Space): void {
 }
 
 export function eventIdFor(space: Space): string {
+  // The field space is a fully separate event for real-world test rounds
+  // (Hirsala, Sep 2026) — same app, different data, nothing shared.
+  if (space === "field") return "HIRSALA-FIELD";
   return space === "test" ? `${EVENT_ID}-test` : EVENT_ID;
 }

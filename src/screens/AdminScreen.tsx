@@ -64,28 +64,46 @@ export default function AdminScreen({
       {/* Which copy of the event this device edits — visible on every admin tab, since
           it changes what all the buttons below actually touch. */}
       <div
-        className={`mx-4 mb-3 rounded-2xl border p-3 flex items-center justify-between gap-3 ${
+        className={`mx-4 mb-3 rounded-2xl border p-3 ${
           space === "test"
             ? "border-sky-900 bg-sky-950/30"
-            : "border-slate-800 bg-slate-900"
+            : space === "field"
+              ? "border-amber-900 bg-amber-950/20"
+              : "border-slate-800 bg-slate-900"
         }`}
       >
-        <div className="min-w-0">
-          <div className={`text-xs font-semibold ${space === "test" ? "text-sky-300" : ""}`}>
-            {space === "test" ? "Test space" : "Tournament"}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div
+              className={`text-xs font-semibold ${
+                space === "test" ? "text-sky-300" : space === "field" ? "text-amber-300" : ""
+              }`}
+            >
+              {space === "test" ? "Test space" : space === "field" ? "Field test · Hirsala" : "Tournament"}
+            </div>
+            <p className="text-[12px] text-slate-500 leading-relaxed">
+              {space === "test"
+                ? "A sandbox with its own data — nothing here touches the tournament."
+                : space === "field"
+                  ? "Real rounds at Hirsala, fully separate from the tournament and sandbox."
+                  : "The real data everyone sees. Switch this phone to the test space to play around safely."}
+            </p>
           </div>
-          <p className="text-[12px] text-slate-500 leading-relaxed">
-            {space === "test"
-              ? "A sandbox with its own data — nothing here touches the tournament."
-              : "The real data everyone sees. Switch this phone to the test space to play around safely."}
-          </p>
+          <button
+            onClick={() => switchSpace(space === "live" ? "test" : "live")}
+            className="btn-ghost px-3 py-1.5 text-xs shrink-0"
+          >
+            {space === "live" ? "To test space" : "To tournament"}
+          </button>
         </div>
-        <button
-          onClick={() => switchSpace(space === "test" ? "live" : "test")}
-          className="btn-ghost px-3 py-1.5 text-xs shrink-0"
-        >
-          {space === "test" ? "To tournament" : "To test space"}
-        </button>
+        {space === "live" && (
+          <button
+            onClick={() => switchSpace("field")}
+            className="mt-2 text-xs text-amber-400/90 underline underline-offset-2"
+          >
+            Field test space (Hirsala)
+          </button>
+        )}
       </div>
       <Segmented
         value={tab}

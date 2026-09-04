@@ -40,6 +40,19 @@ export const courses: Record<string, Course> = {
       red: { colour: "red", cr: 67.6, slope: 131, par: 72, metres: 5011 },
     },
   },
+  hirsala: {
+    id: "hirsala",
+    name: "Hirsala Golf",
+    shortName: "Hirsala",
+    /* Field-test course (Kirkkonummi). Par + SI from the user's own hector-scores
+       app (field-validated on the current par-73 card); yellow CR/slope from the
+       club's "Miehet slope 2026" PDF; metres from mscorecard's par-73 card. */
+    par: [4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 4, 5, 4, 3, 5, 3, 4, 5],
+    si: [2, 18, 12, 16, 10, 8, 6, 14, 4, 13, 5, 15, 3, 17, 9, 11, 1, 7],
+    tees: {
+      yellow: { colour: "yellow", cr: 70.8, slope: 127, par: 73, metres: 5596 },
+    },
+  },
 };
 
 /** Hole lengths in metres per tee, for the scorecard view. */
@@ -56,6 +69,9 @@ export const holeMetres: Record<string, Record<string, number[]>> = {
     yellow: [321, 355, 453, 127, 319, 346, 436, 193, 306, 288, 154, 454, 384, 333, 340, 429, 140, 352],
     blue: [299, 333, 423, 120, 297, 332, 416, 172, 285, 264, 140, 428, 365, 313, 322, 409, 131, 323],
     red: [283, 305, 391, 113, 273, 320, 395, 149, 262, 252, 120, 395, 338, 290, 311, 390, 121, 303],
+  },
+  hirsala: {
+    yellow: [330, 109, 324, 438, 328, 312, 315, 142, 476, 274, 330, 415, 347, 135, 447, 124, 360, 390],
   },
 };
 
