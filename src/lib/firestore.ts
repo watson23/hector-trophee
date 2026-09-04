@@ -4,8 +4,11 @@ import {
   collection,
   deleteDoc,
   doc,
+  documentId,
   getDoc,
   getDocs,
+  query,
+  where,
   initializeFirestore,
   onSnapshot,
   persistentLocalCache,
@@ -18,6 +21,7 @@ import {
   enableNetwork,
 } from "firebase/firestore";
 import type { Card, EventDoc, Round } from "../types";
+import { BACKUP_SEP, type Snapshot } from "./backup";
 import { defaultRounds } from "../data/rounds";
 import {
   buildDefaultEvent,
@@ -313,6 +317,29 @@ export class FirestoreStore implements Store {
     // A whole round is always saved, so this is a replace, not a merge: merging could
     // never clear a removed field — switching course must drop a stale CR override.
     await setDoc(doc(this.roundsRef(), round.id), this.clean(round)).catch(this.reportWriteError);
+  }
+
+  /**
+   * Snapshots as top-level `events/<eventId>__backup__<id>` documents — a path the
+   * existing rules already allow, so backups work without a rules deploy. Server reads:
+   * a restore must see what is really there, not a cached copy.
+   */
+  async listBackups(): Promise<Snapshot[]> {
+    const prefix = `${this.eventId}${BACKUP_SEP}`;
+    const snap = await getDocs(
+      query(
+        collection(this.db, "events"),
+        where(documentId(), ">=", prefix),
+        where(documentId(), "<", `${prefix}\uf8ff`),
+      ),
+    ).catch(this.reportWriteError);
+    return snap.docs.map((d) => d.data() as Snapshot).sort((a, b) => b.at - a.at);
+  }
+
+  async saveBackup(snap: Snapshot): Promise<void> {
+    await setDoc(doc(this.db, "events", `${this.eventId}${BACKUP_SEP}${snap.id}`), this.clean(snap)).catch(
+      this.reportWriteError,
+    );
   }
 
   async nudge(): Promise<void> {

@@ -39,6 +39,15 @@ export default function App() {
       ? "info"
       : "play";
   const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
+  // Safety net while a round is live: an organiser's phone snapshots the tournament every
+  // twenty minutes, skipping when nothing has changed. Only admins run it — a lost twenty
+  // minutes of a round is the worst case, whoever fat-fingers what.
+  const hasOpenRound = t.rounds.some((r) => r.status === "open");
+  useEffect(() => {
+    if (!session.admin || !t.ready || !hasOpenRound) return;
+    const id = setInterval(() => void t.backups.takeIfChanged("Auto (open round)").catch(() => {}), 20 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [session.admin, t.ready, hasOpenRound, t.backups]);
   // Hector TV: #watch in a shared link drops straight into spectator mode — no PIN,
   // because there is nothing to protect: the spectator shell has no write paths.
   // Decided once, at mount: arriving via the shared link (/tv — plus the older
@@ -257,6 +266,7 @@ export default function App() {
               update({ admin: false });
               setAdminOpen(false);
             }}
+            backups={t.backups}
           />
         ) : (
           <>

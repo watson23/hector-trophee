@@ -8,6 +8,7 @@ import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/roun
 import { Header, Segmented } from "../components/Chrome";
 import { spaceLink, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
+import BackupAdmin, { type BackupApi } from "./BackupAdmin";
 import HandicapRefresh from "../components/HandicapRefresh";
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
   onClose: () => void;
   /** Hand the organiser role back: the pill goes, the PIN is needed to return. */
   onSignOut: () => void;
+  backups: BackupApi;
 }
 
 export default function AdminScreen({
@@ -43,11 +45,12 @@ export default function AdminScreen({
   setHole,
   onClose,
   onSignOut,
+  backups,
 }: Props) {
   // Rounds first: it and Flights are the daily workspace, while Pairs is essentially
   // never touched again after Thursday's draft. Session-persisted, like the rest of the
   // UI position, so a refresh lands back on the same section.
-  const [tab, setTab] = usePersistentState<"pairs" | "groups" | "rounds" | "scores">(
+  const [tab, setTab] = usePersistentState<"pairs" | "groups" | "rounds" | "scores" | "backup">(
     "hectro_ui.adminTab",
     "rounds",
     "session",
@@ -117,6 +120,7 @@ export default function AdminScreen({
           { id: "groups", label: "Flights" },
           { id: "scores", label: "Scores" },
           { id: "pairs", label: "Pairs" },
+          { id: "backup", label: "Backup" },
         ]}
       />
       <div className="mt-4">
@@ -148,8 +152,10 @@ export default function AdminScreen({
             deleteCard={deleteCard}
             saveEvent={saveEvent}
             saveRound={saveRound}
+            backup={backups.take}
           />
         )}
+        {tab === "backup" && <BackupAdmin rounds={rounds} backups={backups} />}
       </div>
 
       {/* A formal way out of the role, for someone who wants to play a round as a

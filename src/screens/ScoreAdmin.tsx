@@ -31,6 +31,8 @@ interface Props {
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
+  /** Snapshot the tournament — called before anything here that destroys data. */
+  backup: (reason: string) => Promise<unknown>;
 }
 
 interface Subject {
@@ -97,6 +99,7 @@ export default function ScoreAdmin({
   deleteCard,
   saveEvent,
   saveRound,
+  backup,
 }: Props) {
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
@@ -115,6 +118,7 @@ export default function ScoreAdmin({
     if (!mirrorFrom) return;
     setBusy("Copying the tournament data…");
     try {
+      await backup("Before mirroring the tournament").catch(() => {});
       const n = await mirrorFrom(EVENT_ID);
       setBusy(null);
       setConfirmMirror(false);
@@ -164,6 +168,7 @@ export default function ScoreAdmin({
     if (!round) return;
     setBusy("Clearing…");
     try {
+      await backup(`Before clearing round ${round.seq}`).catch(() => {});
       await Promise.all(subjects.map((s) => deleteCard(round.id, s.id)));
       // Clearing a finished round un-finishes it: back to upcoming, snapshot dropped
       // so the next open re-freezes handicaps. Without this, wiping the last round
@@ -293,14 +298,24 @@ export default function ScoreAdmin({
         <div className="grid grid-cols-2 gap-2">
           <button
             disabled={Boolean(busy)}
-            onClick={() => run("Simulating…", (d) => simulateTournament(d, 18))}
+            onClick={() =>
+              run("Simulating…", async (d) => {
+                await backup("Before simulating a week").catch(() => {});
+                await simulateTournament(d, 18);
+              })
+            }
             className="btn-ghost py-2 text-xs disabled:opacity-40"
           >
             Play whole tournament
           </button>
           <button
             disabled={Boolean(busy)}
-            onClick={() => run("Simulating…", (d) => simulateTournament(d, 7))}
+            onClick={() =>
+              run("Simulating…", async (d) => {
+                await backup("Before simulating a week").catch(() => {});
+                await simulateTournament(d, 7);
+              })
+            }
             className="btn-ghost py-2 text-xs disabled:opacity-40"
           >
             …with last round live
@@ -431,7 +446,10 @@ export default function ScoreAdmin({
               disabled={Boolean(busy)}
               onClick={() => {
                 setConfirmReset(false);
-                void run("Resetting…", (d) => resetTournament(d, cards));
+                void run("Resetting…", async (d) => {
+                  await backup("Before resetting the tournament").catch(() => {});
+                  await resetTournament(d, cards);
+                });
               }}
               className="flex-1 rounded-xl py-2 text-xs font-semibold bg-rose-600 text-white"
             >

@@ -10,6 +10,8 @@ import {
   type Store,
   type StoreError,
 } from "../lib/store";
+import { buildSnapshot, restoreAll, restoreRound, stateFingerprint, type Snapshot } from "../lib/backup";
+import type { BackupApi } from "../screens/BackupAdmin";
 
 export interface TournamentState {
   ready: boolean;
@@ -35,6 +37,11 @@ export interface TournamentState {
   mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   /** Redial the backend to unstick writes queued behind a stale connection. */
   nudge: (() => Promise<void>) | undefined;
+  /** Snapshots of the whole tournament — see lib/backup.ts. */
+  backups: BackupApi & {
+    /** Like take(), but skips when nothing has changed since the last automatic one. */
+    takeIfChanged: (reason: string) => Promise<Snapshot | null>;
+  };
 }
 
 /**
@@ -212,11 +219,61 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     [store],
   );
 
+  // The latest state, readable from callbacks without re-creating them on every change.
+  const latest = useRef({ event, rounds, cards });
+  useEffect(() => {
+    latest.current = { event, rounds, cards };
+  }, [event, rounds, cards]);
+  const lastAutoFingerprint = useRef<string | null>(null);
+
+  const takeBackup = useCallback(
+    async (reason: string, roundsOverride?: Round[]): Promise<Snapshot | null> => {
+      const { event, rounds, cards } = latest.current;
+      if (!store || !event) return null;
+      const snap = buildSnapshot(eventId, event, roundsOverride ?? rounds, cards, reason, identity);
+      await store.saveBackup(snap);
+      return snap;
+    },
+    [store, eventId, identity],
+  );
+
   const saveRound = useCallback(
     async (round: Round) => {
+      const prev = latest.current.rounds.find((r) => r.id === round.id);
+      // A finished round being reopened or cleared is the classic "oops": keep what it
+      // had first. A round going final is the moment worth keeping for good.
+      if (prev?.status === "final" && round.status !== "final") {
+        await takeBackup(`Before reopening round ${round.seq}`).catch(() => {});
+      }
       await store?.saveRound(round);
+      if (round.status === "final" && prev?.status !== "final") {
+        const withThis = latest.current.rounds.map((r) => (r.id === round.id ? round : r));
+        void takeBackup(`Round ${round.seq} final`, withThis).catch(() => {});
+      }
     },
-    [store],
+    [store, takeBackup],
+  );
+
+  const backups = useMemo<TournamentState["backups"]>(
+    () => ({
+      take: (reason) => takeBackup(reason),
+      takeIfChanged: async (reason) => {
+        const { event, rounds, cards } = latest.current;
+        if (!event) return null;
+        const fp = stateFingerprint(event, rounds, cards);
+        if (fp === lastAutoFingerprint.current) return null;
+        lastAutoFingerprint.current = fp;
+        return takeBackup(reason);
+      },
+      list: async () => (store ? store.listBackups() : []),
+      restore: async (snap, roundId) => {
+        if (!store) return;
+        await takeBackup(`Before restoring ${roundId ? `round ${snap.rounds.find((r) => r.id === roundId)?.seq}` : "everything"}`);
+        if (roundId) await restoreRound(store, snap, roundId, latest.current.cards[roundId] ?? {}, identity);
+        else await restoreAll(store, snap, latest.current.cards, identity);
+      },
+    }),
+    [store, takeBackup, identity],
   );
 
   const mirrorFrom = useMemo(
@@ -245,6 +302,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     saveEvent,
     saveRound,
     mirrorFrom,
+    backups,
     nudge: store?.nudge?.bind(store),
   };
 }

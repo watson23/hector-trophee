@@ -1,4 +1,5 @@
 import type { Card, EventDoc, Round } from "../types";
+import type { Snapshot } from "./backup";
 import { EVENT_ID, field } from "../data/field";
 import { defaultRounds } from "../data/rounds";
 import { hashPin } from "./pin";
@@ -54,6 +55,9 @@ export interface Store {
   /** Tear the connection down and redial — unsticks writes queued behind a
       half-dead stream (classic after a laptop sleep). No-op without a network. */
   nudge?(): Promise<void>;
+  /** Whole-tournament snapshots — see lib/backup.ts. Newest first. */
+  listBackups(): Promise<Snapshot[]>;
+  saveBackup(snap: Snapshot): Promise<void>;
 }
 
 export interface StoreError {
@@ -280,6 +284,16 @@ class LocalStore implements Store {
       "rounds",
       rounds.map((r) => (r.id === round.id ? round : r)),
     );
+  }
+
+  async listBackups(): Promise<Snapshot[]> {
+    return this.read<Snapshot[]>("backups", []).sort((a, b) => b.at - a.at);
+  }
+
+  async saveBackup(snap: Snapshot): Promise<void> {
+    // localStorage is small: keep the dozen most recent.
+    const all = [snap, ...this.read<Snapshot[]>("backups", [])].sort((a, b) => b.at - a.at);
+    this.write("backups", all.slice(0, 12));
   }
 
   subscribePending(cb: (count: number) => void): Unsubscribe {

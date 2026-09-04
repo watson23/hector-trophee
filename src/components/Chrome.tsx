@@ -277,13 +277,18 @@ export function Segmented<T extends string>({
   options: { id: T; label: string }[];
   onChange: (v: T) => void;
 }) {
+  // Five segments (Admin) don't fit at the usual size on a phone: tighter padding
+  // and a step smaller rather than truncated labels.
+  const dense = options.length >= 5;
   return (
     <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-full p-1 mx-4">
       {options.map((o) => (
         <button
           key={o.id}
           onClick={() => onChange(o.id)}
-          className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors truncate ${
+          className={`flex-1 rounded-full py-1.5 font-semibold transition-colors truncate ${
+            dense ? "px-1 text-[12px]" : "px-3 text-xs"
+          } ${
             value === o.id ? "bg-violet-600 text-white" : "text-slate-400 hover:text-slate-200"
           }`}
         >
