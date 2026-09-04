@@ -108,7 +108,8 @@ export async function simulateTournament(deps: SimulateDeps, holesInLastRound = 
 
   onProgress?.("Running the draft…");
   const pairs = draftPairs(draftOrder(r1, event, r1Cards), event);
-  await saveEvent({ pairs });
+  // The simulated week is past Thursday night, so the draft is concluded too.
+  await saveEvent({ pairs, draftConcluded: true });
   const withPairs: EventDoc = { ...event, pairs };
 
   for (const round of rest) {
@@ -135,6 +136,6 @@ export async function resetTournament(deps: SimulateDeps, cards: Record<string, 
     );
     await saveRound({ ...round, status: "upcoming", groups: defaultGroups(round.teeTimeWindow) });
   }
-  await saveEvent({ pairs: [] });
+  await saveEvent({ pairs: [], draftConcluded: false });
   onProgress?.(null as unknown as string);
 }
