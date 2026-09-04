@@ -88,6 +88,15 @@ export function teeText(tee: string): string {
   return `${teeLabel[tee] ?? tee} tee`;
 }
 
+/** The tee colours as hex, for SVG — the same hues as teeDotClass. */
+export const teeHex: Record<string, string> = {
+  black: "#0f172a",
+  white: "#f1f5f9",
+  yellow: "#fbbf24",
+  blue: "#0ea5e9",
+  red: "#f43f5e",
+};
+
 /** Tailwind classes for the tee dot shown next to a round. */
 export const teeDotClass: Record<string, string> = {
   black: "bg-slate-900 ring-1 ring-slate-600",

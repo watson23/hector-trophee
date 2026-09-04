@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
-import { courses, holeMapUrl, holeMetres, teeDotClass, teeText } from "../data/courses";
+import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
 import { effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
@@ -844,8 +844,9 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
                   </g>
                 );
               })}
+              {/* The marker wears the tee's colour — the one you are playing from. */}
               <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
-              <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="#fff" stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+              <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
             </svg>
             {["150", "200", "250"].map((m) => {
               const a = arcs[m];
