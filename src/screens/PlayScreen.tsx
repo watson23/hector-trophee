@@ -298,8 +298,8 @@ export default function PlayScreen({
 
       {noFlight && subjects.length > 0 && (
         <p className="mx-4 mt-3 text-[12px] leading-relaxed text-slate-400 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
-          You're not assigned to a flight for this round, so this is just your own card. Ask the
-          organiser to set the groups in Admin.
+          You're not in a flight for this round yet, so this is just your own card. The organiser
+          can place you in Admin → Flights, where everyone not yet assigned is listed.
         </p>
       )}
 
