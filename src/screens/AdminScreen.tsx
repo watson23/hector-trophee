@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
-import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
+import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course } from "../types";
 import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
@@ -982,8 +982,8 @@ function RoundEditorCard({
   saveRound: (round: Round) => Promise<void>;
   patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
-  const course = courses[round.courseId];
-  const tee = course.tees[round.tee];
+  const course = courses[round.courseId] as Course | undefined;
+  const tee = course?.tees[round.tee];
   // One step of undo: the round as it was before the last edit made from this card.
   // A stray tap on a select is the accident this exists for.
   const [undo, setUndo] = useState<Round | null>(null);
@@ -1009,6 +1009,19 @@ function RoundEditorCard({
     setUndo(round);
     // Handicaps are frozen by the store layer whenever a round leaves "upcoming".
     void patchRound(round.id, { status });
+  }
+
+  // A round pointing at a course this build doesn't know (renamed, removed) must not
+  // blank Admin on every phone — say so and let the course be reselected.
+  if (!course || !tee) {
+    return (
+      <div className="card p-3.5 text-xs text-amber-300">
+        Round {round.seq} refers to an unknown course or tee ({round.courseId} / {round.tee}).{" "}
+        <button className="underline underline-offset-2" onClick={() => patch({ courseId: "radecky", tee: "yellow", crOverride: undefined, slopeOverride: undefined })}>
+          Reset to Radecký yellow
+        </button>
+      </div>
+    );
   }
 
   return (
