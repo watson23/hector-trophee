@@ -62,9 +62,13 @@ export function weightLabel(pct: number): string {
   return `${Math.round(pct * 100)}%`;
 }
 
-/** Stableford points expressed as strokes against the course par. */
+/**
+ * Stableford points expressed as strokes: level par is 36 points on any course (two a
+ * hole), so strokes = par + 36 − points. The earlier `2·par − points − 36` agreed with
+ * this only at par 72 and was a stroke out per point of par away from it (Hirsala, 73).
+ */
 export function stablefordToStrokes(points: number, par: number): number {
-  return 2 * par - (points + 36);
+  return par + 36 - points;
 }
 
 /** Lower total wins — the score reads like a stroke count. */

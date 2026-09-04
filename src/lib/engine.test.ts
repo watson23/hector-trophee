@@ -336,6 +336,11 @@ describe("hector points", () => {
     expect(stablefordToStrokes(42, 72)).toBe(66);
     expect(stablefordToStrokes(36, 72)).toBe(72);
     expect(stablefordToStrokes(30, 72)).toBe(78);
+    // Level par is 36 points whatever the par: 36 points = par strokes on every course.
+    expect(stablefordToStrokes(36, 73)).toBe(73);
+    expect(stablefordToStrokes(42, 73)).toBe(67);
+    expect(stablefordToStrokes(36, 70)).toBe(70);
+    expect(stablefordToStrokes(40, 70)).toBe(66);
   });
 
   it("weights a round's strokes and leaves stroke play alone", () => {
