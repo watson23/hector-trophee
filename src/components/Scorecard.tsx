@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { Card, Course, EventDoc } from "../types";
 import type { FormatResult } from "../lib/engine";
-import { netScore, stablefordPoints } from "../lib/formats";
 import { formatToPar } from "../lib/leaderboard";
 import ScoreMark, { ScoreLegend } from "./ScoreMark";
 
@@ -24,7 +23,6 @@ interface Row {
   /** Handicap strokes per hole, for the dots on gross cells. */
   strokes?: number[];
   headline: string;
-  secondary?: string;
 }
 
 interface Board {
@@ -137,11 +135,11 @@ export default function Scorecard({
         })}
         <div className="num text-[12px] font-semibold text-slate-400 text-center py-1">{nineLabel}</div>
         {holes.map((i) => (
-          <div key={`p${i}`} className="num text-[11px] text-slate-500 text-center">
+          <div key={`p${i}`} className="num text-[13px] text-slate-400 text-center">
             {course.par[i]}
           </div>
         ))}
-        <div className="num text-[11px] text-slate-500 text-center">{nineParSum}</div>
+        <div className="num text-[13px] text-slate-400 text-center">{nineParSum}</div>
       </div>
 
       {board?.rows.map((r) => {
@@ -153,10 +151,7 @@ export default function Scorecard({
               <span className={`text-base font-semibold truncate ${r.mine ? "text-violet-300" : ""}`}>
                 {r.label}
               </span>
-              <span className="shrink-0 flex items-baseline gap-2">
-                <span className={`score text-2xl ${r.mine ? "text-violet-300" : ""}`}>{r.headline}</span>
-                {r.secondary && <span className="text-[12px] text-slate-500 num">{r.secondary}</span>}
-              </span>
+              <span className={`score text-2xl shrink-0 ${r.mine ? "text-violet-300" : ""}`}>{r.headline}</span>
             </div>
             <div className="grid grid-cols-[repeat(9,minmax(0,1fr))_2.4rem] gap-x-0.5 items-end">
               {holes.map((i) => (
@@ -293,13 +288,11 @@ function buildBoards(
       const perHole = course.par.map((_, i) => cards[s.id]?.holes?.[String(i + 1)] ?? null);
       let gross = 0;
       let parPlayed = 0;
-      let pts = 0;
       course.par.forEach((par, i) => {
         const g = perHole[i];
         if (!g) return;
         gross += g;
         parPlayed += par;
-        pts += stablefordPoints(par, netScore(g, s.strokes[i]));
       });
       const thru = perHole.filter((v) => v !== null).length;
       return {
@@ -309,7 +302,6 @@ function buildBoards(
         perHole,
         strokes: s.strokes,
         headline: thru > 0 ? formatToPar(gross - parPlayed) : "—",
-        secondary: thru > 0 && !s.id.startsWith("team__") ? `${pts} pts` : undefined,
       };
     });
     boards.push({ id: "scratch", label: "Scratch", kind: "gross", rows });
