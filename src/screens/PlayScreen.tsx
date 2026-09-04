@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
-import { courses, holeMapUrl, holeMetres, teeDotClass, teeLabel } from "../data/courses";
+import { courses, holeMapUrl, holeMetres, teeDotClass, teeText } from "../data/courses";
 import { effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
@@ -260,7 +260,7 @@ export default function PlayScreen({
           subtitle={
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-              {teeLabel[round.tee]}
+              {teeText(round.tee)}
             </span>
           }
         />
@@ -368,7 +368,7 @@ export default function PlayScreen({
           onShowCard={() => setView("card")}
         />
       )}
-      <p className="sr-only">Tee {teeLabel[round.tee]}, course rating {tee.cr}, slope {tee.slope}.</p>
+      <p className="sr-only">{teeText(round.tee)}, course rating {tee.cr}, slope {tee.slope}.</p>
     </div>
   );
 }
@@ -953,7 +953,7 @@ function NextRound({
             {round.day}
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-              {teeLabel[round.tee]}
+              {teeText(round.tee)}
             </span>
             · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
           </span>

@@ -3,7 +3,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
-import { courses, teeDotClass, teeLabel } from "../data/courses";
+import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
 import { switchSpace, type Space } from "../lib/space";
@@ -988,7 +988,7 @@ function RoundEditorCard({
       {strayed && programme && (
         <p className="text-[12px] text-amber-400/90 leading-relaxed flex items-center justify-between gap-3">
           <span>
-            Programme: {courses[programme.courseId]?.shortName} · {teeLabel[programme.tee]}
+            Programme: {courses[programme.courseId]?.shortName} · {teeText(programme.tee)}
           </span>
           <button
             onClick={() => patch({ courseId: programme.courseId, tee: programme.tee, crOverride: undefined, slopeOverride: undefined })}

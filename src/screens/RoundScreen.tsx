@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FormatKind, FormatSpec, Round } from "../types";
-import { courses, teeDotClass, teeLabel } from "../data/courses";
+import { courses, teeDotClass, teeText } from "../data/courses";
 import {
   effectiveTee,
   roundParticipants,
@@ -159,7 +159,7 @@ export default function RoundScreen({
             {round.day} · {course?.shortName}
           </span>
           <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${teeDotClass[round.tee]}`} />
-          {teeLabel[round.tee]}
+          <span className="shrink-0">{teeText(round.tee)}</span>
         </span>
       </div>
 

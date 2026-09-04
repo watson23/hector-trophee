@@ -83,6 +83,11 @@ export const teeLabel: Record<string, string> = {
   red: "Red",
 };
 
+/** "Yellow tee" — the indicator wording wherever a round names its tee. */
+export function teeText(tee: string): string {
+  return `${teeLabel[tee] ?? tee} tee`;
+}
+
 /** Tailwind classes for the tee dot shown next to a round. */
 export const teeDotClass: Record<string, string> = {
   black: "bg-slate-900 ring-1 ring-slate-600",

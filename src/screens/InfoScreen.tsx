@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Announcement, EventDoc, FieldPlayer, Round } from "../types";
-import { courseGuideUrl, courses, holeMetres, teeDotClass, teeLabel } from "../data/courses";
+import { courseGuideUrl, courses, holeMetres, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
@@ -225,7 +225,7 @@ function RoundCard({
           <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
             {course.shortName}
             <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-            {teeLabel[round.tee]}
+            {teeText(round.tee)}
           </div>
         </div>
         <div className="text-right shrink-0">
