@@ -13,8 +13,13 @@ export function holesPlayed(card: Card | undefined): number {
 }
 
 /** Net score on a hole. Never drops below 1. */
+/**
+ * Net score is plain arithmetic: a hole-in-one with a stroke received is a net 0, and a
+ * 2 with two strokes a net 0 too. The old floor of 1 quietly turned those into a net 1 —
+ * on the card and in the points (one fewer than earned).
+ */
 export function netScore(gross: number, strokes: number): number {
-  return Math.max(1, gross - strokes);
+  return gross - strokes;
 }
 
 /** Standard Stableford: 2 points for a net par, one more per stroke better. */

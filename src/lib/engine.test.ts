@@ -14,6 +14,7 @@ import {
   stablefordPoints,
   stablefordResult,
   strokePlayResult,
+  netScore,
 } from "./formats";
 import {
   computeTournament,
@@ -45,6 +46,16 @@ function cardAtPar(subjectId: string, over = 0): Card {
   });
   return { id: `r1__${subjectId}`, roundId: "r1", subjectId, holes };
 }
+
+describe("netScore", () => {
+  it("is plain arithmetic — a net zero is a net zero", () => {
+    expect(netScore(1, 1)).toBe(0);
+    expect(netScore(2, 2)).toBe(0);
+    expect(netScore(4, 1)).toBe(3);
+    // A net zero on a par 3 is worth 5 Stableford points, not 4.
+    expect(stablefordPoints(3, netScore(1, 1))).toBe(5);
+  });
+});
 
 describe("handicap", () => {
   it("applies slope and the CR − par adjustment", () => {
