@@ -71,6 +71,10 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   scoreboard digits, no par ring (selection is the only highlight), one ‹ › hole nav,
   `Next hole →` enabled once the flight is scored and returning to the course.
   Idle 90 s closes it.
+- **Scorecard**: one nine at a time (Out / In), never 18 columns on a phone. One
+  table: per card a name + round-headline line, then nine `lg` score marks and the
+  nine's total. No separate summary block; no SI/metres rows (stroke dots carry
+  the shots). Tapping a hole number opens the entry sheet on that hole.
 - The rule behind it: walking and entering are different moments with different
   needs; anything on the entry sheet that isn't scoring is clutter, anything on the
   course view that can be tapped by accident is a hazard.
