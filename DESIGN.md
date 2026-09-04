@@ -72,7 +72,7 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   player's HCP and stroke on the name line, 56px buttons with 26px scoreboard digits
   (64/28 for a two-ball), no par ring (selection is the only highlight), one ‹ › hole
   nav, Done and `Next hole →` side by side — the latter enabled once the flight is
-  scored and returning to the course. Idle 90 s closes it.
+  scored and returning to the course.
 - **Scorecard**: one nine at a time (Out / In), never 18 columns on a phone. One
   table: per card a name + round-headline line, then nine `lg` score marks and the
   nine's total. No separate summary block; no SI/metres rows (stroke dots carry

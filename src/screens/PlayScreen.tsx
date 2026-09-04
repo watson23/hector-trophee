@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
@@ -12,7 +12,6 @@ import FlightList from "../components/FlightList";
 import HectorMark from "../components/HectorMark";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import Scorecard from "../components/Scorecard";
-import ScoreMark from "../components/ScoreMark";
 
 interface Props {
   event: EventDoc;
@@ -548,12 +547,10 @@ function OnCourse({
                 </span>
                 <span className="flex justify-center">
                   {r.holeValue !== null ? (
-                    r.gross ? (
-                      <ScoreMark value={r.holeValue} par={par} strokes={r.strokes[0]} size="lg" />
-                    ) : (
-                      /* The format's counted score for the hole — net for a pair. */
-                      <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
-                    )
+                    /* The hole's result, big and tinted against par — the same for a
+                       gross card and a pair's counted net. (The scorecard keeps the
+                       ring/box marks; here legibility on the move wins.) */
+                    <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
                   ) : (
                     <span
                       className={`num text-base font-semibold whitespace-nowrap ${
@@ -592,8 +589,7 @@ function OnCourse({
 /**
  * Mode B — entering. Opens on demand and contains only the scoring: one row per card
  * with the quick-score grid, ‹ › for the hole, and Next hole → which returns to the
- * course. Nothing here is decoration. An idle timer closes it as insurance against a
- * phone pocketed mid-entry.
+ * course. Nothing here is decoration.
  */
 function EntrySheet({
   round,
@@ -623,19 +619,12 @@ function EntrySheet({
   const metres = holeMetres[round.courseId]?.[round.tee]?.[hole - 1];
   const allScored = subjects.length > 0 && subjects.every((s) => cards[s.id]?.holes?.[String(hole)]);
 
-  // Idle insurance: 90 s without a touch closes the sheet.
-  const [touched, setTouched] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(onClose, 90_000);
-    return () => clearTimeout(t);
-  }, [touched, onClose]);
-
   // Four cards must fit one screen with the buttons still big: 64px targets for a
   // two-ball, 56px for three or four.
   const tall = subjects.length <= 2;
 
   return (
-    <div className="pt-3 px-4" onPointerDown={() => setTouched((n) => n + 1)}>
+    <div className="pt-3 px-4">
       <div className="flex items-center justify-between gap-2">
         <NavButton dir="prev" disabled={hole === 1} onClick={() => setHoleNo(Math.max(1, hole - 1))} />
         <div className="text-center">
