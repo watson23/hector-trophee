@@ -136,11 +136,14 @@ describe("stroke play", () => {
     expect(strokePlayResult(card, ctx, true).toPar).toBe(-1);
   });
 
-  it("never lets a net score go below 1", () => {
+  it("lets a net score reach 0 — a hole-in-one with a stroke is a net zero", () => {
     const ctx = { hi: lasse.hi, course: radecky, tee: yellow, allowance: 1.0 };
     const card: Card = { id: "x", roundId: "r1", subjectId: lasse.id, holes: { "16": 1 } };
-    // hole 16 is a par 3 with SI 3 — one stroke, but net cannot drop under 1
-    expect(strokePlayResult(card, ctx, true).strokes).toBe(1);
+    // hole 16 is a par 3 with SI 3 — Lasse receives a stroke there, so the ace nets 0
+    const r = strokePlayResult(card, ctx, true);
+    expect(r.strokes).toBe(0);
+    expect(r.perHole[15]).toBe(0);
+    expect(r.thru).toBe(1);
   });
 });
 
