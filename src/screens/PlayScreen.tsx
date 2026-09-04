@@ -250,6 +250,8 @@ export default function PlayScreen({
   })();
   const hole = pin ?? firstOpenHole;
 
+  // The game being played, in the header: which format the flight rows below follow.
+  const mainFormat = round.formats.find((f) => f.hector) ?? round.formats[0];
   return (
     <div className="pb-4">
       {/* One line of header: the round is context, not content, while playing —
@@ -261,6 +263,12 @@ export default function PlayScreen({
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
               {teeText(round.tee)}
+              {mainFormat && (
+                <>
+                  <span className="text-slate-600">·</span>
+                  {mainFormat.label.replace(/^(Better Ball|Scramble) Stroke Play/, "$1")}
+                </>
+              )}
             </span>
           }
         />
@@ -454,7 +462,7 @@ function OnCourse({
         strokes: teamSubject
           ? [teamSubject.strokes[hole - 1]]
           : partners.map((p) => p?.strokes[hole - 1] ?? 0),
-        figure: t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—",
+        figure: t.thru > 0 ? formatToPar(t.toPar) : "—",
       });
     }
   } else {
@@ -469,12 +477,9 @@ function OnCourse({
         holeValue: cards[sub.id]?.holes?.[String(hole)] ?? null,
         gross: true,
         strokes: [sub.strokes[hole - 1]],
-        figure:
-          !p || p.thru === 0
-            ? "—"
-            : fr!.spec.kind === "stableford"
-              ? `${p.value} (${formatToPar(toPar)})`
-              : `${formatToPar(toPar)} (${p.value})`,
+        // To par (or points) alone: the stroke total mid-round says little, and the
+        // scorecard is one tap away for anyone who wants it.
+        figure: !p || p.thru === 0 ? "—" : fr!.spec.kind === "stableford" ? String(p.value) : formatToPar(toPar),
       });
     }
   }

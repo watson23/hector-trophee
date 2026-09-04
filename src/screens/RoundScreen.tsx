@@ -115,7 +115,7 @@ export default function RoundScreen({
         ...round.formats.map((f) => ({
           id: f.id,
           // A configured gross format IS the scratch board — name it what it is.
-          label: f.kind === "strokeplay" && !f.net ? "Scratch" : kindLabel[f.kind],
+          label: f.kind === "strokeplay" ? (f.net ? "Stroke Play NET" : "Scratch") : kindLabel[f.kind],
         })),
         ...(scratchBoard ? [{ id: "scratch", label: "Scratch" }] : []),
         ...(hasPairBoard ? [{ id: "pairs", label: "Pairs" }] : []),

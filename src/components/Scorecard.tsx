@@ -247,7 +247,9 @@ function buildBoards(
   const boards: Board[] = [];
 
   for (const f of formats) {
-    const short = f.spec.label.replace(/ Stroke Play/, "").replace(/ (NET|SCR)$/, "");
+    // "Stroke Play NET" keeps its NET — it is the one label where gross vs net is
+    // the whole question. Team formats drop the middle: "Better Ball", "Scramble".
+    const short = f.spec.label.replace(/^(Better Ball|Scramble) Stroke Play NET$/, "$1").replace(/ SCR$/, "");
     if (f.teams.length > 0) {
       const rows: Row[] = [];
       for (const t of f.teams) {
@@ -258,7 +260,7 @@ function buildBoards(
           label: t.label,
           mine: subjects.some((s) => s.mine && (s.id === `team__${pair.id}` || s.id === pair.aId || s.id === pair.bId)),
           perHole: t.perHole,
-          headline: t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—",
+          headline: t.thru > 0 ? formatToPar(t.toPar) : "—",
         });
       }
       // Flight order: by the first partner's position in the flight.
@@ -276,12 +278,8 @@ function buildBoards(
           mine: isMine([p.playerId]),
           perHole: p.perHole,
           strokes: p.strokes,
-          headline:
-            p.thru === 0
-              ? "—"
-              : f.spec.kind === "stableford"
-                ? `${p.value} (${formatToPar(toPar)})`
-                : `${formatToPar(toPar)} (${p.value})`,
+          // The nine's total already ends the hole row; the headline is to par or points.
+          headline: p.thru === 0 ? "—" : f.spec.kind === "stableford" ? String(p.value) : formatToPar(toPar),
         });
       }
       rows.sort((a, b) => flightIds.indexOf(a.key) - flightIds.indexOf(b.key));
@@ -310,7 +308,7 @@ function buildBoards(
         mine: Boolean(s.mine),
         perHole,
         strokes: s.strokes,
-        headline: thru > 0 ? `${formatToPar(gross - parPlayed)} (${gross})` : "—",
+        headline: thru > 0 ? formatToPar(gross - parPlayed) : "—",
         secondary: thru > 0 && !s.id.startsWith("team__") ? `${pts} pts` : undefined,
       };
     });
