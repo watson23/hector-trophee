@@ -1,4 +1,5 @@
-import type { EventDoc, FieldPlayer } from "../types";
+import type { EventDoc, FieldPlayer, Round } from "../types";
+import { MAX_PER_FLIGHT } from "../lib/flights";
 import type { RoundResult } from "../lib/engine";
 
 /**
@@ -13,11 +14,16 @@ import type { RoundResult } from "../lib/engine";
 export default function DraftBoard({
   event,
   result,
+  nextRound,
 }: {
   event: EventDoc;
   result: RoundResult | undefined;
+  /** Tomorrow's round, whose tee times the pairs choose as they are formed. */
+  nextRound?: Round;
 }) {
   const byId = new Map(event.players.map((p) => [p.id, p]));
+  const teeOf = (pair: { aId: string; bId: string }) =>
+    nextRound?.groups.find((g) => g.playerIds.includes(pair.aId) || g.playerIds.includes(pair.bId))?.teeTime;
   const paired = new Set(event.pairs.flatMap((p) => [p.aId, p.bId]));
 
   // Defenders sit out the draft — by right, not by pick.
@@ -92,9 +98,41 @@ export default function DraftBoard({
                     defending
                   </span>
                 )}
+                {teeOf(pair) && (
+                  <span className="ml-auto num text-xs text-slate-400 shrink-0">{teeOf(pair)}</span>
+                )}
               </li>
             ))}
           </ol>
+        </div>
+      )}
+
+      {/* Tomorrow's tee sheet as it fills: which times are gone, which are still open —
+          the next pair to be formed reads it off the same board everyone is watching. */}
+      {nextRound && nextRound.groups.length > 0 && (
+        <div className="mt-3">
+          <p className="label mb-1.5">Tee times · round {nextRound.seq}</p>
+          <ul className="space-y-1">
+            {nextRound.groups.map((g) => {
+              const pairsIn = event.pairs.filter(
+                (p) => g.playerIds.includes(p.aId) || g.playerIds.includes(p.bId),
+              );
+              const free = MAX_PER_FLIGHT - g.playerIds.length;
+              return (
+                <li key={g.id} className="text-sm flex items-baseline gap-2">
+                  <span className="num text-xs text-slate-400 w-11 shrink-0">{g.teeTime}</span>
+                  <span className={`min-w-0 truncate ${pairsIn.length ? "text-slate-300" : "text-slate-600"}`}>
+                    {pairsIn.length
+                      ? pairsIn.map((p) => `${byId.get(p.aId)?.name} + ${byId.get(p.bId)?.name}`).join(" · ")
+                      : "open"}
+                  </span>
+                  {free > 0 && pairsIn.length > 0 && (
+                    <span className="ml-auto num text-[11px] text-emerald-400 shrink-0">{free} free</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 

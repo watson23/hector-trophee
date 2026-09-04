@@ -197,7 +197,11 @@ export default function RoundScreen({
       {round.formats.some((f) => f.hector?.source === "betterIndividual") &&
         !event.draftConcluded &&
         (round.status === "final" ? (
-          <DraftBoard event={event} result={result} />
+          <DraftBoard
+            event={event}
+            result={result}
+            nextRound={rounds.find((r) => r.seq === round.seq + 1 && r.status !== "final")}
+          />
         ) : (
           <p className="mx-4 mt-3 text-[12px] leading-relaxed text-violet-300 bg-violet-950/40 border border-violet-900/60 rounded-xl px-3 py-2">
             Round 1 is played individually. This Stableford order is the draft order — the
