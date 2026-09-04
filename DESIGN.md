@@ -67,10 +67,12 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 - **On the course** (default): hole big + `Par · SI · m` line, the flight's standings
   in the round's main tournament format, one `Enter scores · hole N` door. No score
   buttons exist here — a pocketed phone cannot score.
-- **Entry sheet** (on demand): only scoring. Names ≥20px, buttons 64px with 28px
-  scoreboard digits, no par ring (selection is the only highlight), one ‹ › hole nav,
-  `Next hole →` enabled once the flight is scored and returning to the course.
-  Idle 90 s closes it.
+- **Entry sheet** (on demand): only scoring, and a full flight fits one screen with
+  no scrolling: no page header (the hole is the header), de-boxed rows with the
+  player's HCP and stroke on the name line, 56px buttons with 26px scoreboard digits
+  (64/28 for a two-ball), no par ring (selection is the only highlight), one ‹ › hole
+  nav, Done and `Next hole →` side by side — the latter enabled once the flight is
+  scored and returning to the course. Idle 90 s closes it.
 - **Scorecard**: one nine at a time (Out / In), never 18 columns on a phone. One
   table: per card a name + round-headline line, then nine `lg` score marks and the
   nine's total. No separate summary block; no SI/metres rows (stroke dots carry

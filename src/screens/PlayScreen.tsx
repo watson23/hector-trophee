@@ -250,16 +250,19 @@ export default function PlayScreen({
 
   return (
     <div className="pb-4">
-      {/* One line of header: the round is context, not content, while playing. */}
-      <Header
-        title={`R${round.seq} · ${course.shortName}`}
-        subtitle={
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-            {teeLabel[round.tee]}
-          </span>
-        }
-      />
+      {/* One line of header: the round is context, not content, while playing —
+          and while the entry sheet is open the hole is the header, so none at all. */}
+      {!entryOpen && (
+        <Header
+          title={`R${round.seq} · ${course.shortName}`}
+          subtitle={
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
+              {teeLabel[round.tee]}
+            </span>
+          }
+        />
+      )}
 
       {round.status !== "open" && (
         /* Early scoring is a one-way door without this: the choice is remembered
@@ -627,13 +630,17 @@ function EntrySheet({
     return () => clearTimeout(t);
   }, [touched, onClose]);
 
+  // Four cards must fit one screen with the buttons still big: 64px targets for a
+  // two-ball, 56px for three or four.
+  const tall = subjects.length <= 2;
+
   return (
-    <div className="mt-3 px-4 space-y-3" onPointerDown={() => setTouched((n) => n + 1)}>
+    <div className="pt-3 px-4" onPointerDown={() => setTouched((n) => n + 1)}>
       <div className="flex items-center justify-between gap-2">
         <NavButton dir="prev" disabled={hole === 1} onClick={() => setHoleNo(Math.max(1, hole - 1))} />
         <div className="text-center">
-          <div className="score text-5xl leading-none">{hole}</div>
-          <div className="text-[12px] text-slate-500 num mt-1">
+          <div className="score text-4xl leading-none">{hole}</div>
+          <div className="text-[12px] text-slate-500 num mt-0.5">
             Par {par} · SI {si}
             {metres ? ` · ${metres} m` : ""}
           </div>
@@ -641,7 +648,7 @@ function EntrySheet({
         <NavButton dir="next" disabled={hole === 18} onClick={() => setHoleNo(Math.min(18, hole + 1))} />
       </div>
 
-      <div className="space-y-3">
+      <div className="mt-2 divide-y divide-slate-800">
         {subjects.map((s) => (
           <SubjectRow
             key={s.id}
@@ -649,6 +656,7 @@ function EntrySheet({
             hole={hole}
             par={par}
             card={cards[s.id]}
+            tall={tall}
             onScore={(v) => {
               // Pin before writing so completing the flight's last score can't
               // advance the derived hole under a thumb — Next hole is the way on.
@@ -659,35 +667,35 @@ function EntrySheet({
         ))}
       </div>
 
-      {hole < 18 ? (
-        <button
-          className="btn-primary w-full py-4 text-lg"
-          disabled={!allScored}
-          onClick={() => {
-            setHoleNo(hole + 1);
-            onClose();
-          }}
-        >
-          Next hole →
+      <div className="mt-3 flex gap-2">
+        <button className="btn-ghost basis-1/3 py-3" onClick={onClose}>
+          Done
         </button>
-      ) : (
-        <>
-          <button className="btn-primary w-full py-4 text-lg" disabled={!complete} onClick={onFinish}>
+        {hole < 18 ? (
+          <button
+            className="btn-primary basis-2/3 py-3 text-lg"
+            disabled={!allScored}
+            onClick={() => {
+              setHoleNo(hole + 1);
+              onClose();
+            }}
+          >
+            Next hole →
+          </button>
+        ) : (
+          <button className="btn-primary basis-2/3 py-3 text-lg" disabled={!complete} onClick={onFinish}>
             Finish round
           </button>
-          {!complete && (
-            <p className="text-[12px] text-slate-500 text-center num">
-              Still missing:{" "}
-              {Array.from({ length: 18 }, (_, i) => i + 1)
-                .filter((h) => !subjects.every((s) => cards[s.id]?.holes?.[String(h)]))
-                .join(" · ")}
-            </p>
-          )}
-        </>
+        )}
+      </div>
+      {hole === 18 && !complete && (
+        <p className="mt-2 text-[12px] text-slate-500 text-center num">
+          Still missing:{" "}
+          {Array.from({ length: 18 }, (_, i) => i + 1)
+            .filter((h) => !subjects.every((s) => cards[s.id]?.holes?.[String(h)]))
+            .join(" · ")}
+        </p>
       )}
-      <button className="btn-ghost w-full text-sm" onClick={onClose}>
-        Done
-      </button>
     </div>
   );
 }
@@ -1089,12 +1097,15 @@ function SubjectRow({
   hole,
   par,
   card,
+  tall,
   onScore,
 }: {
   subject: Subject;
   hole: number;
   par: number;
   card: Card | undefined;
+  /** 64px buttons for a two-ball; 56px so four cards fit one screen. */
+  tall: boolean;
   onScore: (value: number | null) => void;
 }) {
   const [showOther, setShowOther] = useState(false);
@@ -1102,43 +1113,27 @@ function SubjectRow({
   const strokes = subject.strokes[hole - 1];
   // Eagle through triple bogey covers virtually every score; "…" handles the rest.
   const quick = Array.from({ length: 7 }, (_, i) => par - 2 + i).filter((n) => n >= 1);
-  const net = value ? netScore(value, strokes) : null;
-  const points = net === null ? null : stablefordPoints(par, net);
+  const h = tall ? "h-16" : "h-14";
+  const digit = tall ? "text-[28px]" : "text-[26px]";
 
   return (
-    <div className="card p-3">
-      <div className="flex items-baseline justify-between gap-2 mb-2.5">
-        <div className="min-w-0">
-          <div className="font-semibold text-xl truncate">
-            {subject.name}
-            {subject.mine && (
-              <span className="ml-1.5 text-[11px] font-semibold text-violet-400 align-middle">
-                you
-              </span>
-            )}
-          </div>
-          <div className="text-[12px] text-slate-500 truncate num">{subject.detail}</div>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {strokes !== 0 && (
-            /* Signed the Golf GameBook way — the app everyone's instincts come from:
-               minus for strokes received (they come OFF the score), plus for the
-               plus-handicapper's give-back. */
-            <span
-              className={`pill num ${
-                strokes > 0 ? "bg-emerald-950 text-emerald-400" : "bg-rose-950 text-rose-400"
-              }`}
-            >
-              {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`} stroke
-              {Math.abs(strokes) > 1 ? "s" : ""}
-            </span>
+    <div className="py-2.5">
+      {/* One line: name, then HCP and this hole's stroke (GameBook-signed: minus
+          for strokes received) in the quiet voice. Nothing after the score is
+          entered — the buttons show it. */}
+      <div className="flex items-baseline gap-2 mb-2 min-w-0">
+        <span className="font-semibold text-lg truncate">
+          {subject.name}
+          {subject.mine && (
+            <span className="ml-1.5 text-[11px] font-semibold text-violet-400 align-middle">you</span>
           )}
-          {net !== null && (
-            <span className="pill bg-slate-800 text-slate-300 num">
-              net {net} · {points} pt{points === 1 ? "" : "s"}
-            </span>
-          )}
-        </div>
+        </span>
+        <span className="shrink-0 text-[12px] text-slate-500 num">{subject.detail}</span>
+        {strokes !== 0 && (
+          <span className={`shrink-0 text-[12px] num font-semibold ${strokes > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`}
+          </span>
+        )}
       </div>
 
       <div className="flex gap-1.5">
@@ -1152,13 +1147,13 @@ function SubjectRow({
                  highlight; the "par" tag underneath says which one it is. */
               /* No colour transition: on a hole change the digits redraw at once
                  and a fading highlight lagged behind them, reading as a jump. */
-              className={`flex-1 h-16 rounded-xl flex flex-col items-center
+              className={`flex-1 ${h} rounded-xl flex flex-col items-center
                           justify-center leading-none gap-0.5 ${
                 value === n ? "bg-violet-600" : "bg-slate-800/70 hover:bg-slate-700"
               }`}
             >
               <span
-                className={`score text-[28px] ${
+                className={`score ${digit} ${
                   value === n ? "text-white" : quickTint(diff)
                 }`}
               >
@@ -1177,7 +1172,7 @@ function SubjectRow({
         <button
           onClick={() => setShowOther((v) => !v)}
           aria-label="Enter another score"
-          className={`w-12 h-16 rounded-xl font-bold text-lg shrink-0 ${
+          className={`w-12 ${h} rounded-xl font-bold text-lg shrink-0 ${
             value !== null && !quick.includes(value)
               ? "bg-violet-600 text-white num"
               : "bg-slate-900 text-slate-500 border border-slate-700"
