@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeLabel } from "../data/courses";
-import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
+import { effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
+import { formatToPar } from "../lib/leaderboard";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
-import { Empty, Header, Segmented } from "../components/Chrome";
+import { Empty, Header } from "../components/Chrome";
 import FlightList from "../components/FlightList";
 import HectorMark from "../components/HectorMark";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
@@ -21,6 +22,8 @@ interface Props {
   allCards: Record<string, Record<string, Card>>;
   setHcpSubmitted: (roundId: string, subjectId: string, submitted: boolean) => void;
   me: FieldPlayer | null;
+  /** This round's computed result — the on-course view shows the flight's standings. */
+  result: RoundResult | undefined;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
   onShowRound: (roundId: string) => void;
   onShowTrophy: () => void;
@@ -44,12 +47,28 @@ export default function PlayScreen({
   cards,
   allCards,
   me,
+  result,
   setHole,
   setHcpSubmitted,
   onShowRound,
   onShowTrophy,
 }: Props) {
   const [view, setView] = usePersistentState<"hole" | "card">("hectro_ui.playview", "hole");
+  // Mode B (the entry sheet) is open only while scoring; the course view is the rest.
+  // Both this and the hole pin are tagged with the round they belong to, so a round
+  // change resets them by derivation — no effect, no cascading render.
+  const [entryState, setEntryState] = useState<{ round: string; open: boolean }>({
+    round: "",
+    open: false,
+  });
+  const entryOpen = entryState.round === round?.id && entryState.open;
+  const setEntryOpen = (open: boolean) => setEntryState({ round: round?.id ?? "", open });
+  const [pinState, setPinState] = useState<{ round: string; pin: number | null }>({
+    round: "",
+    pin: null,
+  });
+  const pin = pinState.round === round?.id ? pinState.pin : null;
+  const setPin = (h: number | null) => setPinState({ round: round?.id ?? "", pin: h });
   /*
    * The round this device has "finished" — the flight signing its card. Purely a
    * per-device acknowledgment: cards are already complete in the database, and the
@@ -201,7 +220,9 @@ export default function PlayScreen({
 
   const tee = effectiveTee(round, course);
   const scrambleRound = round.formats.some((f) => f.teamCard);
-  const noFlight = !round.groups.some((g) => g.playerIds.includes(me?.id ?? ""));
+  const myGroup = round.groups.find((g) => g.playerIds.includes(me?.id ?? ""));
+  const noFlight = !myGroup;
+  const flightIds = myGroup?.playerIds ?? (me ? fallbackGroup(me, event) : []);
   const complete =
     subjects.length > 0 &&
     subjects.every((s) => {
@@ -211,34 +232,48 @@ export default function PlayScreen({
     });
   const finished = finishedRound === round.id && complete;
 
+  /*
+   * The hole in view: the first the flight hasn't fully entered — derived from the
+   * cards, never remembered, so a new round never opens on last week's hole 4 and a
+   * refresh on the 14th tee lands on the 14th. A manual position (‹ › in the entry
+   * sheet, or a score just entered) pins it so the view can't yank forward under a
+   * thumb; the pin resets when the round changes.
+   */
+  const firstOpenHole = (() => {
+    for (let h = 1; h <= 18; h++) {
+      if (!subjects.every((s) => cards[s.id]?.holes?.[String(h)])) return h;
+    }
+    return 18;
+  })();
+  const hole = pin ?? firstOpenHole;
+
   return (
     <div className="pb-4">
+      {/* One line of header: the round is context, not content, while playing. */}
       <Header
-        title={`Round ${round.seq} · ${course.shortName}`}
+        title={`R${round.seq} · ${course.shortName}`}
         subtitle={
-          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
-              {teeLabel[round.tee]}
-            </span>
-            · {round.formats.map((f) => f.label.replace(/ (NET|SCR)$/, "")).join(" · ")}
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <span className={`inline-block w-2 h-2 rounded-full ${teeDotClass[round.tee]}`} />
+            {teeLabel[round.tee]}
           </span>
         }
-      />
-
-      <Segmented
-        value={view}
-        onChange={setView}
-        options={[
-          { id: "hole", label: "Hole by hole" },
-          { id: "card", label: "Scorecard" },
-        ]}
+        right={
+          !entryOpen && view !== "card" && subjects.length > 0 ? (
+            <button
+              onClick={() => setView("card")}
+              className="pill border border-slate-700 bg-slate-900 text-slate-300 font-semibold shrink-0"
+            >
+              Scorecard
+            </button>
+          ) : undefined
+        }
       />
 
       {round.status !== "open" && (
         /* Early scoring is a one-way door without this: the choice is remembered
            for the session, so the screen itself must offer the way back. */
-        <p className="mx-4 mt-3 text-[12px] leading-relaxed text-slate-500 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
+        <p className="mx-4 mt-1 text-[12px] leading-relaxed text-slate-500 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
           <span>Scoring before the round has been opened.</span>
           <button
             onClick={() => setScoreAnyway(null)}
@@ -275,7 +310,10 @@ export default function PlayScreen({
           />
         </div>
       ) : view === "card" ? (
-        <div className="mt-4 px-4">
+        <div className="mt-3 px-4">
+          <button className="btn-ghost w-full mb-3 text-sm" onClick={() => setView("hole")}>
+            ← Back to the round
+          </button>
           <Scorecard course={course} subjects={subjects} cards={cards} />
         </div>
       ) : finished ? (
@@ -288,15 +326,33 @@ export default function PlayScreen({
           onReopen={() => setFinishedRound(null)}
           onShowRound={() => onShowRound(round.id)}
         />
-      ) : (
-        <HoleEntry
-          key={round.id}
+      ) : entryOpen ? (
+        <EntrySheet
           round={round}
           course={course}
           subjects={subjects}
           cards={cards}
+          hole={hole}
+          setHoleNo={(h) => setPin(h)}
           setHole={setHole}
           complete={complete}
+          onFinish={() => {
+            setEntryOpen(false);
+            setFinishedRound(round.id);
+          }}
+          onClose={() => setEntryOpen(false)}
+        />
+      ) : (
+        <OnCourse
+          round={round}
+          course={course}
+          event={event}
+          me={me}
+          flightIds={flightIds}
+          result={result}
+          hole={hole}
+          complete={complete}
+          onEnter={() => setEntryOpen(true)}
           onFinish={() => setFinishedRound(round.id)}
         />
       )}
@@ -306,127 +362,214 @@ export default function PlayScreen({
 }
 
 /**
- * The hole-by-hole entry: navigation, one row per card, the next-hole button.
- *
- * It opens on the first hole the flight hasn't fully entered — derived from the cards,
- * not remembered. Positions used to be persisted per round id, which survived a reset
- * (round ids don't change) and greeted a brand-new round on "hole 4" from last week's
- * testing. Deriving also gives the refresh-on-the-14th-tee case for free, on any device.
- *
- * A manual position wins once taken: navigating or entering a score pins the hole, so
- * the view never jumps out from under a thumb when firstOpenHole advances. The pin is
- * plain state in here on purpose — this component only mounts while the hole view is
- * showing and is keyed by round id, so leaving the view or changing rounds resets it by
- * unmounting, and the entry always reopens on the next un-entered hole.
+ * Mode A — on the course. What you see while walking: the hole you're on, where your
+ * flight stands in the round's main format, and one big door into scoring. No score
+ * buttons live here, so a pocketed phone can't score anything.
  */
-function HoleEntry({
+function OnCourse({
   round,
   course,
-  subjects,
-  cards,
-  setHole,
+  event,
+  me,
+  flightIds,
+  result,
+  hole,
   complete,
+  onEnter,
   onFinish,
 }: {
   round: Round;
   course: NonNullable<(typeof courses)[string]>;
-  subjects: Subject[];
-  cards: Record<string, Card>;
-  setHole: (subjectId: string, hole: number, value: number | null) => void;
-  /** Every card in the flight has all 18 holes. */
+  event: EventDoc;
+  me: FieldPlayer | null;
+  flightIds: string[];
+  result: RoundResult | undefined;
+  hole: number;
   complete: boolean;
+  onEnter: () => void;
   onFinish: () => void;
 }) {
-  const [pin, setPin] = useState<number | null>(null);
-  // Once opened, the map stays on while stepping through holes — on the course you
-  // want the next tee's diagram, not another tap. Persisted like every preference.
   const [showMap, setShowMap] = usePersistentState("hectro_ui.holemap", false);
-
-  const firstOpenHole = (() => {
-    for (let h = 1; h <= 18; h++) {
-      if (!subjects.every((s) => cards[s.id]?.holes?.[String(h)])) return h;
-    }
-    return 18;
-  })();
-  const hole = pin ?? firstOpenHole;
-  const setHole_ = (next: number | ((prev: number) => number)) =>
-    setPin(typeof next === "function" ? next(hole) : next);
-
   const par = course.par[hole - 1];
   const si = course.si[hole - 1];
   const metres = holeMetres[round.courseId]?.[round.tee]?.[hole - 1];
-  const allScored = subjects.length > 0 && subjects.every((s) => cards[s.id]?.holes?.[String(hole)]);
+
+  // The round's main format: the one that feeds the Hector, else the first listed.
+  const main = round.formats.find((f) => f.hector) ?? round.formats[0];
+  const fr = result?.formats.find((f) => f.spec.id === main?.id);
+  const flight = new Set(flightIds);
+  const rows: { key: string; label: string; mine: boolean; display: string; thru: number; sort: number }[] = [];
+  if (fr) {
+    if (fr.teams.length > 0) {
+      for (const t of fr.teams) {
+        const pair = event.pairs.find((p) => p.id === t.pairId);
+        if (!pair || !(flight.has(pair.aId) || flight.has(pair.bId))) continue;
+        rows.push({
+          key: t.pairId,
+          label: t.label,
+          mine: pair.aId === me?.id || pair.bId === me?.id,
+          display: t.thru > 0 ? `${formatToPar(t.toPar)} (${t.value})` : "—",
+          thru: t.thru,
+          sort: t.thru > 0 ? t.toPar : Infinity,
+        });
+      }
+    } else {
+      for (const p of fr.players) {
+        if (!flight.has(p.playerId)) continue;
+        const toPar = p.toPar ?? 0;
+        rows.push({
+          key: p.playerId,
+          label: p.name,
+          mine: p.playerId === me?.id,
+          display:
+            p.thru > 0
+              ? fr.spec.kind === "stableford"
+                ? `${p.value} pts (${formatToPar(toPar)})`
+                : `${formatToPar(toPar)} (${p.value})`
+              : "—",
+          thru: p.thru,
+          sort: p.thru > 0 ? toPar : Infinity,
+        });
+      }
+    }
+    rows.sort((a, b) => a.sort - b.sort);
+  }
 
   return (
-    <>
-      <div className="mt-4 px-4">
-        <div className="card flex items-center justify-between px-2 py-3">
-          <NavButton
-            dir="prev"
-            disabled={hole === 1}
-            onClick={() => setHole_((h) => Math.max(1, h - 1))}
-          />
-          <div className="text-center">
-            <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
-              Hole
-            </div>
-            <div className="score text-5xl leading-none mt-0.5">{hole}</div>
-            <div className="flex items-center justify-center gap-2 mt-2 text-xs">
-              <span className="pill bg-violet-950 text-violet-300 num">Par {par}</span>
-              <span className="pill bg-slate-800 text-slate-300 num">SI {si}</span>
-              {metres && <span className="pill bg-slate-800 text-slate-400 num">{metres} m</span>}
-              {holeMapUrl(round.courseId, hole) && (
-                /* Dressed as the control it is — violet outline and a glyph, so it
-                   doesn't disappear among the Par/SI data pills beside it. */
-                <button
-                  onClick={() => setShowMap((v) => !v)}
-                  className={`pill transition-colors font-semibold ${
-                    showMap
-                      ? "bg-violet-600 text-white"
-                      : "border border-violet-700/70 bg-violet-950/30 text-violet-300"
-                  }`}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="w-3 h-3"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  Map
-                </button>
-              )}
-            </div>
-          </div>
-          <NavButton
-            dir="next"
-            disabled={hole === 18}
-            onClick={() => setHole_((h) => Math.min(18, h + 1))}
-          />
+    <div className="mt-3 px-4 space-y-3">
+      <div className="card px-4 py-4 text-center">
+        <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
+          Hole
+        </div>
+        <div className="score text-6xl leading-none mt-0.5">{hole}</div>
+        <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-400 num">
+          <span>
+            Par {par} · SI {si}
+            {metres ? ` · ${metres} m` : ""}
+          </span>
+          {holeMapUrl(round.courseId, hole) && (
+            <button
+              onClick={() => setShowMap((v) => !v)}
+              className={`pill transition-colors font-semibold ${
+                showMap
+                  ? "bg-violet-600 text-white"
+                  : "border border-violet-700/70 bg-violet-950/30 text-violet-300"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3" aria-hidden="true">
+                <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
+              </svg>
+              Map
+            </button>
+          )}
         </div>
         {showMap && holeMapUrl(round.courseId, hole) && (
-          /* hector.golf's diagram for this hole; the service worker caches each one
-             on first view, so a map seen at breakfast still opens on the fairway. */
           <img
             src={holeMapUrl(round.courseId, hole)!}
             alt={`Hole ${hole} layout`}
             loading="lazy"
-            /* Mostly tall narrow strips (~158×1050), the odd wide dogleg: natural
-               width capped, centred, transparent art straight on the ground — read
-               it top to bottom like a yardage-book page. */
             className="mt-3 mx-auto max-w-[min(60%,260px)]"
           />
         )}
       </div>
 
-      <div className="mt-3 px-4 space-y-3">
+      {/* Where the flight stands — in the round's own language, as the Round tab
+          speaks it: stroke formats lead with to-par, Stableford with points. */}
+      <div className="card px-4 py-3">
+        <div className="flex items-baseline justify-between">
+          <div className="label">Your flight</div>
+          {main && <div className="text-[12px] text-slate-500 num">{main.label.replace(/ (NET|SCR)$/, "")}</div>}
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-sm text-slate-500 mt-2">Nothing scored yet.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-slate-800">
+            {rows.map((r) => (
+              <li key={r.key} className="flex items-baseline justify-between gap-3 py-2">
+                <span className={`text-lg truncate ${r.mine ? "font-semibold text-violet-300" : "text-slate-200"}`}>
+                  {r.label}
+                </span>
+                <span className="shrink-0 flex items-baseline gap-2">
+                  <span className={`score text-2xl ${r.mine ? "text-violet-300" : ""}`}>{r.display}</span>
+                  <span className="text-[12px] text-slate-500 num w-9 text-right">
+                    {r.thru > 0 ? (r.thru === 18 ? "F" : `${r.thru}`) : ""}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {complete ? (
+        <button className="btn-primary w-full py-4 text-lg" onClick={onFinish}>
+          Finish round
+        </button>
+      ) : (
+        <button className="btn-primary w-full py-4 text-lg" onClick={onEnter}>
+          Enter scores · hole {hole}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Mode B — entering. Opens on demand and contains only the scoring: one row per card
+ * with the quick-score grid, ‹ › for the hole, and Next hole → which returns to the
+ * course. Nothing here is decoration. An idle timer closes it as insurance against a
+ * phone pocketed mid-entry.
+ */
+function EntrySheet({
+  round,
+  course,
+  subjects,
+  cards,
+  hole,
+  setHoleNo,
+  setHole,
+  complete,
+  onFinish,
+  onClose,
+}: {
+  round: Round;
+  course: NonNullable<(typeof courses)[string]>;
+  subjects: Subject[];
+  cards: Record<string, Card>;
+  hole: number;
+  setHoleNo: (h: number) => void;
+  setHole: (subjectId: string, hole: number, value: number | null) => void;
+  complete: boolean;
+  onFinish: () => void;
+  onClose: () => void;
+}) {
+  const par = course.par[hole - 1];
+  const si = course.si[hole - 1];
+  const metres = holeMetres[round.courseId]?.[round.tee]?.[hole - 1];
+  const allScored = subjects.length > 0 && subjects.every((s) => cards[s.id]?.holes?.[String(hole)]);
+
+  // Idle insurance: 90 s without a touch closes the sheet.
+  const [touched, setTouched] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(onClose, 90_000);
+    return () => clearTimeout(t);
+  }, [touched, onClose]);
+
+  return (
+    <div className="mt-3 px-4 space-y-3" onPointerDown={() => setTouched((n) => n + 1)}>
+      <div className="flex items-center justify-between gap-2">
+        <NavButton dir="prev" disabled={hole === 1} onClick={() => setHoleNo(Math.max(1, hole - 1))} />
+        <div className="text-center">
+          <div className="score text-5xl leading-none">{hole}</div>
+          <div className="text-[12px] text-slate-500 num mt-1">
+            Par {par} · SI {si}
+            {metres ? ` · ${metres} m` : ""}
+          </div>
+        </div>
+        <NavButton dir="next" disabled={hole === 18} onClick={() => setHoleNo(Math.min(18, hole + 1))} />
+      </div>
+
+      <div className="space-y-3">
         {subjects.map((s) => (
           <SubjectRow
             key={s.id}
@@ -435,52 +578,45 @@ function HoleEntry({
             par={par}
             card={cards[s.id]}
             onScore={(v) => {
-              // Pin the view before writing: without this, completing the flight's
-              // last score would advance firstOpenHole and yank the view forward
-              // mid-look — "Next hole" is the deliberate way onwards.
-              setHole_(hole);
+              // Pin before writing so completing the flight's last score can't
+              // advance the derived hole under a thumb — Next hole is the way on.
+              setHoleNo(hole);
               setHole(s.id, hole, v);
             }}
           />
         ))}
       </div>
 
-      {/* Always in the layout, enabled once the flight is scored — appearing out of
-          nowhere made everything below it jump on the last score of each hole. On the
-          18th, the walk continues to the clubhouse: Finish round takes its place. */}
-      <div className="px-4 mt-4">
-        {hole < 18 ? (
-          <button
-            className="btn-primary w-full"
-            disabled={!allScored}
-            onClick={() => setHole_((h) => h + 1)}
-          >
-            Next hole →
+      {hole < 18 ? (
+        <button
+          className="btn-primary w-full py-4 text-lg"
+          disabled={!allScored}
+          onClick={() => {
+            setHoleNo(hole + 1);
+            onClose();
+          }}
+        >
+          Next hole →
+        </button>
+      ) : (
+        <>
+          <button className="btn-primary w-full py-4 text-lg" disabled={!complete} onClick={onFinish}>
+            Finish round
           </button>
-        ) : (
-          <>
-            <button className="btn-primary w-full" disabled={!complete} onClick={onFinish}>
-              Finish round
-            </button>
-            {!complete && (
-              <p className="text-[12px] text-slate-500 text-center mt-2 num">
-                Still missing:{" "}
-                {Array.from({ length: 18 }, (_, i) => i + 1)
-                  .filter((h) => !subjects.every((s) => cards[s.id]?.holes?.[String(h)]))
-                  .join(" · ")}
-              </p>
-            )}
-          </>
-        )}
-      </div>
-
-      <HoleStrip
-        hole={hole}
-        onPick={setHole_}
-        filled={(h) => subjects.every((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
-        partial={(h) => subjects.some((s) => Boolean(cards[s.id]?.holes?.[String(h)]))}
-      />
-    </>
+          {!complete && (
+            <p className="text-[12px] text-slate-500 text-center num">
+              Still missing:{" "}
+              {Array.from({ length: 18 }, (_, i) => i + 1)
+                .filter((h) => !subjects.every((s) => cards[s.id]?.holes?.[String(h)]))
+                .join(" · ")}
+            </p>
+          )}
+        </>
+      )}
+      <button className="btn-ghost w-full text-sm" onClick={onClose}>
+        Done
+      </button>
+    </div>
   );
 }
 
@@ -901,7 +1037,7 @@ function SubjectRow({
     <div className="card p-3">
       <div className="flex items-baseline justify-between gap-2 mb-2.5">
         <div className="min-w-0">
-          <div className="font-semibold text-base truncate">
+          <div className="font-semibold text-xl truncate">
             {subject.name}
             {subject.mine && (
               <span className="ml-1.5 text-[11px] font-semibold text-violet-400 align-middle">
@@ -940,24 +1076,22 @@ function SubjectRow({
             <button
               key={n}
               onClick={() => onScore(value === n ? null : n)}
-              className={`flex-1 h-14 rounded-xl transition-colors flex flex-col items-center
+              /* No ring on par: it read as already selected. Selection is the only
+                 highlight; the "par" tag underneath says which one it is. */
+              className={`flex-1 h-16 rounded-xl transition-colors flex flex-col items-center
                           justify-center leading-none gap-0.5 ${
-                value === n
-                  ? "bg-violet-600"
-                  : n === par
-                    ? "bg-slate-800 ring-1 ring-slate-600"
-                    : "bg-slate-800/60 hover:bg-slate-700"
+                value === n ? "bg-violet-600" : "bg-slate-800/70 hover:bg-slate-700"
               }`}
             >
               <span
-                className={`font-bold num text-xl ${
+                className={`score text-[28px] ${
                   value === n ? "text-white" : quickTint(diff)
                 }`}
               >
                 {n}
               </span>
               <span
-                className={`text-[10px] font-medium tracking-wide ${
+                className={`text-[11px] font-medium tracking-wide ${
                   value === n ? "text-violet-200" : "text-slate-500"
                 }`}
               >
@@ -969,7 +1103,7 @@ function SubjectRow({
         <button
           onClick={() => setShowOther((v) => !v)}
           aria-label="Enter another score"
-          className={`w-11 h-14 rounded-xl font-bold text-base shrink-0 transition-colors ${
+          className={`w-12 h-16 rounded-xl font-bold text-lg shrink-0 transition-colors ${
             value !== null && !quick.includes(value)
               ? "bg-violet-600 text-white num"
               : "bg-slate-900 text-slate-500 border border-slate-700"
@@ -1010,38 +1144,3 @@ function SubjectRow({
   );
 }
 
-function HoleStrip({
-  hole,
-  onPick,
-  filled,
-  partial,
-}: {
-  hole: number;
-  onPick: (h: number) => void;
-  filled: (h: number) => boolean;
-  partial: (h: number) => boolean;
-}) {
-  return (
-    <div className="mt-5 px-4">
-      <div className="grid grid-cols-9 gap-1">
-        {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
-          <button
-            key={h}
-            onClick={() => onPick(h)}
-            className={`h-8 rounded-lg text-[12px] font-semibold num transition-colors ${
-              h === hole
-                ? "bg-violet-600 text-white"
-                : filled(h)
-                  ? "bg-slate-800 text-emerald-400"
-                  : partial(h)
-                    ? "bg-slate-800 text-amber-400"
-                    : "bg-slate-900 text-slate-600 border border-slate-800"
-            }`}
-          >
-            {h}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}

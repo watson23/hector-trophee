@@ -250,6 +250,7 @@ export default function App() {
                 cards={activeRound ? (t.cards[activeRound.id] ?? {}) : {}}
                 allCards={t.cards}
                 setHcpSubmitted={t.setHcpSubmitted}
+                result={activeRound ? t.roundResults[activeRound.id] : undefined}
                 me={me}
                 setHole={(subjectId, hole, value) =>
                   activeRound && t.setHole(activeRound.id, subjectId, hole, value)
