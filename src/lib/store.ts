@@ -41,7 +41,15 @@ export interface Store {
   /** Mark a card as entered into eBirdie/GameBook for official handicap. */
   setHcpSubmitted(roundId: string, subjectId: string, submitted: boolean): Promise<void>;
   saveEvent(patch: Partial<EventDoc>): Promise<void>;
+  /** Replace a whole round document — for undo and restore, where the whole shape is meant. */
   saveRound(round: Round): Promise<void>;
+  /**
+   * Write only the given fields of a round. Admin edits go through here: two organisers
+   * changing different fields of the same round (flights on one phone, status on another)
+   * must not overwrite each other, which a whole-document replace built from a stale copy
+   * would. A field set to `undefined` is removed.
+   */
+  patchRound(roundId: string, patch: Partial<Round>): Promise<void>;
   /** Number of writes not yet acknowledged by the server. */
   subscribePending(cb: (count: number) => void): Unsubscribe;
   /** Backend errors worth showing the user, e.g. the rules rejecting a read. */
@@ -292,6 +300,19 @@ class LocalStore implements Store {
     this.write(
       "rounds",
       rounds.map((r) => (r.id === round.id ? round : r)),
+    );
+  }
+
+  async patchRound(roundId: string, patch: Partial<Round>): Promise<void> {
+    const rounds = this.read<Round[]>("rounds", defaultRoundsFor(this.eventId));
+    this.write(
+      "rounds",
+      rounds.map((r) => {
+        if (r.id !== roundId) return r;
+        const next: Record<string, unknown> = { ...r, ...patch };
+        for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k];
+        return next as unknown as Round;
+      }),
     );
   }
 

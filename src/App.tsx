@@ -260,6 +260,7 @@ export default function App() {
             deleteCard={t.deleteCard}
             saveEvent={t.saveEvent}
             saveRound={t.saveRound}
+            patchRound={t.patchRound}
             setHole={t.setHole}
             onClose={() => setAdminOpen(false)}
             onSignOut={() => {

@@ -31,6 +31,7 @@ interface Props {
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
   /** Snapshot the tournament — called before anything here that destroys data. */
   backup: (reason: string) => Promise<unknown>;
 }
@@ -99,6 +100,7 @@ export default function ScoreAdmin({
   deleteCard,
   saveEvent,
   saveRound,
+  patchRound,
   backup,
 }: Props) {
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
@@ -174,8 +176,7 @@ export default function ScoreAdmin({
       // so the next open re-freezes handicaps. Without this, wiping the last round
       // left every status final and the app stuck on "That's a wrap".
       if (round.status === "final") {
-        const { handicaps: _dropped, ...rest } = round;
-        await saveRound({ ...rest, status: "upcoming" });
+        await patchRound(round.id, { status: "upcoming", handicaps: undefined });
       }
     } finally {
       setConfirmClear(false);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
-import { computeTournament, effectiveTee, evaluateRound, type RoundResult } from "../lib/engine";
+import { computeTournament, effectiveTee, evaluateRound, snapshotHandicaps, type RoundResult } from "../lib/engine";
 import {
   getStore,
   migrateEvent,
@@ -33,6 +33,8 @@ export interface TournamentState {
   setHcpSubmitted: (roundId: string, subjectId: string, submitted: boolean) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
+  /** Write only these fields of a round — what every Admin edit should use. */
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
   /** Copy another event's data wholesale into this one; null when the backend can't. */
   mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   /** Redial the backend to unstick writes queued behind a stale connection. */
@@ -237,20 +239,54 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     [store, eventId, identity],
   );
 
+  /**
+   * The moments around a round's status that deserve care, shared by whole-round saves
+   * and field patches: a finished round being reopened or cleared is the classic "oops"
+   * (snapshot first); a round going final is worth keeping for good (snapshot after);
+   * and a round leaving "upcoming" without frozen handicaps gets them frozen now — the
+   * freeze used to fire only on the exact upcoming→open tap, so upcoming→final, or
+   * scoring before the round was opened, left a round that tomorrow's handicap update
+   * would silently rescore.
+   */
+  const withFreeze = (prev: Round | undefined, patch: Partial<Round>): Partial<Round> => {
+    const event = latest.current.event;
+    const status = patch.status ?? prev?.status;
+    if (!event || !prev || status === "upcoming" || prev.handicaps || patch.handicaps) return patch;
+    return { ...patch, handicaps: snapshotHandicaps(prev, event.players).handicaps };
+  };
+  const beforeStatusChange = async (prev: Round | undefined, next: Partial<Round>) => {
+    if (prev?.status === "final" && next.status && next.status !== "final") {
+      await takeBackup(`Before reopening round ${prev.seq}`).catch(() => {});
+    }
+  };
+  const afterStatusChange = (prev: Round | undefined, next: Round) => {
+    if (next.status === "final" && prev?.status !== "final") {
+      const withThis = latest.current.rounds.map((r) => (r.id === next.id ? next : r));
+      void takeBackup(`Round ${next.seq} final`, withThis).catch(() => {});
+    }
+  };
+
   const saveRound = useCallback(
     async (round: Round) => {
       const prev = latest.current.rounds.find((r) => r.id === round.id);
-      // A finished round being reopened or cleared is the classic "oops": keep what it
-      // had first. A round going final is the moment worth keeping for good.
-      if (prev?.status === "final" && round.status !== "final") {
-        await takeBackup(`Before reopening round ${round.seq}`).catch(() => {});
-      }
-      await store?.saveRound(round);
-      if (round.status === "final" && prev?.status !== "final") {
-        const withThis = latest.current.rounds.map((r) => (r.id === round.id ? round : r));
-        void takeBackup(`Round ${round.seq} final`, withThis).catch(() => {});
-      }
+      const next = { ...round, ...withFreeze(prev, round) };
+      await beforeStatusChange(prev, next);
+      await store?.saveRound(next);
+      afterStatusChange(prev, next);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [store, takeBackup],
+  );
+
+  const patchRound = useCallback(
+    async (roundId: string, patch: Partial<Round>) => {
+      const prev = latest.current.rounds.find((r) => r.id === roundId);
+      const next = withFreeze(prev, patch);
+      await beforeStatusChange(prev, next);
+      await store?.patchRound(roundId, next);
+      if (prev) afterStatusChange(prev, { ...prev, ...next } as Round);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [store, takeBackup],
   );
 
@@ -301,6 +337,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     setHcpSubmitted,
     saveEvent,
     saveRound,
+    patchRound,
     mirrorFrom,
     backups,
     nudge: store?.nudge?.bind(store),

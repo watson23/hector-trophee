@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
-import { snapshotHandicaps, type RoundResult } from "../lib/engine";
+import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
@@ -23,6 +23,7 @@ interface Props {
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   onClose: () => void;
   /** Hand the organiser role back: the pill goes, the PIN is needed to return. */
@@ -42,6 +43,7 @@ export default function AdminScreen({
   deleteCard,
   saveEvent,
   saveRound,
+  patchRound,
   setHole,
   onClose,
   onSignOut,
@@ -146,10 +148,10 @@ export default function AdminScreen({
             saveEvent={saveEvent}
           />
         )}
-        {tab === "groups" && <GroupsEditor event={event} rounds={rounds} saveRound={saveRound} />}
+        {tab === "groups" && <GroupsEditor event={event} rounds={rounds} patchRound={patchRound} />}
         {tab === "rounds" && (
           <>
-            <RoundsEditor rounds={rounds} players={event.players} saveRound={saveRound} />
+            <RoundsEditor rounds={rounds} saveRound={saveRound} patchRound={patchRound} />
             <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
           </>
         )}
@@ -166,6 +168,7 @@ export default function AdminScreen({
             deleteCard={deleteCard}
             saveEvent={saveEvent}
             saveRound={saveRound}
+            patchRound={patchRound}
             backup={backups.take}
           />
         )}
@@ -539,11 +542,11 @@ interface FlightUnit {
 function GroupsEditor({
   event,
   rounds,
-  saveRound,
+  patchRound,
 }: {
   event: EventDoc;
   rounds: Round[];
-  saveRound: (round: Round) => Promise<void>;
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
   const [roundId, setRoundId] = useState(rounds[0]?.id);
   // Both bulk actions replace the whole sheet — and flights are usually built by hand,
@@ -614,7 +617,7 @@ function GroupsEditor({
     return units;
   }
 
-  const update = (groups: Round["groups"]) => saveRound({ ...round, groups });
+  const update = (groups: Round["groups"]) => patchRound(round.id, { groups });
 
   function moveUnit(unit: FlightUnit, toGroupId: string | null) {
     const groups = round.groups.map((g) => ({
@@ -945,12 +948,12 @@ const STATUSES: RoundStatus[] = ["upcoming", "open", "final"];
 
 function RoundsEditor({
   rounds,
-  players,
   saveRound,
+  patchRound,
 }: {
   rounds: Round[];
-  players: FieldPlayer[];
   saveRound: (round: Round) => Promise<void>;
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
   return (
     <div className="px-4 space-y-3">
@@ -962,8 +965,8 @@ function RoundsEditor({
         <RoundEditorCard
           key={round.id}
           round={round}
-          players={players}
           saveRound={saveRound}
+          patchRound={patchRound}
         />
       ))}
     </div>
@@ -972,12 +975,12 @@ function RoundsEditor({
 
 function RoundEditorCard({
   round,
-  players,
   saveRound,
+  patchRound,
 }: {
   round: Round;
-  players: FieldPlayer[];
   saveRound: (round: Round) => Promise<void>;
+  patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
   const course = courses[round.courseId];
   const tee = course.tees[round.tee];
@@ -986,7 +989,7 @@ function RoundEditorCard({
   const [undo, setUndo] = useState<Round | null>(null);
   const patch = (p: Partial<Round>) => {
     setUndo(round);
-    return saveRound({ ...round, ...p });
+    return patchRound(round.id, p);
   };
   // What the official programme says for this round — shown when the card has strayed
   // from it. Only meaningful for the tournament's own courses (the field space plays
@@ -1004,11 +1007,8 @@ function RoundEditorCard({
    */
   function setStatus(status: RoundStatus) {
     setUndo(round);
-    if (status === "open" && !round.handicaps) {
-      void saveRound({ ...snapshotHandicaps(round, players), status });
-    } else {
-      void saveRound({ ...round, status });
-    }
+    // Handicaps are frozen by the store layer whenever a round leaves "upcoming".
+    void patchRound(round.id, { status });
   }
 
   return (

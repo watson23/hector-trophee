@@ -319,6 +319,15 @@ export class FirestoreStore implements Store {
     await setDoc(doc(this.roundsRef(), round.id), this.clean(round)).catch(this.reportWriteError);
   }
 
+  async patchRound(roundId: string, patch: Partial<Round>): Promise<void> {
+    // Merge write of just these fields; `undefined` becomes a field delete so a patch can
+    // still clear a CR override or drop a handicap snapshot. Cleaned per value — the JSON
+    // round-trip in clean() would destroy the deleteField sentinel.
+    const data: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(patch)) data[k] = v === undefined ? deleteField() : this.clean(v);
+    await setDoc(doc(this.roundsRef(), roundId), data, { merge: true }).catch(this.reportWriteError);
+  }
+
   /**
    * Snapshots as top-level `events/<eventId>__backup__<id>` documents — a path the
    * existing rules already allow, so backups work without a rules deploy. Server reads:
