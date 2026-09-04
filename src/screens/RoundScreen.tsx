@@ -211,8 +211,9 @@ export default function RoundScreen({
                 key: t.pairId,
                 label: t.label,
                 value: t.thru > 0 ? t.toPar : 0,
-                // To par leads, strokes follow — the ranking metric is the headline.
-                display: `${formatToPar(t.toPar)} (${t.value})`,
+                // To par alone — the ranking metric is the headline; the stroke total
+                // is on the scorecard for anyone who wants it.
+                display: formatToPar(t.toPar),
                 extra:
                   t.playingHcp !== undefined
                     ? [`team HCP ${t.playingHcp}`, ...underParCounts(t, "")].join(" · ")
@@ -252,13 +253,10 @@ export default function RoundScreen({
                 label: p.name,
                 value: p.thru > 0 ? (p.toPar ?? 0) : 0,
                 // Ranked to par (net par = 2 points) so mid-round comparison is fair —
-                // but points lead the display, because "40 points!" is how Stableford
-                // is actually spoken. Stroke formats lead with to par for the same
-                // reason: "twelve under" is how those are spoken.
-                display:
-                  f.spec.kind === "stableford"
-                    ? `${p.value} (${formatToPar(p.toPar ?? 0)})`
-                    : `${formatToPar(p.toPar ?? 0)} (${p.value})`,
+                // but points are the display, because "40 points!" is how Stableford
+                // is actually spoken. Stroke formats show to par for the same reason:
+                // "twelve under" is how those are spoken. Thru explains the ordering.
+                display: f.spec.kind === "stableford" ? String(p.value) : formatToPar(p.toPar ?? 0),
                 extra: f.spec.net ? `playing HCP ${p.playingHcp}` : undefined,
                 thru: p.thru,
                 played: p.thru > 0,
