@@ -731,9 +731,13 @@ function AdminUnlock({ hash, onUnlock }: { hash: string; onUnlock: () => void })
     >
       <input
         autoFocus
-        type="password"
+        /* Deliberately not type="password": that makes every password manager offer
+           to save the PIN on each unlock. A text field masked with CSS reads the same
+           and stays out of the vault; one-time-code keeps autofill from guessing. */
+        type="text"
         inputMode="numeric"
-        className={`input flex-1 num text-center ${error ? "ring-2 ring-rose-500" : ""}`}
+        autoComplete="one-time-code"
+        className={`input flex-1 num text-center [-webkit-text-security:disc] ${error ? "ring-2 ring-rose-500" : ""}`}
         placeholder="Admin PIN"
         value={pin}
         onChange={(e) => {

@@ -4,7 +4,7 @@ import { flightsForPairs, MAX_PER_FLIGHT, teeWindow } from "../lib/flights";
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus } from "../types";
 import { snapshotHandicaps, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel } from "../data/courses";
-import { DEFAULT_FLIGHT_COUNT, defaultGroups } from "../data/rounds";
+import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
 import { switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
@@ -884,17 +884,33 @@ function RoundEditorCard({
 }) {
   const course = courses[round.courseId];
   const tee = course.tees[round.tee];
-  const patch = (p: Partial<Round>) => saveRound({ ...round, ...p });
+  // One step of undo: the round as it was before the last edit made from this card.
+  // A stray tap on a select is the accident this exists for.
+  const [undo, setUndo] = useState<Round | null>(null);
+  const patch = (p: Partial<Round>) => {
+    setUndo(round);
+    return saveRound({ ...round, ...p });
+  };
+  // What the official programme says for this round — shown when the card has strayed
+  // from it. Only meaningful for the tournament's own courses (the field space plays
+  // elsewhere and has no programme to stray from).
+  const programme = defaultRounds.find((r) => r.id === round.id);
+  const programmeCourses = new Set(defaultRounds.map((r) => r.courseId));
+  const strayed =
+    programme &&
+    programmeCourses.has(round.courseId) &&
+    (programme.courseId !== round.courseId || programme.tee !== round.tee);
 
   /**
    * Opening a round freezes the handicaps it is played off. Handicaps are refreshed each
    * morning, so without this a later update would rescore a round already in the books.
    */
   function setStatus(status: RoundStatus) {
+    setUndo(round);
     if (status === "open" && !round.handicaps) {
       void saveRound({ ...snapshotHandicaps(round, players), status });
     } else {
-      void patch({ status });
+      void saveRound({ ...round, status });
     }
   }
 
@@ -968,6 +984,35 @@ function RoundEditorCard({
           </select>
         </label>
       </div>
+
+      {strayed && programme && (
+        <p className="text-[12px] text-amber-400/90 leading-relaxed flex items-center justify-between gap-3">
+          <span>
+            Programme: {courses[programme.courseId]?.shortName} · {teeLabel[programme.tee]}
+          </span>
+          <button
+            onClick={() => patch({ courseId: programme.courseId, tee: programme.tee, crOverride: undefined, slopeOverride: undefined })}
+            className="shrink-0 underline underline-offset-2"
+          >
+            Reset to programme
+          </button>
+        </p>
+      )}
+
+      {undo && (
+        <p className="text-[12px] text-slate-400 flex items-center justify-between gap-3 bg-slate-800/60 rounded-lg px-2.5 py-1.5">
+          <span>Changed.</span>
+          <button
+            onClick={() => {
+              void saveRound(undo);
+              setUndo(null);
+            }}
+            className="shrink-0 font-semibold text-violet-300 underline underline-offset-2"
+          >
+            Undo
+          </button>
+        </p>
+      )}
 
       <div className="flex items-center gap-2 text-xs">
         <span className={`inline-block w-2.5 h-2.5 rounded-full ${teeDotClass[round.tee]}`} />

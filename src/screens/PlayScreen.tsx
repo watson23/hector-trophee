@@ -966,7 +966,7 @@ function NextRound({
             </div>
             {ch !== null && (
               <div className="text-right">
-                <div className="label">Your CH</div>
+                <div className="label">Playing HCP</div>
                 <div className="score text-4xl mt-1 text-violet-300">{ch}</div>
               </div>
             )}
