@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { courseHeroUrl, courses } from "../data/courses";
+import { courseHeroCaption, courseHeroUrl, courses } from "../data/courses";
 
 /**
  * An establishing shot — a broadcast opening frame, not a decoration. Sits flush
@@ -64,7 +64,7 @@ export default function CourseHero({
   return (
     <EstablishingShot
       src={url}
-      caption={`Konopiště · ${course.shortName}`}
+      caption={courseHeroCaption(courseId) ?? course.name}
       height={height}
       insetClass={inset ? "-mx-4 -mt-4 mb-4 rounded-t-2xl" : ""}
     />

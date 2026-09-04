@@ -114,7 +114,19 @@ export function courseGuideUrl(courseId: string): string | null {
 const heroImage: Record<string, string> = {
   radecky: "/courses/radecky.webp",
   deste: "/courses/deste.webp",
+  hirsala: "/courses/hirsala.webp",
 };
+
+/** The chyron caption under each hero — place · course, in the course's own terms. */
+const heroCaption: Record<string, string> = {
+  radecky: "Konopiště · Radecký",
+  deste: "Konopiště · d'Este",
+  hirsala: "Hirsala · Kirkkonummi",
+};
+
+export function courseHeroCaption(courseId: string): string | null {
+  return heroCaption[courseId] ?? null;
+}
 
 export function courseHeroUrl(courseId: string): string | null {
   return heroImage[courseId] ?? null;
