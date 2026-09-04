@@ -1216,7 +1216,10 @@ function SubjectRow({
   tall: boolean;
   onScore: (value: number | null) => void;
 }) {
-  const [showOther, setShowOther] = useState(false);
+  // Tagged by hole: paging to the next hole with the "…" box open closes it, instead of
+  // showing the previous hole's number over the new hole.
+  const [otherFor, setOtherFor] = useState<number | null>(null);
+  const showOther = otherFor === hole;
   const value = card?.holes?.[String(hole)] ?? null;
   const strokes = subject.strokes[hole - 1];
   // Eagle through triple bogey covers virtually every score; "…" handles the rest.
@@ -1278,7 +1281,7 @@ function SubjectRow({
           );
         })}
         <button
-          onClick={() => setShowOther((v) => !v)}
+          onClick={() => setOtherFor(showOther ? null : hole)}
           aria-label="Enter another score"
           className={`w-12 ${h} rounded-xl font-bold text-lg shrink-0 ${
             value !== null && !quick.includes(value)
@@ -1292,7 +1295,11 @@ function SubjectRow({
 
       {showOther && (
         <div className="flex items-center gap-2 mt-2">
+          {/* Committed on Enter or when focus leaves — typing "15" must not write a 1
+              to every phone on the way. Keyed by hole so the box never carries a value
+              over from another hole. */}
           <input
+            key={hole}
             type="number"
             inputMode="numeric"
             min={1}
@@ -1301,16 +1308,19 @@ function SubjectRow({
             className="input w-24 num text-center"
             placeholder="score"
             defaultValue={value ?? ""}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (n >= 1 && n <= 20) onScore(n);
+            onBlur={(e) => {
+              const n = Number(e.currentTarget.value);
+              if (n >= 1 && n <= 20 && n !== value) onScore(n);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
             }}
           />
           <button
             className="text-xs text-slate-400 underline underline-offset-2"
             onClick={() => {
               onScore(null);
-              setShowOther(false);
+              setOtherFor(null);
             }}
           >
             Clear hole
