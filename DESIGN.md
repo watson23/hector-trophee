@@ -62,6 +62,19 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 - Score marks: shape encodes result (ring = birdie, square = bogey, doubled =
   eagle/double), numeral stays bright. Legend lives on the scorecard.
 
+## In-round Play: two modes, never one screen
+
+- **On the course** (default): hole big + `Par · SI · m` line, the flight's standings
+  in the round's main tournament format, one `Enter scores · hole N` door. No score
+  buttons exist here — a pocketed phone cannot score.
+- **Entry sheet** (on demand): only scoring. Names ≥20px, buttons 64px with 28px
+  scoreboard digits, no par ring (selection is the only highlight), one ‹ › hole nav,
+  `Next hole →` enabled once the flight is scored and returning to the course.
+  Idle 90 s closes it.
+- The rule behind it: walking and entering are different moments with different
+  needs; anything on the entry sheet that isn't scoring is clutter, anything on the
+  course view that can be tapped by accident is a hazard.
+
 ## Motion
 
 - Row re-ranking glides via FLIP, **gated to actual order changes** (WebKit
