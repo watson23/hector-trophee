@@ -4,6 +4,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
+import { applyCap, holeCap } from "../lib/holeCap";
 import { effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
@@ -358,6 +359,7 @@ export default function PlayScreen({
             setEntryOpen(false);
             setFinishedRound(round.id);
           }}
+          capRule={event.holeCap}
           onClose={() => setEntryOpen(false)}
         />
       ) : (
@@ -610,6 +612,7 @@ function EntrySheet({
   complete,
   onFinish,
   onClose,
+  capRule,
 }: {
   round: Round;
   course: NonNullable<(typeof courses)[string]>;
@@ -621,6 +624,7 @@ function EntrySheet({
   complete: boolean;
   onFinish: () => void;
   onClose: () => void;
+  capRule: EventDoc["holeCap"];
 }) {
   const par = course.par[hole - 1];
   const si = course.si[hole - 1];
@@ -654,6 +658,7 @@ function EntrySheet({
             par={par}
             card={cards[s.id]}
             tall={tall}
+            cap={holeCap(capRule, par, s.strokes[hole - 1])}
             onScore={(v) => {
               // Pin before writing so completing the flight's last score can't
               // advance the derived hole under a thumb — Next hole is the way on.
@@ -1206,6 +1211,7 @@ function SubjectRow({
   par,
   card,
   tall,
+  cap,
   onScore,
 }: {
   subject: Subject;
@@ -1214,8 +1220,12 @@ function SubjectRow({
   card: Card | undefined;
   /** 64px buttons for a two-ball; 56px so four cards fit one screen. */
   tall: boolean;
+  /** The tournament's maximum on this hole for this player, or null without a cap rule. */
+  cap: number | null;
   onScore: (value: number | null) => void;
 }) {
+  // Anything above the cap is stored as the cap — the rule, applied at the source.
+  const score = (n: number | null) => onScore(n === null ? null : applyCap(n, cap));
   // Tagged by hole: paging to the next hole with the "…" box open closes it, instead of
   // showing the previous hole's number over the new hole.
   const [otherFor, setOtherFor] = useState<number | null>(null);
@@ -1254,7 +1264,7 @@ function SubjectRow({
           return (
             <button
               key={n}
-              onClick={() => onScore(value === n ? null : n)}
+              onClick={() => score(value === n ? null : n)}
               /* No ring on par: it read as already selected. Selection is the only
                  highlight; the "par" tag underneath says which one it is. */
               /* No colour transition: on a hole change the digits redraw at once
@@ -1311,12 +1321,27 @@ function SubjectRow({
             defaultValue={value ?? ""}
             onBlur={(e) => {
               const n = Number(e.currentTarget.value);
-              if (n >= 1 && n <= 20 && n !== value) onScore(n);
+              if (n >= 1 && n <= 20 && n !== value) score(n);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
             }}
           />
+          {cap !== null && (
+            /* The tournament's max on this hole — also what a picked-up ball ("–") scores. */
+            <button
+              onClick={() => {
+                score(cap);
+                setOtherFor(null);
+              }}
+              className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+                value === cap ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-200"
+              }`}
+            >
+              Max <span className="num">{cap}</span>
+              <span className="block text-[10px] font-normal opacity-70">picked up / didn't finish</span>
+            </button>
+          )}
           <button
             className="text-xs text-slate-400 underline underline-offset-2"
             onClick={() => {

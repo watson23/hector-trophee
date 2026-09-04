@@ -145,7 +145,16 @@ export interface EventDoc {
    * shown even once all pairs stand — until the organiser concludes it in Admin.
    */
   draftConcluded?: boolean;
+  /**
+   * The tournament's maximum score on a hole, if it plays with one: "par5" = par + 5,
+   * "ndb" = net double bogey (par + 2 + the strokes received on the hole). Entry offers
+   * it as a button, and anything entered above it is stored as the cap — which is also
+   * what a picked-up ball ("–") scores.
+   */
+  holeCap?: HoleCapRule;
 }
+
+export type HoleCapRule = "none" | "par5" | "ndb";
 
 /** A single scorecard. `holes` is a sparse map so per-hole writes merge. */
 export interface Card {

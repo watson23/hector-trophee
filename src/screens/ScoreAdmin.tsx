@@ -5,6 +5,7 @@ import { effectiveTee, hiFor, roundParticipants, teamCardId } from "../lib/engin
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { generateRoundCards } from "../lib/testdata";
+import { applyCap, holeCap } from "../lib/holeCap";
 import { resetTournament, simulateTournament } from "../lib/simulate";
 import { EVENT_ID } from "../data/field";
 import type { Space } from "../lib/space";
@@ -241,6 +242,7 @@ export default function ScoreAdmin({
             par={course.par}
             card={roundCards[subject.id]}
             onSet={(hole, value) => setHole(round.id, subject.id, hole, value)}
+            capFor={(hole) => holeCap(event.holeCap, course.par[hole - 1], subject.strokes[hole - 1])}
             onBack={() => setSubjectId(null)}
           />
         )}
@@ -481,15 +483,20 @@ function HoleEditor({
   par,
   card,
   onSet,
+  capFor,
   onBack,
 }: {
   subject: Subject;
   par: number[];
   card: Card | undefined;
   onSet: (hole: number, value: number | null) => void;
+  /** The tournament's per-hole maximum for this player, or null without a cap rule. */
+  capFor: (hole: number) => number | null;
   onBack: () => void;
 }) {
   const [hole, setHole] = useState<number | null>(null);
+  const cap = hole ? capFor(hole) : null;
+  const set = (h: number, n: number | null) => onSet(h, n === null ? null : applyCap(n, cap));
   const value = hole ? (card?.holes?.[String(hole)] ?? null) : null;
   const holePar = hole ? par[hole - 1] : 4;
   const strokes = hole ? subject.strokes[hole - 1] : 0;
@@ -550,7 +557,7 @@ function HoleEditor({
               .map((n) => (
                 <button
                   key={n}
-                  onClick={() => onSet(hole, n)}
+                  onClick={() => set(hole, n)}
                   className={`flex-1 h-11 rounded-xl font-bold num text-sm ${
                     value === n ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-200"
                   }`}
@@ -559,12 +566,42 @@ function HoleEditor({
                 </button>
               ))}
             <button
-              onClick={() => onSet(hole, null)}
+              onClick={() => set(hole, null)}
               className="w-12 h-11 rounded-xl text-[12px] font-semibold bg-slate-900
                          border border-slate-700 text-slate-400"
             >
               clear
             </button>
+          </div>
+          {/* Beyond the quick row: any score, and the tournament's max for the hole. */}
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              key={hole}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={20}
+              className="input w-24 num text-center py-1.5"
+              placeholder="other"
+              defaultValue={value !== null && !Array.from({ length: 7 }, (_, i) => holePar - 2 + i).includes(value) ? value : ""}
+              onBlur={(e) => {
+                const n = Number(e.currentTarget.value);
+                if (n >= 1 && n <= 20 && n !== value) set(hole, n);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+            />
+            {cap !== null && (
+              <button
+                onClick={() => set(hole, cap)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${
+                  value === cap ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-200"
+                }`}
+              >
+                Max <span className="num">{cap}</span>
+              </button>
+            )}
           </div>
         </div>
       )}

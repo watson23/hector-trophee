@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFENDING_PAIR } from "../lib/store";
+import { HOLE_CAP_HELP, HOLE_CAP_LABEL } from "../lib/holeCap";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/flights";
-import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair } from "../types";
+import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair, HoleCapRule } from "../types";
 import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
@@ -153,6 +154,7 @@ export default function AdminScreen({
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} patchRound={patchRound} />}
         {tab === "rounds" && (
           <>
+            <HoleCapCard event={event} saveEvent={saveEvent} />
             <RoundsEditor rounds={rounds} saveRound={saveRound} patchRound={patchRound} />
             <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
           </>
@@ -226,6 +228,34 @@ function InviteLink({ space }: { space: Space }) {
         {copied ? "Copied" : "Copy link"}
       </button>
     </div>
+  );
+}
+
+/**
+ * The tournament's maximum score on a hole. Tradition caps a blow-up (par + 5, or a net
+ * double bogey — the committee to confirm which); with a rule set, the entry sheet offers
+ * the cap as a button and stores anything above it as the cap.
+ */
+function HoleCapCard({ event, saveEvent }: { event: EventDoc; saveEvent: (patch: Partial<EventDoc>) => Promise<void> }) {
+  const rule: HoleCapRule = event.holeCap ?? "none";
+  return (
+    <section className="mx-4 mb-3 card p-3.5">
+      <h2 className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">Max score per hole</h2>
+      <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5 mb-2.5">{HOLE_CAP_HELP[rule]}</p>
+      <div className="flex gap-1.5">
+        {(["none", "par5", "ndb"] as const).map((r) => (
+          <button
+            key={r}
+            onClick={() => void saveEvent({ holeCap: r })}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${
+              rule === r ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-400"
+            }`}
+          >
+            {HOLE_CAP_LABEL[r]}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
