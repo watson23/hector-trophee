@@ -40,6 +40,7 @@ export function TabBar({
   badges,
   visible,
   labels,
+  icons,
 }: {
   tab: Tab;
   onChange: (t: Tab) => void;
@@ -48,6 +49,8 @@ export function TabBar({
   /** Hector TV shows a subset of the tabs, with the Round tab relabelled "Live". */
   visible?: Tab[];
   labels?: Partial<Record<Tab, string>>;
+  /** Draft night swaps the Round tab's icon along with its label. */
+  icons?: Partial<Record<Tab, ReactNode>>;
 }) {
   const shown = visible ? TABS.filter((t) => visible.includes(t.id)) : TABS;
   return (
@@ -72,7 +75,7 @@ export function TabBar({
             {badges?.[t.id] && (
               <span className="absolute top-1.5 right-[calc(50%-16px)] w-2 h-2 rounded-full bg-amber-400" />
             )}
-            {t.icon ? (
+            {(icons?.[t.id] ?? t.icon) ? (
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -81,7 +84,7 @@ export function TabBar({
                 className="w-6 h-6"
                 aria-hidden="true"
               >
-                {t.icon}
+                {(icons?.[t.id] ?? t.icon)}
               </svg>
             ) : (
               /* The eagle is the trophy and the trophy is gold — always, active or

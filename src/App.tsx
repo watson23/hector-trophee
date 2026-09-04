@@ -6,6 +6,15 @@ import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, type Tab } from "./components/Chrome";
 import { currentSpace, eventIdFor } from "./lib/space";
 import { isDraftNight } from "./lib/draftNight";
+
+/* Draft night's tab icon: two people, the pairing being made. */
+const DRAFT_ICON = (
+  <>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
+  </>
+);
 import PlayScreen from "./screens/PlayScreen";
 import RoundScreen from "./screens/RoundScreen";
 import TournamentScreen from "./screens/TournamentScreen";
@@ -195,7 +204,8 @@ export default function App() {
           tab={tvTab}
           onChange={setTab}
           visible={["round", "tournament", "info"]}
-          labels={{ round: isDraftNight(t.event, t.rounds) ? "Draft" : "Live" }}
+          labels={{ round: isDraftNight(t.event, t.rounds) ? "Draft!" : "Live" }}
+          icons={isDraftNight(t.event, t.rounds) ? { round: DRAFT_ICON } : undefined}
         />
       </div>
     );
@@ -363,7 +373,8 @@ export default function App() {
             setTab(next);
           }}
           badges={{ info: newsUnread }}
-          labels={isDraftNight(t.event, t.rounds) ? { round: "Draft" } : undefined}
+          labels={isDraftNight(t.event, t.rounds) ? { round: "Draft!" } : undefined}
+          icons={isDraftNight(t.event, t.rounds) ? { round: DRAFT_ICON } : undefined}
         />
       )}
     </div>
