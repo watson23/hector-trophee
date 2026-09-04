@@ -213,9 +213,21 @@ export default function TournamentScreen({
                 const done = rounds.filter((r) => r.status === "final").length;
                 const live = rounds.find((r) => r.status === "open");
                 if (done === 0 && !live) return `Six rounds, two trophies — nothing scored yet`;
-                return `Running totals · ${done} of ${rounds.length} rounds in${
-                  live ? ` · R${live.seq} live` : ""
-                }`;
+                // The on-air mark, in the Round chyron's own language: emerald and a
+                // breathing dot, so "live" reads as scores moving under the table.
+                return (
+                  <>
+                    Running totals · {done} of {rounds.length} rounds in
+                    {live && (
+                      <>
+                        {" · "}
+                        <span className="inline-flex items-center gap-1.5 text-emerald-300 font-semibold">
+                          <span className="live-dot" />R{live.seq} live
+                        </span>
+                      </>
+                    )}
+                  </>
+                );
               })()
         }
       />
