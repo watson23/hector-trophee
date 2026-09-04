@@ -292,8 +292,9 @@ function buildBoards(
           mine: isMine([p.playerId]),
           perHole: p.perHole,
           strokes: p.strokes,
-          // The nine's total already ends the hole row; the headline is to par or points.
-          headline: p.thru === 0 ? "—" : f.spec.kind === "stableford" ? String(p.value) : formatToPar(toPar),
+          // The nine's total (strokes or points) already ends the hole row, so the
+          // headline is always to par — on Stableford, points against two a hole.
+          headline: p.thru === 0 ? "—" : formatToPar(toPar),
         });
       }
       rows.sort((a, b) => flightIds.indexOf(a.key) - flightIds.indexOf(b.key));
