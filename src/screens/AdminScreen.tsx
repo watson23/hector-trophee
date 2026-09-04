@@ -50,6 +50,7 @@ export default function AdminScreen({
   // Rounds first: it and Flights are the daily workspace, while Pairs is essentially
   // never touched again after Thursday's draft. Session-persisted, like the rest of the
   // UI position, so a refresh lands back on the same section.
+  const [spacesOpen, setSpacesOpen] = useState(false);
   const [tab, setTab] = usePersistentState<"pairs" | "groups" | "rounds" | "scores" | "backup">(
     "hectro_ui.adminTab",
     "rounds",
@@ -67,40 +68,61 @@ export default function AdminScreen({
           </button>
         }
       />
-      {/* Which copy of the event this device edits — visible on every admin tab, since
-          it changes what all the buttons below actually touch. One row per space; the
-          current one is marked, any other is one tap (and a reload) away. */}
-      <div className="mx-4 mb-3 rounded-2xl border border-slate-800 bg-slate-900 p-2">
-        {SPACES.map((s) => {
-          const active = s.id === space;
+      {/* Which copy of the event this device edits. Folded to one line by default — in
+          the thick of things the organiser is here for flights and scores, not for
+          switching spaces — with the current space always named (and coloured when it
+          is not the tournament). Tap to unfold the full list. */}
+      <div className="mx-4 mb-3 rounded-2xl border border-slate-800 bg-slate-900">
+        {(() => {
+          const cur = SPACES.find((s) => s.id === space) ?? SPACES[0];
           const tone =
-            s.tone === "test" ? "text-sky-300" : s.tone === "field" ? "text-amber-300" : "text-slate-100";
+            cur.tone === "test" ? "text-sky-300" : cur.tone === "field" ? "text-amber-300" : "text-slate-100";
           return (
             <button
-              key={s.id}
-              onClick={() => !active && switchSpace(s.id)}
-              className={`w-full text-left rounded-xl px-3 py-2 flex items-start gap-3 ${
-                active ? "bg-slate-800" : "hover:bg-slate-800/50"
-              }`}
+              onClick={() => setSpacesOpen((v) => !v)}
+              aria-expanded={spacesOpen}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left"
             >
-              <span
-                className={`mt-1.5 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
-                  active ? "bg-violet-400" : "border border-slate-600"
-                }`}
-              />
-              <span className="min-w-0">
-                <span className={`block text-xs font-semibold ${tone}`}>
-                  {s.label}
-                  {active && <span className="text-slate-500 font-normal"> · this phone</span>}
-                </span>
-                <span className="block text-[12px] text-slate-500 leading-relaxed">{s.description}</span>
+              <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0 bg-violet-400" />
+              <span className={`text-xs font-semibold truncate ${tone}`}>{cur.label}</span>
+              <span className="text-[12px] text-slate-500 truncate">· this phone</span>
+              <span className="ml-auto text-[12px] text-slate-500 shrink-0">
+                {spacesOpen ? "Close" : "Change"}
               </span>
             </button>
           );
-        })}
-        {space !== "live" && (
-          <div className="px-3 pb-1">
-            <InviteLink space={space} />
+        })()}
+        {spacesOpen && (
+          <div className="border-t border-slate-800 p-2">
+            {SPACES.map((s) => {
+              const active = s.id === space;
+              const tone =
+                s.tone === "test" ? "text-sky-300" : s.tone === "field" ? "text-amber-300" : "text-slate-100";
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => !active && switchSpace(s.id)}
+                  className={`w-full text-left rounded-xl px-3 py-2 flex items-start gap-3 ${
+                    active ? "bg-slate-800" : "hover:bg-slate-800/50"
+                  }`}
+                >
+                  <span
+                    className={`mt-1.5 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
+                      active ? "bg-violet-400" : "border border-slate-600"
+                    }`}
+                  />
+                  <span className="min-w-0">
+                    <span className={`block text-xs font-semibold ${tone}`}>{s.label}</span>
+                    <span className="block text-[12px] text-slate-500 leading-relaxed">{s.description}</span>
+                  </span>
+                </button>
+              );
+            })}
+            {space !== "live" && (
+              <div className="px-3 pb-1">
+                <InviteLink space={space} />
+              </div>
+            )}
           </div>
         )}
       </div>
