@@ -873,12 +873,20 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
         )}
       </div>
       {hasArcs && (
-        <button
-          onClick={() => setShowArcs((v) => !v)}
-          className="mt-2 text-[12px] font-medium text-slate-500 underline underline-offset-4 py-1"
-        >
-          {showArcs ? "Hide distances" : "Show distances"}
-        </button>
+        <>
+          {showArcs && (
+            <p className="mt-2 max-w-[17rem] text-center text-[11px] leading-snug text-slate-600">
+              Distances are estimated by the app from the course drawing, not measured on the
+              ground — a guide for club choice, not a rangefinder.
+            </p>
+          )}
+          <button
+            onClick={() => setShowArcs((v) => !v)}
+            className="mt-1 text-[12px] font-medium text-slate-500 underline underline-offset-4 py-1"
+          >
+            {showArcs ? "Hide distances" : "Show distances"}
+          </button>
+        </>
       )}
     </div>
   );
