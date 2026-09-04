@@ -51,6 +51,7 @@ export default function Scorecard({
   mainId,
   currentHole,
   onPickHole,
+  onBack,
   onShowWholeRound,
 }: {
   course: Course;
@@ -64,6 +65,8 @@ export default function Scorecard({
   mainId: string | undefined;
   currentHole: number;
   onPickHole: (hole: number) => void;
+  /** Back to the course view — the same footer slot the course view's Scorecard button uses. */
+  onBack: () => void;
   /** Zoom out to the Round tab on this board — the third step of hole → group → field. */
   onShowWholeRound?: (boardId: string) => void;
 }) {
@@ -179,11 +182,18 @@ export default function Scorecard({
         </div>
       )}
 
-      {onShowWholeRound && board && (
-        <button className="btn-ghost w-full py-3 mt-4" onClick={() => onShowWholeRound(board.id)}>
-          See the whole round →
+      {/* Navigation lives at the bottom, in the same slot on every view: back on the
+          left (zoom in), the whole round on the right (zoom out). */}
+      <div className="mt-4 flex gap-2">
+        <button className="btn-ghost basis-1/2 py-3" onClick={onBack}>
+          ← Back to the round
         </button>
-      )}
+        {onShowWholeRound && board && (
+          <button className="btn-ghost basis-1/2 py-3" onClick={() => onShowWholeRound(board.id)}>
+            Whole round →
+          </button>
+        )}
+      </div>
     </div>
   );
 }

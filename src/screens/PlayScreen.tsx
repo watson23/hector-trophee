@@ -307,9 +307,6 @@ export default function PlayScreen({
         </div>
       ) : view === "card" ? (
         <div className="mt-3 px-4">
-          <button className="btn-ghost w-full mb-3 text-sm" onClick={() => setView("hole")}>
-            ← Back to the round
-          </button>
           <Scorecard
             course={course}
             subjects={subjects}
@@ -324,6 +321,7 @@ export default function PlayScreen({
               setView("hole");
               setEntryOpen(true);
             }}
+            onBack={() => setView("hole")}
             onShowWholeRound={(boardId) => onShowRoundBoard(round.id, boardId)}
           />
         </div>
@@ -584,7 +582,7 @@ function OnCourse({
         </button>
       )}
       <button className="btn-ghost w-full py-3" onClick={onShowCard}>
-        Scorecard
+        Scorecard →
       </button>
     </div>
   );

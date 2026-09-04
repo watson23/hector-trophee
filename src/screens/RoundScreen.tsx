@@ -135,14 +135,16 @@ export default function RoundScreen({
           ident. The register shifts with the selected round's status: a breathing
           dot and LIVE while play is on, quiet caps otherwise. */}
       {onBackToCard && (
-        <div className="px-4 pt-3">
-          <button
-            onClick={onBackToCard}
-            className="pill bg-violet-950/70 border border-violet-800 text-violet-300 font-semibold"
-          >
-            ← Back to your card
-          </button>
-        </div>
+        /* The app's floating-pill vocabulary (Admin, Exit TV sit bottom-right): the
+           way back sits bottom-left, reachable however long the board is. */
+        <button
+          onClick={onBackToCard}
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 76px)" }}
+          className="fixed left-3 z-40 rounded-full bg-violet-600/90 text-white px-3 py-1.5
+                     text-xs font-semibold shadow-lg backdrop-blur active:bg-violet-700"
+        >
+          ← Back to your card
+        </button>
       )}
       <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-3 num text-[12px] tracking-[0.12em] uppercase">
         <span className="flex items-center gap-2 shrink-0 font-semibold">
