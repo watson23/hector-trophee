@@ -77,6 +77,20 @@ export default function DraftBoard({
         </p>
       )}
 
+      {(() => {
+        const def = event.pairs.find((p) => p.defending);
+        if (!def || !nextRound || teeOf(def)) return null;
+        const defRank = Math.min(...[def.aId, def.bId].map(rankOf).filter((r) => r > 0));
+        const turn = Number.isFinite(defRank) && (!next || rankOf(next.playerId) >= defRank);
+        if (!turn) return null;
+        return (
+          <p className="mt-2.5 text-xs text-amber-300/90 leading-relaxed">
+            Defenders' turn: {byId.get(def.aId)?.name} + {byId.get(def.bId)?.name} choose their tee
+            time (#{defRank} in round 1).
+          </p>
+        );
+      })()}
+
       {defenceUnsettled && (
         <p className="mt-2.5 text-xs text-amber-300/90 leading-relaxed">
           {defenders.map((d) => d.name).join(" + ")} defend their title and sit out the draft.

@@ -314,7 +314,6 @@ function PairsEditor({
     await saveEvent({
       pairs: [{ id, aId: defenders[0].id, bId: defenders[1].id, defending: true }, ...event.pairs],
     });
-    setJustPaired(id);
   }
 
   /**
@@ -345,6 +344,23 @@ function PairsEditor({
     : [];
   const rankOf = (id: string) => order.findIndex((p) => p.playerId === id) + 1;
   const pointsOf = (id: string) => order.find((p) => p.playerId === id)?.value;
+
+  // The flow area at the top shows one thing at a time: the tee-time question for the
+  // pair just formed, the defenders' turn to choose theirs, or the next pick.
+  const pendingPair = justPaired ? event.pairs.find((p) => p.id === justPaired) : undefined;
+  const pendingTee = Boolean(pendingPair && nextRound && !flightOf(pendingPair));
+  // Defenders choose their tee time when the draft reaches the better of their round-1
+  // placings — not before. Once the picker on the clock ranks at or below that, it is
+  // their turn; if the draft is finished and they still have none, it is overdue.
+  const [defendersLater, setDefendersLater] = useState(false);
+  const defPair = event.pairs.find((p) => p.defending);
+  const defRank = defPair ? Math.min(...[defPair.aId, defPair.bId].map(rankOf).filter((r) => r > 0)) : Infinity;
+  const defendersTurn =
+    Boolean(defPair && nextRound && !flightOf(defPair!)) &&
+    Number.isFinite(defRank) &&
+    (nextUp === null || rankOf(nextUp) >= defRank) &&
+    !pendingTee &&
+    !defendersLater;
 
   async function addPair(aId: string, bId: string) {
     const id = `pair-${event.pairs.length + 1}-${aId}`;
@@ -449,17 +465,6 @@ function PairsEditor({
             <p className="text-sm font-semibold mt-0.5">
               {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
             </p>
-            {pair.defending && (
-              <p className="text-[12px] text-slate-400 leading-relaxed mt-1">
-                Defenders pick their time when the draft reaches their turn — the better of
-                their round-1 placings
-                {(() => {
-                  const best = Math.min(...[pair.aId, pair.bId].map(rankOf).filter((r) => r > 0));
-                  return Number.isFinite(best) ? `, #${best}` : "";
-                })()}
-                . "Decide later" keeps the chips on their card for then.
-              </p>
-            )}
             {teeChips(pair)}
             <button
               onClick={() => setJustPaired(null)}
@@ -471,63 +476,27 @@ function PairsEditor({
         );
       })()}
 
-      <section>
-        <h2 className="label mb-2">
-          Pairs ({event.pairs.length} of {target})
-        </h2>
-        {event.pairs.length === 0 ? (
-          <p className="text-sm text-slate-500 py-3">No pairs yet.</p>
-        ) : (
-          <ol className="space-y-2">
-            {event.pairs.map((pair, i) => (
-              <li key={pair.id} className="card p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs num text-slate-600 w-4">{i + 1}</span>
-                  <span className="text-sm font-medium truncate">
-                    {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
-                  </span>
-                  {pair.defending && (
-                    <span className="pill bg-amber-950 text-amber-300 shrink-0">defending</span>
-                  )}
-                </div>
-                {/* Two taps, like clearing a round: pairs drive the scoring for rounds
-                    2–6, so a stray thumb must not dissolve one mid-tournament. */}
-                {confirmRemove === pair.id ? (
-                  <span className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => {
-                        removePair(pair.id);
-                        setConfirmRemove(null);
-                      }}
-                      className="text-xs font-semibold text-white bg-rose-600 rounded-lg px-2 py-1"
-                    >
-                      Yes, remove
-                    </button>
-                    <button
-                      onClick={() => setConfirmRemove(null)}
-                      className="text-xs text-slate-400 px-1.5 py-1"
-                    >
-                      Cancel
-                    </button>
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => setConfirmRemove(pair.id)}
-                    className="text-xs text-rose-400 hover:text-rose-300 shrink-0 px-2"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              {nextRound && teeChips(pair)}
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
 
-      {unpaired.length > 1 && (
+      {defendersTurn && defPair && nextRound && (
+        <section className="card p-3.5 border-amber-500/30 bg-amber-500/[0.06]">
+          <h2 className="text-[12px] font-semibold uppercase tracking-wider text-amber-400">
+            Defenders' turn — pick their tee time
+          </h2>
+          <p className="text-sm font-semibold mt-0.5">
+            {byId.get(defPair.aId)?.name} + {byId.get(defPair.bId)?.name}
+            <span className="text-[12px] font-normal text-slate-400 num"> · #{defRank} in round 1</span>
+          </p>
+          {teeChips(defPair)}
+          <button
+            onClick={() => setDefendersLater(true)}
+            className="mt-2 text-[12px] text-slate-500 underline underline-offset-2"
+          >
+            Not now — the chips stay on their card below
+          </button>
+        </section>
+      )}
+
+      {unpaired.length > 1 && !pendingTee && (
         <section>
           <h2 className="label mb-2">Next pick</h2>
 
@@ -618,6 +587,62 @@ function PairsEditor({
           )}
         </section>
       )}
+
+      <section>
+        <h2 className="label mb-2">
+          Pairs ({event.pairs.length} of {target})
+        </h2>
+        {event.pairs.length === 0 ? (
+          <p className="text-sm text-slate-500 py-3">No pairs yet.</p>
+        ) : (
+          <ol className="space-y-2">
+            {event.pairs.map((pair, i) => (
+              <li key={pair.id} className="card p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs num text-slate-600 w-4">{i + 1}</span>
+                  <span className="text-sm font-medium truncate">
+                    {byId.get(pair.aId)?.name} + {byId.get(pair.bId)?.name}
+                  </span>
+                  {pair.defending && (
+                    <span className="pill bg-amber-950 text-amber-300 shrink-0">defending</span>
+                  )}
+                </div>
+                {/* Two taps, like clearing a round: pairs drive the scoring for rounds
+                    2–6, so a stray thumb must not dissolve one mid-tournament. */}
+                {confirmRemove === pair.id ? (
+                  <span className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => {
+                        removePair(pair.id);
+                        setConfirmRemove(null);
+                      }}
+                      className="text-xs font-semibold text-white bg-rose-600 rounded-lg px-2 py-1"
+                    >
+                      Yes, remove
+                    </button>
+                    <button
+                      onClick={() => setConfirmRemove(null)}
+                      className="text-xs text-slate-400 px-1.5 py-1"
+                    >
+                      Cancel
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setConfirmRemove(pair.id)}
+                    className="text-xs text-rose-400 hover:text-rose-300 shrink-0 px-2"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {nextRound && teeChips(pair)}
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </div>
   );
 }
