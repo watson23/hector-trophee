@@ -3,6 +3,7 @@ import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeText } from "../data/courses";
+import holeArcs from "../data/holeArcs.json";
 import { effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
@@ -524,12 +525,7 @@ function OnCourse({
           </button>
         )}
         {showMap && holeMapUrl(round.courseId, hole) && (
-          <img
-            src={holeMapUrl(round.courseId, hole)!}
-            alt={`Hole ${hole} layout`}
-            loading="eager"
-            className="mt-3 mx-auto max-h-[280px] w-auto max-w-[80%]"
-          />
+          <HoleMap courseId={round.courseId} hole={hole} tee={round.tee} par={par} />
         )}
 
         {/* One row per card, in flight order — the same order as the entry sheet, so
@@ -787,6 +783,50 @@ function RoundFinished({
 }
 
 /** The scorecard's colour for each result, so entry and card speak the same language. */
+type HoleArc = { w: number; h: number; arcs: Record<string, Record<string, { d: string; mid: [number, number] }>> };
+const HOLE_ARCS = holeArcs as unknown as Record<string, Record<string, HoleArc>>;
+
+/**
+ * The hole illustration with a distance arc from the round's tee. hector.golf draws
+ * the maps to scale (~2.1 px/m, checked against the tee-to-tee metre differences), so
+ * scripts/hole-arcs.py can place "200 m from this tee" as a real arc across the hole —
+ * the number a tee shot is planned around. Par 3s don't get one: the green is the target.
+ */
+function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number; tee: string; par: number }) {
+  const data = HOLE_ARCS[courseId]?.[String(hole)];
+  const arc = par >= 4 ? data?.arcs[tee]?.["200"] : undefined;
+  return (
+    <div className="mt-3 flex justify-center">
+      <div className="relative inline-block">
+        <img
+          src={holeMapUrl(courseId, hole)!}
+          alt={`Hole ${hole} layout`}
+          loading="eager"
+          className="block max-h-[280px] w-auto max-w-[80vw]"
+        />
+        {arc && data && (
+          <>
+            <svg
+              viewBox={`0 0 ${data.w} ${data.h}`}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              aria-hidden="true"
+            >
+              <path d={arc.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={4} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+              <path d={arc.d} fill="none" stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+            </svg>
+            <span
+              className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] font-semibold text-slate-300"
+              style={{ top: `${(arc.mid[1] / data.h) * 100}%` }}
+            >
+              200 m
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function quickTint(diff: number): string {
   if (diff <= -2) return "text-amber-300";
   if (diff === -1) return "text-rose-400";
