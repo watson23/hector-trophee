@@ -20,7 +20,7 @@ interface Row {
   label: string;
   mine: boolean;
   perHole: (number | null)[];
-  /** Handicap strokes per hole, for the dots on gross cells. */
+  /** Handicap strokes per hole, for the dots above gross and net cells. */
   strokes?: number[];
   headline: string;
 }
@@ -179,6 +179,12 @@ export default function Scorecard({
           <ScoreLegend />
         </div>
       )}
+      {board && board.kind !== "gross" && board.rows.some((r) => r.strokes?.some((n) => n > 0)) && (
+        <div className="mt-4 flex items-center justify-center gap-1 text-[11px] text-slate-500">
+          <span className="w-[3.5px] h-[3.5px] rounded-full bg-violet-400" />
+          Stroke received
+        </div>
+      )}
 
       {/* Navigation lives at the bottom, in the same slot on every view, each button
           named by where it lands: the current hole on the left (zoom in), the round's
@@ -225,9 +231,19 @@ function Cell({ kind, value, par, strokes }: { kind: CellKind; value: number | n
             : value === 1
               ? "text-sky-300"
               : "text-blue-400";
+  // The same stroke dots as the gross marks, so a net eagle shows the stroke that
+  // made it and a real one doesn't — "eagle or NET eagle" answered at a glance.
   return (
-    <span className={`inline-flex w-8 h-8 items-center justify-center score text-[20px] ${tint}`}>
-      {value}
+    <span className="inline-flex flex-col items-center">
+      <span className="flex h-[6px] items-center gap-[2px]">
+        {Array.from({ length: Math.min(strokes, 2) }, (_, i) => (
+          <span key={i} className="w-1 h-1 rounded-full bg-violet-400/70" />
+        ))}
+      </span>
+      <span className={`inline-flex w-8 h-8 items-center justify-center score text-[20px] ${tint}`}>
+        {value}
+      </span>
+      {strokes > 0 && <span className="sr-only">{strokes} handicap stroke</span>}
     </span>
   );
 }
