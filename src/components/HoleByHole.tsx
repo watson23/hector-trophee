@@ -78,7 +78,10 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
           const sum = played.reduce((a, i) => a + (row.values[i] ?? 0), 0);
           return (
             <tr key={row.label} className="border-t border-slate-800/70">
-              <td className="text-left font-sans text-[12px] text-slate-400 py-0.5 truncate">
+              {/* The score marks carry a 5px stroke-dot lane above the digit, so their
+                  digits sit lower than middle-aligned text. Label and total align to the
+                  bottom with the mark's 24px line, so all three read as one row. */}
+              <td className="text-left font-sans text-[12px] text-slate-400 py-0.5 leading-6 align-bottom truncate">
                 {row.label}
               </td>
               {holes.map((i) => (
@@ -94,7 +97,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
                 </td>
               ))}
               <td
-                className={`text-center py-0.5 text-[13px] font-bold ${row.emphasis ? "text-slate-100" : "text-slate-300"}`}
+                className={`text-center py-0.5 leading-6 align-bottom text-[13px] font-bold ${row.emphasis ? "text-slate-100" : "text-slate-300"}`}
               >
                 {played.length ? sum : "—"}
               </td>
