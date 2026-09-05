@@ -118,6 +118,8 @@ export default async function handler(
         report[eventId] = "no such event";
         continue;
       }
+      // Once pairs exist the draft has run: indexes keep moving, buckets are history.
+      const draftBegun = ((snap.data().pairs ?? []) as unknown[]).length > 0;
       const players = (snap.data().players ?? []) as {
         id: string;
         name: string;
@@ -131,6 +133,7 @@ export default async function handler(
         if (!f) return p; // withdrawn upstream ≠ deleted here, same as the manual refresh
         if (p.hiLocked) return p; // set by hand in Admin — the override is the point
         if (Math.abs(f.hi - p.hi) > 1e-9) changes.push(`${p.name} ${p.hi} → ${f.hi}`);
+        if (draftBegun) return { ...p, hi: f.hi };
         if (f.bucket !== p.bucket) changes.push(`${p.name} moves to bucket ${f.bucket}`);
         return { ...p, hi: f.hi, bucket: f.bucket };
       });

@@ -146,7 +146,7 @@ export default function InfoScreen({
         )}
         {activeSection === "schedule" &&
           rounds.map((r) => <RoundCard key={r.id} round={r} event={event} me={me} />)}
-        {activeSection === "field" && <Field event={event} me={me} />}
+        {activeSection === "field" && <Field event={event} me={me} rounds={rounds} />}
         {activeSection === "courses" &&
           Object.values(courses).map((c) => <CourseCard key={c.id} courseId={c.id} />)}
         {activeSection === "formats" && <Formats rounds={rounds} />}
@@ -289,13 +289,22 @@ function RoundCard({
  * coming this year, how strong the field is, and who sits near the line — the buckets
  * keep moving with the nightly handicap updates right up to Thursday's draft.
  */
-function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
-  const buckets = ([1, 2] as const).map((b) =>
-    event.players.filter((p) => p.bucket === b).sort((a, x) => a.hi - x.hi),
-  );
+function Field({ event, me, rounds }: { event: EventDoc; me: FieldPlayer | null; rounds: Round[] }) {
   const avg = (ps: FieldPlayer[]) =>
     ps.length ? ps.reduce((a, p) => a + p.hi, 0) / ps.length : 0;
   const drafted = event.pairs.length > 0;
+  /*
+   * Once the draft has run, the buckets are a record of Thursday: the index each player
+   * carried into the draft is the one round 1 froze at its opening. Indexes keep moving
+   * through the week, so a changed one is shown beside it — "13.3 → 13.1" — while the
+   * bucket itself never moves again.
+   */
+  const draftRound = rounds.find((r) => r.formats.some((f) => f.hector?.source === "betterIndividual"));
+  const atDraft = (p: FieldPlayer) => draftRound?.handicaps?.[p.id] ?? p.hi;
+  // Ordered by the index that decided the bucket, so the list keeps its Thursday shape.
+  const buckets = ([1, 2] as const).map((b) =>
+    event.players.filter((p) => p.bucket === b).sort((a, x) => (drafted ? atDraft(a) - atDraft(x) : a.hi - x.hi)),
+  );
 
   return (
     <div className="space-y-5">
@@ -311,11 +320,18 @@ function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
         </div>
       </div>
 
+      {drafted && (
+        <p className="text-[12px] text-slate-500 leading-relaxed -mt-2">
+          The buckets as drawn for the draft. Where an index has moved since, the card reads
+          "at the draft → now"; the pools themselves stay as they were.
+        </p>
+      )}
+
       {buckets.map((players, i) => (
         <section key={i}>
           <div className="flex items-baseline justify-between border-b border-slate-700/70 pb-1.5">
             <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-slate-500">
-              Bucket {i + 1}
+              {drafted ? "Draft bucket" : "Bucket"} {i + 1}
             </h3>
             <span className="text-[12px] text-slate-500 num">avg {avg(players).toFixed(1)}</span>
           </div>
@@ -331,7 +347,16 @@ function Field({ event, me }: { event: EventDoc; me: FieldPlayer | null }) {
                     <span className="ml-1.5 text-[11px] font-semibold text-violet-400">you</span>
                   )}
                 </span>
-                <span className="text-[12px] text-slate-500 num">{p.hi.toFixed(1)}</span>
+                <span className="text-[12px] text-slate-500 num">
+                  {drafted && Math.abs(atDraft(p) - p.hi) > 1e-9 ? (
+                    <>
+                      {atDraft(p).toFixed(1)} <span className="text-slate-600">→</span>{" "}
+                      <span className="text-slate-300">{p.hi.toFixed(1)}</span>
+                    </>
+                  ) : (
+                    p.hi.toFixed(1)
+                  )}
+                </span>
               </li>
             ))}
           </ul>

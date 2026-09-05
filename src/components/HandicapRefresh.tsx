@@ -47,7 +47,8 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
       const d = diffHandicaps(event.players, list);
       setFetched(list);
       setChanges(d.changes);
-      setBucketMoves(d.bucketMoves);
+      // After the draft the buckets are history: indexes move, pools don't.
+      setBucketMoves(event.pairs.length > 0 ? [] : d.bucketMoves);
       setUnmatched(d.unmatched);
       setState("ready");
     } catch (e) {
@@ -59,7 +60,7 @@ export default function HandicapRefresh({ event, rounds, saveEvent }: Props) {
   async function apply() {
     if (!fetched) return;
     setState("saving");
-    await saveEvent({ players: applyHandicaps(event.players, fetched) });
+    await saveEvent({ players: applyHandicaps(event.players, fetched, event.pairs.length > 0) });
     setDone(
       `Updated ${changes.length} handicap${changes.length === 1 ? "" : "s"}${
         bucketMoves.length > 0
