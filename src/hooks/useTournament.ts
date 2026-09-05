@@ -230,7 +230,9 @@ export function useTournament(identity: string, eventId: string): TournamentStat
             : (event.players.find((p) => p.id === subjectId)?.name ?? subjectId);
           const course = courses[round.courseId]?.shortName ?? round.courseId;
           const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : (["th", "st", "nd", "rd"][n % 10] ?? "th")}`;
-          const text = `🍾 HOLE-IN-ONE! ${who} aced the ${ordinal(hole)} at ${course} in round ${round.seq} — the first in Hector Trophée history. Champagne at the clubhouse!`;
+          // The prank-catcher: the temptation to "just see what happens" is real, and
+          // a round of beers is the traditional price. The genuine hero will understand.
+          const text = `🍾 HOLE-IN-ONE! ${who} aced the ${ordinal(hole)} at ${course} in round ${round.seq} — the first in Hector Trophée history. Champagne at the clubhouse! (In case this was a prank by ${who} after all, a round of beers on them should settle it.)`;
           void store.saveEvent({ announcements: [...existing, { id, text, at: Date.now() }] }).catch(() => {});
         }
       }
