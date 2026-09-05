@@ -58,13 +58,15 @@ export default {
           100: "#efeef3",
           200: "#dfdde4",
           300: "#c2c0c9",
-          400: "#9b99a4",
-          /* 500/600 lifted 2.9.2026 after tester feedback ("tumman harmaa mustalla
-             tekee tiukkaa"): the old values measured 3.2:1 and 2.0:1 on the card
-             ground — failing AA — and outdoor glare eats faint grey first.
-             500 now ≈5.0:1 (secondary text), 600 ≈3.2:1 (deliberate de-emphasis). */
-          500: "#858391",
-          600: "#666471",
+          /* 400/500/600 lifted again 5.9.2026 (second legibility pass, after the first
+             field tests): the small grey captions read as under-designed on black, not
+             just hard to see. 400 ≈8.5:1 (secondary numbers: gap, thru, extra lines),
+             500 ≈6.5:1 (captions, labels), 600 ≈4.4:1 (deliberate de-emphasis — still
+             AA for the 13px it is mostly set in). Sizes stay; colour does the work,
+             so nothing gets cramped. */
+          400: "#aeacb7",
+          500: "#9a98a6",
+          600: "#7c7a86",
           700: "#2c2b31",
           800: "#1d1c20",
           900: "#131215",

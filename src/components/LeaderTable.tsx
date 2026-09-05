@@ -167,8 +167,10 @@ export default function LeaderTable({
                         : ""
                   }`}
                 >
+                  {/* The position sits on the name's line, not centred between the name
+                      and the detail line below it. */}
                   <td
-                    className={`pl-2.5 py-2.5 num text-xs font-semibold ${
+                    className={`pl-2.5 pt-[13px] pb-2.5 align-top num text-xs font-semibold ${
                       r.leader ? "text-gold-400" : "text-slate-500"
                     }`}
                   >
@@ -186,7 +188,7 @@ export default function LeaderTable({
                       {fav && <span className="text-violet-400 shrink-0">★</span>}
                       <span
                         className={`truncate ${fav ? "text-violet-200 font-semibold" : ""} ${
-                          r.item.label.length > 17 ? "text-[15px] tracking-tight" : ""
+                          r.item.label.length > 14 ? "text-[15px] tracking-tight" : "text-[17px]"
                         }`}
                       >
                         {r.item.label}
@@ -204,8 +206,8 @@ export default function LeaderTable({
                     </div>
                     {r.item.extra && (
                       <div
-                        className={`text-[12px] num truncate ${
-                          r.item.extraTone === "warn" ? "text-amber-500/90" : "text-slate-500"
+                        className={`text-[13px] num truncate ${
+                          r.item.extraTone === "warn" ? "text-amber-500/90" : "text-slate-400"
                         }`}
                       >
                         {r.item.extra}
@@ -221,10 +223,10 @@ export default function LeaderTable({
                       ? (r.item.display ?? r.item.value.toFixed(decimals))
                       : "—"}
                   </td>
-                  <td className="text-right pl-2 pr-0.5 num text-[12px] text-slate-400 whitespace-nowrap">
+                  <td className="text-right pl-2 pr-0.5 num text-[13px] text-slate-300 whitespace-nowrap">
                     {r.item.played ? formatDiff(r.diff, gapDecimals ?? Math.max(decimals, 1)) : "—"}
                   </td>
-                  <td className="text-right pl-1.5 pr-2.5 num text-[12px] text-slate-400 whitespace-nowrap">
+                  <td className="text-right pl-1.5 pr-2.5 num text-[13px] text-slate-300 whitespace-nowrap">
                     {r.item.thruLabel ?? formatThru(r.item.thru, totalHoles)}
                   </td>
                 </tr>
