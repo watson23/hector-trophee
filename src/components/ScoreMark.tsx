@@ -70,8 +70,9 @@ export default function ScoreMark({
     );
   }
 
-  // A hole-in-one is gold whatever the row — the one score that outranks eagle colour.
-  const ace = value === 1;
+  // A hole-in-one is gold — the one score that outranks eagle colour. Only on a gross
+  // row: a plain row holds points or a net figure, where a 1 is nothing to celebrate.
+  const ace = !plain && value === 1;
   const style = ace
     ? { ring: "border-gold-400", radius: "rounded-full", double: true, text: "text-gold-300" }
     : plain
