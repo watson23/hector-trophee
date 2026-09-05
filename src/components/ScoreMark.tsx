@@ -51,8 +51,13 @@ export default function ScoreMark({
   par,
   strokes = 0,
   size = "md",
-  /** Points and net rows: numbers, no shapes — the shapes mean "against par". */
+  /** Net rows: numbers, no shapes — the shapes mean "against par". */
   plain = false,
+  /**
+   * Stableford points: the same shapes, read against two a hole — 0 is the deep blue of
+   * a double, 1 the bogey blue, 2 bare, 3 birdie red, 4 and 5 the eagle gold.
+   */
+  points = false,
   emphasis = false,
 }: {
   value: number | null | undefined;
@@ -60,6 +65,7 @@ export default function ScoreMark({
   strokes?: number;
   size?: ScoreSize;
   plain?: boolean;
+  points?: boolean;
   emphasis?: boolean;
 }) {
   const g = GEOM[size];
@@ -72,12 +78,14 @@ export default function ScoreMark({
 
   // A hole-in-one is gold — the one score that outranks eagle colour. Only on a gross
   // row: a plain row holds points or a net figure, where a 1 is nothing to celebrate.
-  const ace = !plain && value === 1;
+  const ace = !plain && !points && value === 1;
   const style = ace
     ? { ring: "border-gold-400", radius: "rounded-full", double: true, text: "text-gold-300" }
-    : plain
-      ? null
-      : markStyle(value - par);
+    : points
+      ? markStyle(2 - value)
+      : plain
+        ? null
+        : markStyle(value - par);
   const text = style ? style.text : emphasis ? "text-slate-100" : "text-slate-300";
 
   return (

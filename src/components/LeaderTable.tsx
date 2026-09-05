@@ -1,4 +1,5 @@
-import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from "react";
+import { usePersistentState } from "../hooks/usePersistentState";
 import { formatDiff, formatThru, rank } from "../lib/leaderboard";
 
 export interface LeaderRow {
@@ -45,7 +46,10 @@ export default function LeaderTable({
   /** Hector TV: rows a spectator follows — violet tint and a star, rank untouched. */
   highlightKeys?: Set<string>;
 }) {
-  const [open, setOpen] = useState<string | null>(null);
+  // Which row is expanded survives a reload (an app update lands mid-round) — session
+  // scoped, and shared across tables by row key, so opening yourself on the Round tab
+  // opens you on the Trophée too.
+  const [open, setOpen] = usePersistentState<string | null>("hectro_ui.leaderOpen", null, "session");
 
   /*
    * Broadcast motion, straight off live TV graphics: when the standings change, rows

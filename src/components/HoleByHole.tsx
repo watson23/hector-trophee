@@ -7,6 +7,8 @@ export interface HoleRow {
   values: (number | null)[];
   /** Colour the numbers against par, the way a scorecard does. */
   colourVsPar?: boolean;
+  /** Stableford points: the same marks, read against two a hole. */
+  points?: boolean;
   /** Mark the holes where a handicap stroke was received. */
   strokes?: number[];
   emphasis?: boolean;
@@ -90,7 +92,8 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
                     size="sm"
                     value={row.values[i]}
                     par={course.par[i]}
-                    plain={!row.colourVsPar}
+                    plain={!row.colourVsPar && !row.points}
+                    points={row.points}
                     emphasis={row.emphasis}
                     strokes={row.strokes?.[i] ?? 0}
                   />

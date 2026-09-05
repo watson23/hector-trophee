@@ -288,6 +288,7 @@ export default function RoundScreen({
                               label: f.spec.kind === "stableford" ? "pts" : "net",
                               values: p.perHole,
                               colourVsPar: f.spec.kind !== "stableford",
+                              points: f.spec.kind === "stableford",
                               emphasis: true,
                             },
                           ] as HoleRow[])

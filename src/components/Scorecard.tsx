@@ -243,6 +243,9 @@ export default function Scorecard({
 /** One cell: a score mark for gross, a tinted number for net, a weighted number for points. */
 function Cell({ kind, value, par, strokes }: { kind: CellKind; value: number | null; par: number; strokes: number }) {
   if (kind === "gross") return <ScoreMark value={value} par={par} strokes={strokes} size="lg" />;
+  // Points wear the same marks as gross, read against two a hole — one language for
+  // "how did the hole go", whichever board is open.
+  if (kind === "points") return <ScoreMark value={value} par={par} strokes={strokes} size="lg" points />;
   if (value === null) {
     return <span className="inline-flex w-8 h-8 items-center justify-center text-slate-700">·</span>;
   }
