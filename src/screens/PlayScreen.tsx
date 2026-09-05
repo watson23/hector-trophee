@@ -579,7 +579,11 @@ function OnCourse({
                     <Fragment key={k}>
                       {k > 0 && <span className="text-slate-500"> + </span>}
                       {name}
-                      {r.holeValue === null && <StrokeBall n={r.strokes[k] ?? 0} />}
+                      {r.holeValue === null && (
+                        <span className="ml-1.5 inline-flex align-middle">
+                          <StrokeBall n={r.strokes[k] ?? 0} />
+                        </span>
+                      )}
                     </Fragment>
                   ))}
                 </span>
@@ -1257,7 +1261,7 @@ function StrokeBall({ n }: { n: number }) {
     <span
       role="img"
       aria-label={label}
-      className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-full num text-[11px] font-bold align-middle ml-1.5 shrink-0 ${tone}`}
+      className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-full num text-[11px] font-bold align-middle shrink-0 ${tone}`}
     >
       {n > 0 ? n : n < 0 ? `+${-n}` : 0}
     </span>
@@ -1339,15 +1343,16 @@ function SubjectRow({
       {/* One line: name, then HCP and this hole's stroke (GameBook-signed: minus
           for strokes received) in the quiet voice. Nothing after the score is
           entered — the buttons show it. */}
-      <div className="flex items-baseline gap-2 mb-2 min-w-0">
-        <span className="font-semibold text-lg truncate">
+      {/* Name, its stroke ball right beside it (the same place as in the course view),
+          then the quiet HCP. items-center keeps the ball on the name's line, not
+          drifting towards the buttons below. No "you" badge — people know who they are;
+          the violet name already says it. */}
+      <div className="flex items-center gap-2 mb-2 min-w-0">
+        <span className={`font-semibold text-lg truncate ${subject.mine ? "text-violet-300" : ""}`}>
           {subject.name}
-          {subject.mine && (
-            <span className="ml-1.5 text-[11px] font-semibold text-violet-400 align-middle">you</span>
-          )}
         </span>
-        <span className="shrink-0 text-[12px] text-slate-500 num">{subject.detail}</span>
         <StrokeBall n={strokes} />
+        <span className="shrink-0 text-[12px] text-slate-500 num">{subject.detail}</span>
       </div>
 
       {askingAce && (
