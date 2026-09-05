@@ -18,6 +18,8 @@ interface Props {
   movement: Record<string, number>;
   highlightPlayers?: Set<string>;
   highlightPairs?: Set<string>;
+  /** The viewer's own keys — player id and pair id — for the soft wash. */
+  mineKeys?: Set<string>;
 }
 
 /**
@@ -108,6 +110,7 @@ export default function TournamentScreen({
   movement,
   highlightPlayers,
   highlightPairs,
+  mineKeys,
 }: Props) {
   const [tab, setTab] = usePersistentState<"hector" | "victor">("hectro_ui.trophy", "hector");
   const complete = isTournamentComplete(rounds);
@@ -315,6 +318,7 @@ export default function TournamentScreen({
                 wideThru
                 leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                 highlightKeys={highlightPairs}
+                mineKeys={mineKeys}
               />
             </>
           )
@@ -328,6 +332,7 @@ export default function TournamentScreen({
             wideThru
             leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
             highlightKeys={highlightPlayers}
+            mineKeys={mineKeys}
           />
         )}
       </div>

@@ -29,6 +29,8 @@ interface Props {
   /** Hector TV: followed players (and their pairs) get the violet star treatment. */
   highlightPlayers?: Set<string>;
   highlightPairs?: Set<string>;
+  /** The viewer's own keys — player id and pair id — for the soft wash. */
+  mineKeys?: Set<string>;
   /** Present only when the viewer arrived from their scorecard — a breadcrumb back. */
   onBackToCard?: () => void;
 }
@@ -42,6 +44,7 @@ export default function RoundScreen({
   onRoundChange,
   highlightPlayers,
   highlightPairs,
+  mineKeys,
   onBackToCard,
 }: Props) {
   // Fully controlled: no local copy to fall out of sync when the Play tab sends the
@@ -326,6 +329,7 @@ export default function RoundScreen({
                   gapDecimals={0}
                   leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
+                  mineKeys={mineKeys}
                 />
               </div>
             </section>
@@ -390,6 +394,7 @@ export default function RoundScreen({
                     scoreHeader="To par"
                     leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                     highlightKeys={highlightPairs}
+                    mineKeys={mineKeys}
                   />
                 </div>
                 <p className="px-4 mt-2 text-[12px] text-slate-500 leading-relaxed">

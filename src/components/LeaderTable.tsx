@@ -31,6 +31,7 @@ export default function LeaderTable({
   leaderMark,
   wideThru = false,
   highlightKeys,
+  mineKeys,
 }: {
   rows: LeaderRow[];
   lowerIsBetter: boolean;
@@ -45,6 +46,9 @@ export default function LeaderTable({
   wideThru?: boolean;
   /** Hector TV: rows a spectator follows — violet tint and a star, rank untouched. */
   highlightKeys?: Set<string>;
+  /** The signed-in player's own rows (their id, their pair's id): a soft violet wash and
+      a violet name, so finding yourself in twenty rows is a glance. */
+  mineKeys?: Set<string>;
 }) {
   // Which row is expanded survives a reload (an app update lands mid-round) — session
   // scoped, and shared across tables by row key, so opening yourself on the Round tab
@@ -151,6 +155,7 @@ export default function LeaderTable({
             const isOpen = open === r.item.key;
             // The leader's amber wins over the favourite's violet when they coincide.
             const fav = !r.leader && highlightKeys?.has(r.item.key);
+            const mine = !r.leader && !fav && mineKeys?.has(r.item.key);
             return (
               <Fragment key={r.item.key}>
                 <tr
@@ -164,7 +169,9 @@ export default function LeaderTable({
                       ? "shadow-[inset_3px_0_0_theme(colors.gold.400)]"
                       : fav
                         ? "bg-violet-500/10 shadow-[inset_2px_0_0_theme(colors.violet.500)]"
-                        : ""
+                        : mine
+                          ? "bg-violet-500/[0.08]"
+                          : ""
                   }`}
                 >
                   {/* The position sits on the name's line, not centred between the name
@@ -187,7 +194,7 @@ export default function LeaderTable({
                       {r.leader && ranked.filter((x) => x.leader).length === 1 && leaderMark}
                       {fav && <span className="text-violet-400 shrink-0">★</span>}
                       <span
-                        className={`truncate ${fav ? "text-violet-200 font-semibold" : ""} ${
+                        className={`truncate ${fav ? "text-violet-200 font-semibold" : mine ? "text-violet-300 font-semibold" : ""} ${
                           r.item.label.length > 14 ? "text-[15px] tracking-tight" : "text-[17px]"
                         }`}
                       >

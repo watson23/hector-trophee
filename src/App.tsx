@@ -88,6 +88,14 @@ export default function App() {
     () => t.event?.players.find((p) => p.id === session.playerId) ?? null,
     [t.event, session.playerId],
   );
+  // The viewer's own rows on leaderboards: their id and, once drafted, their pair's id.
+  const mineKeys = useMemo(() => {
+    if (!me) return undefined;
+    const keys = new Set<string>([me.id]);
+    const pair = t.event?.pairs.find((p) => p.aId === me.id || p.bId === me.id);
+    if (pair) keys.add(pair.id);
+    return keys;
+  }, [me, t.event]);
 
   // Usage bookkeeping: one "open" per signed-in session, and each tab as it is shown.
   const openRecorded = useRef<string | null>(null);
@@ -322,6 +330,7 @@ export default function App() {
                 cards={t.cards}
                 roundId={roundSel ?? activeRound?.id ?? null}
                 onRoundChange={setRoundSel}
+                mineKeys={mineKeys}
                 onBackToCard={
                   returnToCard
                     ? () => {
@@ -333,7 +342,13 @@ export default function App() {
               />
             )}
             {tab === "tournament" && (
-              <TournamentScreen rounds={t.rounds} hector={t.hector} victor={t.victor} movement={t.hectorMovement} />
+              <TournamentScreen
+                rounds={t.rounds}
+                hector={t.hector}
+                victor={t.victor}
+                movement={t.hectorMovement}
+                mineKeys={mineKeys}
+              />
             )}
             {tab === "info" && (
               <InfoScreen
