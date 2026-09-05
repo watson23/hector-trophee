@@ -9,6 +9,8 @@ export interface HoleRow {
   colourVsPar?: boolean;
   /** Stableford points: the same marks, read against two a hole. */
   points?: boolean;
+  /** Show this row's 18-hole total under the nines (the gross stroke count). */
+  total?: boolean;
   /** Mark the holes where a handicap stroke was received. */
   strokes?: number[];
   emphasis?: boolean;
@@ -36,6 +38,20 @@ export default function HoleByHole({
       {[0, 9].map((from) => (
         <Nine key={from} course={course} rows={rows} from={from} />
       ))}
+      {/* The whole round's stroke count — from the first hole, quiet until all 18 are in,
+          so nothing appears by surprise on the 18th and nobody adds two nines in their head. */}
+      {rows
+        .filter((r) => r.total)
+        .map((r) => {
+          const played = r.values.filter((v): v is number => v !== null);
+          if (played.length === 0) return null;
+          const done = played.length === 18;
+          return (
+            <p key={r.label} className={`num text-[12px] text-right ${done ? "text-slate-200 font-semibold" : "text-slate-500"}`}>
+              {played.reduce((a, b) => a + b, 0)} strokes{done ? "" : ` · ${played.length} holes`}
+            </p>
+          );
+        })}
       {footer && <p className="text-[11px] text-slate-500 leading-relaxed">{footer}</p>}
     </div>
   );
@@ -116,6 +132,7 @@ function Nine({ course, rows, from }: { course: Course; rows: HoleRow[]; from: n
 export function grossRow(card: Card | undefined, label: string, strokes?: number[]): HoleRow {
   return {
     label,
+    total: true,
     values: Array.from({ length: 18 }, (_, i) => {
       const v = card?.holes?.[String(i + 1)];
       return typeof v === "number" && v > 0 ? v : null;
