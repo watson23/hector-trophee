@@ -71,6 +71,19 @@ const scramble = (pct: number, bonuses?: FormatSpec["bonuses"]): FormatSpec => (
   ...(bonuses ? { bonuses } : {}),
 });
 
+/**
+ * The formats an organiser can put on a round, as Admin offers them — the same specs the
+ * programme uses, so a field test plays exactly what the tournament will, and a reshuffle
+ * by the rules committee is a matter of ticking boxes.
+ */
+export const FORMAT_PRESETS: { id: string; label: string; spec: FormatSpec }[] = [
+  { id: "stableford", label: "Stableford NET", spec: stablefordVictor() },
+  { id: "strokeplay-net", label: "Stroke Play NET", spec: strokePlayNet },
+  { id: "strokeplay-scr", label: "Stroke Play SCR", spec: strokePlayGross },
+  { id: "betterball", label: "Better Ball NET", spec: betterBall },
+  { id: "scramble", label: "Scramble NET", spec: scramble(1.0) },
+];
+
 /** The resort books five tee times per round — the sheet's size is a fact, not a preference. */
 export const DEFAULT_FLIGHT_COUNT = 5;
 

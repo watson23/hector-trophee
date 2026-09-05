@@ -6,7 +6,7 @@ import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/fl
 import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair, HoleCapRule, UsageDay } from "../types";
 import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
-import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
+import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds, FORMAT_PRESETS } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
 import { SPACES, spaceLink, spaceMeta, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
@@ -1410,15 +1410,57 @@ function RoundEditorCard({
         </p>
       )}
 
-      <ul className="text-[12px] text-slate-500 space-y-0.5">
-        {round.formats.map((f) => (
-          <li key={f.id}>
-            {f.label} · {Math.round(f.allowance * 100)}%
-            {f.hector && ` · Hector ${Math.round(f.hector.pct * 100)}% ${f.hector.source}`}
-            {f.victor && " · Victor"}
-          </li>
-        ))}
-      </ul>
+      {/* Formats: tick what the round plays; the first listed is the main game (the one
+          the course view follows), and any other can be moved up to take its place.
+          Presets carry the tournament's own Hector/Victor settings. */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="label">Formats</span>
+          <span className="text-[11px] text-slate-600">first = main game</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {FORMAT_PRESETS.map((p) => {
+            const on = round.formats.some((f) => f.id === p.id);
+            return (
+              <button
+                key={p.id}
+                onClick={() => {
+                  const next = on
+                    ? round.formats.filter((f) => f.id !== p.id)
+                    : [...round.formats, p.spec];
+                  if (next.length === 0) return; // a round always plays something
+                  void patch({ formats: next });
+                }}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                  on ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-400"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+        <ul className="text-[12px] text-slate-500 space-y-0.5">
+          {round.formats.map((f, i) => (
+            <li key={f.id} className="flex items-center gap-2">
+              <span className="min-w-0 truncate">
+                {i === 0 && <span className="text-violet-300 font-semibold">main · </span>}
+                {f.label} · {Math.round(f.allowance * 100)}%
+                {f.hector && ` · Hector ${Math.round(f.hector.pct * 100)}% ${f.hector.source}`}
+                {f.victor && " · Victor"}
+              </span>
+              {i > 0 && (
+                <button
+                  onClick={() => void patch({ formats: [f, ...round.formats.filter((x) => x.id !== f.id)] })}
+                  className="shrink-0 underline underline-offset-2 text-slate-400"
+                >
+                  make main
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
