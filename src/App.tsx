@@ -158,7 +158,7 @@ export default function App() {
     const tvTab: Tab = ["round", "tournament", "info"].includes(tab) ? tab : "round";
     return (
       <div className="min-h-dvh">
-        <SpaceBanner space={space} />
+        <SpaceBanner space={space} canSwitch={session.admin} />
         <TVBar following={following} players={t.event.players} onEdit={() => setEditFollows(true)} />
         <main className="max-w-lg mx-auto pb-32">
           {tvTab === "round" && (
@@ -235,7 +235,7 @@ export default function App() {
     // before you type the event code, not after.
     return (
       <div className="min-h-dvh">
-        <SpaceBanner space={space} />
+        <SpaceBanner space={space} canSwitch={session.admin} />
         <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
         <Onboarding
           event={t.event}
@@ -253,7 +253,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh">
-      <SpaceBanner space={space} />
+      <SpaceBanner space={space} canSwitch={session.admin} />
       <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
 
       <main className="max-w-lg mx-auto pb-32">

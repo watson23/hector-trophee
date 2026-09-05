@@ -107,13 +107,18 @@ export function TabBar({
  * this stays at the top. The way back is right in the banner, so a device can always
  * return to the tournament without hunting for the admin toggle.
  */
-export function SpaceBanner({ space }: { space: Space }) {
+export function SpaceBanner({ space, canSwitch = true }: { space: Space; canSwitch?: boolean }) {
   if (space === "live") return null;
   const meta = spaceMeta(space);
   const tone =
     meta.tone === "test"
       ? "bg-sky-950/80 border-sky-900 text-sky-300"
       : "bg-amber-950/70 border-amber-900 text-amber-300";
+  // A field tester without organiser access has no way back into the field event if
+  // they tap out of it — so for them the banner just says where they are.
+  if (!canSwitch) {
+    return <div className={`${tone} border-b text-xs px-4 py-1.5 text-center`}>{meta.label} — not the real tournament.</div>;
+  }
   return (
     <div className={`${tone} border-b text-xs px-4 py-1.5 text-center`}>
       {meta.label} — not the real tournament.{" "}
