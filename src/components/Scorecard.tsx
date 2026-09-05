@@ -25,6 +25,12 @@ interface Row {
   /** On a points board, the gross strokes behind the points — the number a golfer reads first. */
   gross?: (number | null)[];
   headline: string;
+  /**
+   * Running gross stroke total over the holes played, and whether all 18 are in. Shown
+   * from the first hole (nothing appears by surprise on the 18th), quiet until final.
+   * Individual cards only — a pair's counted strokes are not a stroke total.
+   */
+  total?: { strokes: number; holes: number };
 }
 
 interface Board {
@@ -156,7 +162,18 @@ export default function Scorecard({
               <span className={`text-base font-semibold truncate ${r.mine ? "text-violet-300" : ""}`}>
                 {r.label}
               </span>
-              <span className={`score text-2xl shrink-0 ${r.mine ? "text-violet-300" : ""}`}>{r.headline}</span>
+              <span className="shrink-0 flex items-baseline gap-2">
+                {r.total && r.total.holes > 0 && (
+                  <span
+                    className={`num text-[12px] ${
+                      r.total.holes === 18 ? "text-slate-200 font-semibold" : "text-slate-500"
+                    }`}
+                  >
+                    {r.total.strokes} strokes{r.total.holes < 18 ? ` · ${r.total.holes} holes` : ""}
+                  </span>
+                )}
+                <span className={`score text-2xl ${r.mine ? "text-violet-300" : ""}`}>{r.headline}</span>
+              </span>
             </div>
             <div className="grid grid-cols-[repeat(9,minmax(0,1fr))_2.4rem] gap-x-0.5 items-end">
               {holes.map((i) => (
@@ -316,6 +333,7 @@ function buildBoards(
             kind === "points"
               ? course.par.map((_, i) => cards[p.playerId]?.holes?.[String(i + 1)] ?? null)
               : undefined,
+          total: grossTotal(cards[p.playerId]),
           // The nine's total (strokes or points) already ends the hole row, so the
           // headline is always to par — on Stableford, points against two a hole.
           headline: p.thru === 0 ? "—" : formatToPar(toPar),
@@ -346,11 +364,19 @@ function buildBoards(
         perHole,
         strokes: s.strokes,
         headline: thru > 0 ? formatToPar(gross - parPlayed) : "—",
+        total: grossTotal(cards[s.id]),
       };
     });
     boards.push({ id: "scratch", label: "Scratch", kind: "gross", rows });
   }
   return boards;
+}
+
+/** Gross strokes over the holes entered on a card, and how many holes that is. */
+function grossTotal(card: Card | undefined): { strokes: number; holes: number } | undefined {
+  if (!card?.holes) return undefined;
+  const values = Object.values(card.holes).filter((v): v is number => typeof v === "number" && v > 0);
+  return { strokes: values.reduce((a, b) => a + b, 0), holes: values.length };
 }
 
 function firstIndex(pairId: string, event: EventDoc, flightIds: string[]): number {
