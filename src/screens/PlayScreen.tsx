@@ -448,6 +448,8 @@ function OnCourse({
   type Row = {
     key: string;
     label: string;
+    /** One name per card holder, in the same order as `strokes` — a pair has two. */
+    names: string[];
     mine: boolean;
     /** What the format counted on the hole in view, or null if not played yet. */
     holeValue: number | null;
@@ -473,6 +475,9 @@ function OnCourse({
       rows.push({
         key: t.pairId,
         label: t.label,
+        names: teamSubject
+          ? [t.label]
+          : [pair!.aId, pair!.bId].map((id) => event.players.find((p) => p.id === id)?.name ?? id),
         mine: Boolean(teamSubject?.mine || partners.some((p) => p?.mine)),
         holeValue: t.perHole[hole - 1] ?? null,
         gross: false,
@@ -490,6 +495,7 @@ function OnCourse({
       rows.push({
         key: sub.id,
         label: sub.name,
+        names: [sub.name],
         mine: Boolean(sub.mine),
         holeValue: cards[sub.id]?.holes?.[String(hole)] ?? null,
         gross: true,
@@ -567,7 +573,15 @@ function OnCourse({
                     r.mine ? "font-semibold text-violet-300" : "text-slate-200"
                   }`}
                 >
-                  {r.label}
+                  {/* Before the hole is played, each name carries its own stroke ball —
+                      a pair's two balls can never be mistaken for one another. */}
+                  {r.names.map((name, k) => (
+                    <Fragment key={k}>
+                      {k > 0 && <span className="text-slate-500"> + </span>}
+                      {name}
+                      {r.holeValue === null && <StrokeBall n={r.strokes[k] ?? 0} />}
+                    </Fragment>
+                  ))}
                 </span>
                 <span className={`${cell} flex justify-center`}>
                   {r.holeValue !== null ? (
@@ -576,23 +590,10 @@ function OnCourse({
                        ring/box marks; here legibility on the move wins.) */
                     <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
                   ) : (
-                    /* Not played yet: the strokes received here, as the same violet dots
-                       the scorecard uses — "−1" read like last hole's result. A pair shows
-                       its partners side by side; a plus-handicap stroke given is "+1". */
-                    <span className="flex items-center gap-1.5" aria-label={r.strokes.map(strokeText).join(", ")}>
-                      {r.strokes.map((n, i) => (
-                        <span key={i} className="flex items-center gap-[3px]">
-                          {n > 0 ? (
-                            Array.from({ length: Math.min(n, 3) }, (_, k) => (
-                              <span key={k} className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400/80" />
-                            ))
-                          ) : n < 0 ? (
-                            <span className="num text-xs text-rose-400">+{Math.abs(n)}</span>
-                          ) : (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full border border-slate-700" />
-                          )}
-                        </span>
-                      ))}
+                    /* Not played yet: the strokes live on the names; this column waits
+                       for the result. */
+                    <span className="text-slate-600" aria-label={r.strokes.map(strokeText).join(", ")}>
+                      –
                     </span>
                   )}
                 </span>
@@ -605,10 +606,9 @@ function OnCourse({
         </div>
       </div>
 
-      {rows.some((r) => r.holeValue === null && r.strokes.some((n) => n > 0)) && (
-        <p className="-mt-1 text-[11px] text-slate-500 text-right pr-1">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400/80 align-middle mr-1" />
-          stroke received on this hole
+      {rows.some((r) => r.holeValue === null) && (
+        <p className="-mt-1 text-[11px] text-slate-500 text-right pr-1 flex items-center justify-end gap-1">
+          <StrokeBall n={1} /> strokes received on this hole
         </p>
       )}
 
@@ -1240,6 +1240,30 @@ function fallbackGroup(me: FieldPlayer, event: EventDoc): string[] {
   return [pair.aId, pair.bId];
 }
 
+/**
+ * Strokes received on the hole, as a small ball with the number in it: violet for one
+ * or more, grey for none, rose for a stroke given (plus handicap). One glyph, the same
+ * in the course view and the entry sheet, so it is learnt once.
+ */
+function StrokeBall({ n }: { n: number }) {
+  const tone =
+    n > 0
+      ? "bg-violet-500 text-white"
+      : n < 0
+        ? "bg-rose-500/80 text-white"
+        : "bg-slate-800 text-slate-500 border border-slate-700";
+  const label = n > 0 ? `${n} stroke${n > 1 ? "s" : ""} received` : n < 0 ? `${-n} stroke given` : "no stroke";
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-full num text-[11px] font-bold align-middle ml-1.5 shrink-0 ${tone}`}
+    >
+      {n > 0 ? n : n < 0 ? `+${-n}` : 0}
+    </span>
+  );
+}
+
 function NavButton({
   dir,
   disabled,
@@ -1323,11 +1347,7 @@ function SubjectRow({
           )}
         </span>
         <span className="shrink-0 text-[12px] text-slate-500 num">{subject.detail}</span>
-        {strokes !== 0 && (
-          <span className={`shrink-0 text-[12px] num font-semibold ${strokes > 0 ? "text-emerald-400" : "text-rose-400"}`}>
-            {strokes > 0 ? `−${strokes}` : `+${Math.abs(strokes)}`}
-          </span>
-        )}
+        <StrokeBall n={strokes} />
       </div>
 
       {askingAce && (

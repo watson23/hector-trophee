@@ -120,3 +120,12 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 - OG image: broadcast composition (eagle, tracked wordmark, chyron), fonts
   match the app. Regenerate rather than hand-edit.
 - Google Fonts + hector.golf images are runtime-cached by the service worker.
+
+## Strokes received on a hole
+
+One glyph, learnt once: a small ball with the number in it, placed right after the
+player's name — violet for one or more strokes, grey for none, rose for a stroke given
+(plus handicap). In the course view every name in a row carries its own ball while the
+hole is unplayed, so a pair's two balls are never mistaken for one another; the HOLE
+column waits with a dash. The entry sheet uses the same ball on its name line. The
+scorecard, where space is tight, keeps its violet dots above the digits.
