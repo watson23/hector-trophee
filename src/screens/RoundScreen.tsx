@@ -271,6 +271,9 @@ export default function RoundScreen({
                 display: formatToPar(p.toPar ?? 0),
                 extra: [
                   f.spec.kind === "stableford" && p.thru > 0 ? `${p.value} pts` : null,
+                  // Scratch, once the card is complete: the number the terrace talks about.
+                  // Not mid-round — 61 strokes after 13 holes is nobody's conversation.
+                  f.spec.kind === "strokeplay" && !f.spec.net && p.thru >= 18 ? `${p.value} strokes` : null,
                   f.spec.net ? `playing HCP ${p.playingHcp}` : null,
                 ]
                   .filter(Boolean)
