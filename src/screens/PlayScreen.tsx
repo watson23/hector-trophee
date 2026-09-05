@@ -91,6 +91,12 @@ export default function PlayScreen({
     null,
     "session",
   );
+  /*
+   * Opening a round no longer throws every phone onto the course. The front page —
+   * photo, tee time, playing handicap — stays until the player taps "Start playing",
+   * or until their flight has a score in (a reload mid-round lands back on the course).
+   */
+  const [playingRound, setPlayingRound] = usePersistentState<string | null>("hectro_ui.playing", null);
 
   const course = round ? courses[round.courseId] : null;
 
@@ -168,7 +174,10 @@ export default function PlayScreen({
    * waiting screen built around the player's own flight, with score entry one
    * deliberate tap away rather than the default.
    */
-  if (round.status !== "open" && scoreAnyway !== round.id) {
+  const flightHasScores = subjects.some((s) => Object.keys(cards[s.id]?.holes ?? {}).length > 0);
+  const onCourse =
+    round.status === "open" ? playingRound === round.id || flightHasScores : scoreAnyway === round.id;
+  if (!onCourse) {
     const complete = rounds.length > 0 && rounds.every((r) => r.status === "final");
     const lastFinal = [...rounds].reverse().find((r) => r.status === "final");
     const hcpChecklist = me && (
@@ -214,6 +223,7 @@ export default function PlayScreen({
         lastFinal={lastFinal ?? null}
         onShowRound={onShowRound}
         onScoreAnyway={() => setScoreAnyway(round.id)}
+        onStart={round.status === "open" ? () => setPlayingRound(round.id) : undefined}
         hcpSection={
           me ? (
             <HcpSection rounds={rounds} allCards={allCards} me={me} onToggle={setHcpSubmitted} />
@@ -377,6 +387,7 @@ export default function PlayScreen({
           onEnter={() => setEntryOpen(true)}
           onFinish={() => setFinishedRound(round.id)}
           onShowCard={() => setView("card")}
+          onLeave={round.status === "open" ? () => setPlayingRound(null) : undefined}
         />
       )}
       <p className="sr-only">{teeText(round.tee)}, course rating {tee.cr}, slope {tee.slope}.</p>
@@ -403,6 +414,7 @@ function OnCourse({
   onEnter,
   onFinish,
   onShowCard,
+  onLeave,
 }: {
   round: Round;
   course: NonNullable<(typeof courses)[string]>;
@@ -417,6 +429,8 @@ function OnCourse({
   onEnter: () => void;
   onFinish: () => void;
   onShowCard: () => void;
+  /** Back to the round's front page (tee times, photo, handicap). */
+  onLeave?: () => void;
 }) {
   const [showMap, setShowMap] = usePersistentState("hectro_ui.holemap", false);
   const par = course.par[hole - 1];
@@ -610,6 +624,13 @@ function OnCourse({
       <button className="btn-ghost w-full py-3" onClick={onShowCard}>
         Scorecard →
       </button>
+      {/* Back to the front page — only while the flight has nothing on the card yet,
+          since a score in makes the course view the home screen again. */}
+      {onLeave && subjects.every((s) => Object.keys(cards[s.id]?.holes ?? {}).length === 0) && (
+        <button onClick={onLeave} className="w-full text-center text-[12px] text-slate-500 underline underline-offset-4 py-1">
+          Tee times & round info
+        </button>
+      )}
     </div>
   );
 }
@@ -1057,6 +1078,7 @@ function NextRound({
   lastFinal,
   onShowRound,
   onScoreAnyway,
+  onStart,
   hcpSection,
 }: {
   round: Round;
@@ -1066,6 +1088,8 @@ function NextRound({
   lastFinal: Round | null;
   onShowRound: (roundId: string) => void;
   onScoreAnyway: () => void;
+  /** Set once the round is open: the player's own step onto the course. */
+  onStart?: () => void;
   /** HCP bookkeeping, embedded in the card so it sits at the fold instead of
       below a full tee sheet nobody has reason to scroll past. */
   hcpSection?: React.ReactNode;
@@ -1095,7 +1119,16 @@ function NextRound({
             · {(round.formats.find((f) => f.hector) ?? round.formats[0])?.label.replace(/^(Better Ball|Scramble) Stroke Play/, "$1")}
           </span>
         }
-        right={<span className="pill bg-slate-800 text-slate-300 shrink-0">Up next</span>}
+        right={
+          onStart ? (
+            <span className="pill bg-emerald-950 text-emerald-300 shrink-0 inline-flex items-center gap-1.5">
+              <span className="live-dot" />
+              Open
+            </span>
+          ) : (
+            <span className="pill bg-slate-800 text-slate-300 shrink-0">Up next</span>
+          )
+        }
       />
 
       <div className="px-4 space-y-3">
@@ -1173,18 +1206,25 @@ function NextRound({
           </button>
         )}
 
-        {/* The escape hatch for a flight already on the tee before the round is
-            opened — worded for that case only, and kept deliberately drab: an
-            invitation to defy "the organiser" would find takers on this trip. */}
-        <p className="text-[12px] text-slate-600 text-center leading-relaxed pt-1">
-          Scoring opens with the round.{" "}
-          <button
-            onClick={onScoreAnyway}
-            className="text-slate-500 underline underline-offset-2 hover:text-slate-400"
-          >
-            Teeing off before it has been opened? Start scoring
+        {onStart ? (
+          /* The round is open: the way onto the course is the player's own tap. */
+          <button className="btn-primary w-full py-4 text-lg" onClick={onStart}>
+            Start playing →
           </button>
-        </p>
+        ) : (
+          /* The escape hatch for a flight already on the tee before the round is
+              opened — worded for that case only, and kept deliberately drab: an
+              invitation to defy "the organiser" would find takers on this trip. */
+          <p className="text-[12px] text-slate-600 text-center leading-relaxed pt-1">
+            Scoring opens with the round.{" "}
+            <button
+              onClick={onScoreAnyway}
+              className="text-slate-500 underline underline-offset-2 hover:text-slate-400"
+            >
+              Teeing off before it has been opened? Start scoring
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
