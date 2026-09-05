@@ -495,14 +495,14 @@ function OnCourse({
           just browsing there first. */}
       <div className="card px-3 py-4 text-center">
         <div className="flex items-center justify-between gap-2">
-          <NavButton dir="prev" disabled={hole === 1} onClick={() => setHoleNo(Math.max(1, hole - 1))} />
+          <NavButton dir="prev" disabled={false} onClick={() => setHoleNo(hole === 1 ? 18 : hole - 1)} />
           <div>
             <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
               Hole
             </div>
             <div className="score text-6xl leading-none mt-0.5">{hole}</div>
           </div>
-          <NavButton dir="next" disabled={hole === 18} onClick={() => setHoleNo(Math.min(18, hole + 1))} />
+          <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
         </div>
         <div className="mt-2 text-sm text-slate-400 num">
           Par {par} · SI {si}
@@ -562,12 +562,23 @@ function OnCourse({
                        ring/box marks; here legibility on the move wins.) */
                     <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
                   ) : (
-                    <span
-                      className={`num text-base font-semibold whitespace-nowrap ${
-                        r.strokes.some((n) => n !== 0) ? "text-emerald-400" : "text-slate-600"
-                      }`}
-                    >
-                      {r.strokes.map(strokeText).join("·")}
+                    /* Not played yet: the strokes received here, as the same violet dots
+                       the scorecard uses — "−1" read like last hole's result. A pair shows
+                       its partners side by side; a plus-handicap stroke given is "+1". */
+                    <span className="flex items-center gap-1.5" aria-label={r.strokes.map(strokeText).join(", ")}>
+                      {r.strokes.map((n, i) => (
+                        <span key={i} className="flex items-center gap-[3px]">
+                          {n > 0 ? (
+                            Array.from({ length: Math.min(n, 3) }, (_, k) => (
+                              <span key={k} className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400/80" />
+                            ))
+                          ) : n < 0 ? (
+                            <span className="num text-xs text-rose-400">+{Math.abs(n)}</span>
+                          ) : (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full border border-slate-700" />
+                          )}
+                        </span>
+                      ))}
                     </span>
                   )}
                 </span>
@@ -579,6 +590,13 @@ function OnCourse({
           })}
         </div>
       </div>
+
+      {rows.some((r) => r.holeValue === null && r.strokes.some((n) => n > 0)) && (
+        <p className="-mt-1 text-[11px] text-slate-500 text-right pr-1">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400/80 align-middle mr-1" />
+          stroke received on this hole
+        </p>
+      )}
 
       {complete ? (
         <button className="btn-primary w-full py-4 text-lg" onClick={onFinish}>
@@ -638,7 +656,8 @@ function EntrySheet({
   return (
     <div className="pt-3 px-4">
       <div className="flex items-center justify-between gap-2">
-        <NavButton dir="prev" disabled={hole === 1} onClick={() => setHoleNo(Math.max(1, hole - 1))} />
+        {/* The card wraps: a flight starting from the 10th walks 18 → 1 like everyone else. */}
+        <NavButton dir="prev" disabled={false} onClick={() => setHoleNo(hole === 1 ? 18 : hole - 1)} />
         <div className="text-center">
           <div className="score text-4xl leading-none">{hole}</div>
           <div className="text-[12px] text-slate-500 num mt-0.5">
@@ -646,7 +665,7 @@ function EntrySheet({
             {metres ? ` · ${metres} m` : ""}
           </div>
         </div>
-        <NavButton dir="next" disabled={hole === 18} onClick={() => setHoleNo(Math.min(18, hole + 1))} />
+        <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
       </div>
 
       <div className="mt-2 divide-y divide-slate-800">
@@ -673,19 +692,20 @@ function EntrySheet({
         <button className="btn-ghost basis-1/3 py-3" onClick={onClose}>
           Done
         </button>
-        {hole < 18 ? (
+        {hole < 18 || !complete ? (
           <button
             className="btn-primary basis-2/3 py-3 text-lg"
             disabled={!allScored}
             onClick={() => {
-              setHoleNo(hole + 1);
+              // From the 18th with holes still open (a back-nine start), on to the 1st.
+              setHoleNo(hole === 18 ? 1 : hole + 1);
               onClose();
             }}
           >
             Next hole →
           </button>
         ) : (
-          <button className="btn-primary basis-2/3 py-3 text-lg" disabled={!complete} onClick={onFinish}>
+          <button className="btn-primary basis-2/3 py-3 text-lg" onClick={onFinish}>
             Finish round
           </button>
         )}

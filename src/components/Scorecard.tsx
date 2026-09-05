@@ -22,6 +22,8 @@ interface Row {
   perHole: (number | null)[];
   /** Handicap strokes per hole, for the dots above gross and net cells. */
   strokes?: number[];
+  /** On a points board, the gross strokes behind the points — the number a golfer reads first. */
+  gross?: (number | null)[];
   headline: string;
 }
 
@@ -170,6 +172,22 @@ export default function Scorecard({
                 {entered.length > 0 ? nineSum : "–"}
               </div>
             </div>
+            {/* Stableford: the strokes behind the points, in a quiet line beneath — a
+                golfer reads "5" before "1 pt", and the Scratch board is a tab away. */}
+            {r.gross && (
+              <div className="grid grid-cols-[repeat(9,minmax(0,1fr))_2.4rem] gap-x-0.5 mt-0.5 num text-[11px] text-slate-500">
+                {holes.map((i) => (
+                  <div key={`g${i}`} className="text-center">
+                    {r.gross![i] ?? ""}
+                  </div>
+                ))}
+                <div className="text-center">
+                  {holes.some((i) => r.gross![i] != null)
+                    ? holes.reduce((a, i) => a + (r.gross![i] ?? 0), 0)
+                    : ""}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -294,6 +312,10 @@ function buildBoards(
           mine: isMine([p.playerId]),
           perHole: p.perHole,
           strokes: p.strokes,
+          gross:
+            kind === "points"
+              ? course.par.map((_, i) => cards[p.playerId]?.holes?.[String(i + 1)] ?? null)
+              : undefined,
           // The nine's total (strokes or points) already ends the hole row, so the
           // headline is always to par — on Stableford, points against two a hole.
           headline: p.thru === 0 ? "—" : formatToPar(toPar),
