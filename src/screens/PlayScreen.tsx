@@ -1149,6 +1149,14 @@ function NextRound({
             )}
           </div>
 
+          {onStart && (
+            /* The round is open: the way onto the course sits right under the tee time,
+               where the eye already is — not below the flights and the bookkeeping. */
+            <button className="btn-primary w-full py-4 text-lg mt-4" onClick={onStart}>
+              Start playing →
+            </button>
+          )}
+
           <div className="mt-4 border-t border-slate-800 pt-3">
             <div className="label mb-1.5">{group ? "Your flight" : "Flights"}</div>
             {flight.length > 0 ? (
@@ -1206,12 +1214,7 @@ function NextRound({
           </button>
         )}
 
-        {onStart ? (
-          /* The round is open: the way onto the course is the player's own tap. */
-          <button className="btn-primary w-full py-4 text-lg" onClick={onStart}>
-            Start playing →
-          </button>
-        ) : (
+        {!onStart && (
           /* The escape hatch for a flight already on the tee before the round is
               opened — worded for that case only, and kept deliberately drab: an
               invitation to defy "the organiser" would find takers on this trip. */
