@@ -29,6 +29,8 @@ export interface FieldPlayer {
   /** WHS Handicap Index. */
   hi: number;
   bucket: 1 | 2;
+  /** Set by hand in Admin: the daily refresh from hector.golf leaves this index alone. */
+  hiLocked?: boolean;
 }
 
 export interface Pair {

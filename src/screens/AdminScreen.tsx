@@ -12,6 +12,7 @@ import { SPACES, spaceLink, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import BackupAdmin, { type BackupApi } from "./BackupAdmin";
 import HandicapRefresh from "../components/HandicapRefresh";
+import HandicapAdjust from "../components/HandicapAdjust";
 
 interface Props {
   event: EventDoc;
@@ -159,6 +160,7 @@ export default function AdminScreen({
             <HoleCapCard event={event} saveEvent={saveEvent} />
             <RoundsEditor rounds={rounds} saveRound={saveRound} patchRound={patchRound} />
             <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
+            <HandicapAdjust event={event} rounds={rounds} saveEvent={saveEvent} patchRound={patchRound} />
             <UsageCard players={event.players} usage={usage} />
           </>
         )}

@@ -74,6 +74,8 @@ export function applyHandicaps(current: FieldPlayer[], fetched: FetchedHandicap[
   const byId = new Map(fetched.map((f) => [f.id, f]));
   return current.map((p) => {
     const f = byId.get(p.id);
+    // A hand-set index stays put; the source is being overridden on purpose.
+    if (p.hiLocked) return p;
     // Bucket comes along with the handicap: hector.golf recomputes both nightly, and a
     // stale bucket here would run Thursday's draft with the wrong pools.
     return f ? { ...p, hi: f.hi, bucket: f.bucket } : p;

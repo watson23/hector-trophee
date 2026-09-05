@@ -123,11 +123,13 @@ export default async function handler(
         name: string;
         hi: number;
         bucket: 1 | 2;
+        hiLocked?: boolean;
       }[];
       const changes: string[] = [];
       const next = players.map((p) => {
         const f = byId.get(p.id);
         if (!f) return p; // withdrawn upstream ≠ deleted here, same as the manual refresh
+        if (p.hiLocked) return p; // set by hand in Admin — the override is the point
         if (Math.abs(f.hi - p.hi) > 1e-9) changes.push(`${p.name} ${p.hi} → ${f.hi}`);
         if (f.bucket !== p.bucket) changes.push(`${p.name} moves to bucket ${f.bucket}`);
         return { ...p, hi: f.hi, bucket: f.bucket };
