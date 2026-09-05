@@ -181,8 +181,10 @@ export default function Scorecard({
                   <Cell kind={board.kind} value={r.perHole[i] ?? null} par={course.par[i]} strokes={r.strokes?.[i] ?? 0} />
                 </div>
               ))}
+              {/* The marks carry a 6px stroke-dot lane above a 32px box; the total sits
+                  on the same 32px line at the bottom, so it reads level with the digits. */}
               <div
-                className={`score text-lg text-center self-center ${
+                className={`score text-lg text-center self-end h-8 flex items-center justify-center ${
                   entered.length === 9 ? "text-slate-100" : "text-slate-500"
                 }`}
               >
