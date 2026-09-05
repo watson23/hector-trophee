@@ -223,7 +223,17 @@ export default function PlayScreen({
         lastFinal={lastFinal ?? null}
         onShowRound={onShowRound}
         onScoreAnyway={() => setScoreAnyway(round.id)}
-        onStart={round.status === "open" ? () => setPlayingRound(round.id) : undefined}
+        onStart={
+          round.status === "open"
+            ? () => {
+                // Onto the course, always: the hole card with its map and yardage — not
+                // whichever view (a scorecard, say) this phone last left open.
+                setView("hole");
+                setPin(null);
+                setPlayingRound(round.id);
+              }
+            : undefined
+        }
         hcpSection={
           me ? (
             <HcpSection rounds={rounds} allCards={allCards} me={me} onToggle={setHcpSubmitted} />
