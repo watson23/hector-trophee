@@ -7,6 +7,7 @@ import {
   documentId,
   getDoc,
   getDocs,
+  increment,
   query,
   where,
   initializeFirestore,
@@ -20,12 +21,13 @@ import {
   disableNetwork,
   enableNetwork,
 } from "firebase/firestore";
-import type { Card, EventDoc, Round } from "../types";
+import type { Card, EventDoc, Round, UsageDay } from "../types";
 import { BACKUP_SEP, type Snapshot } from "./backup";
 import { defaultRoundsFor } from "../data/rounds";
 import {
   buildDefaultEvent,
   cardId,
+  usageDate,
   type Store,
   type StoreError,
   type Unsubscribe,
@@ -359,6 +361,40 @@ export class FirestoreStore implements Store {
       batch.set(doc(this.cardsRef(), cardId(round.id, c.subjectId)), this.clean({ ...c, updatedAt: Date.now(), updatedBy: by }));
     }
     await batch.commit().catch(this.reportWriteError);
+  }
+
+  /**
+   * Usage lives beside the backups, as top-level `events/<eventId>__usage__<date>`
+   * documents — the same rules-free path — one merge write per flush with server-side
+   * increments, so twenty phones writing the same day never race each other.
+   */
+  async recordUsage(playerId: string, delta: { open?: boolean; views?: Record<string, number> }): Promise<void> {
+    const me: Record<string, unknown> = { lastSeen: Date.now() };
+    if (delta.open) me.opens = increment(1);
+    const views: Record<string, unknown> = {};
+    for (const [k, n] of Object.entries(delta.views ?? {})) if (n > 0) views[k] = increment(n);
+    if (Object.keys(views).length) me.views = views;
+    await setDoc(
+      doc(this.db, "events", `${this.eventId}__usage__${usageDate()}`),
+      { [playerId]: me },
+      { merge: true },
+    ).catch(() => {
+      /* bookkeeping only — never worth a banner */
+    });
+  }
+
+  async listUsage(): Promise<UsageDay[]> {
+    const prefix = `${this.eventId}__usage__`;
+    const snap = await getDocs(
+      query(
+        collection(this.db, "events"),
+        where(documentId(), ">=", prefix),
+        where(documentId(), "<", `${prefix}\uf8ff`),
+      ),
+    ).catch(this.reportWriteError);
+    return snap.docs
+      .map((d) => ({ date: d.id.slice(prefix.length), players: d.data() as UsageDay["players"] }))
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
   }
 
   async nudge(): Promise<void> {

@@ -3,7 +3,7 @@ import { DEFENDING_PAIR } from "../lib/store";
 import { HOLE_CAP_HELP, HOLE_CAP_LABEL } from "../lib/holeCap";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/flights";
-import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair, HoleCapRule } from "../types";
+import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair, HoleCapRule, UsageDay } from "../types";
 import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
@@ -31,6 +31,7 @@ interface Props {
   /** Hand the organiser role back: the pill goes, the PIN is needed to return. */
   onSignOut: () => void;
   backups: BackupApi;
+  usage: { list: () => Promise<UsageDay[]> };
 }
 
 export default function AdminScreen({
@@ -50,6 +51,7 @@ export default function AdminScreen({
   onClose,
   onSignOut,
   backups,
+  usage,
 }: Props) {
   // Rounds first: it and Flights are the daily workspace, while Pairs is essentially
   // never touched again after Thursday's draft. Session-persisted, like the rest of the
@@ -157,6 +159,7 @@ export default function AdminScreen({
             <HoleCapCard event={event} saveEvent={saveEvent} />
             <RoundsEditor rounds={rounds} saveRound={saveRound} patchRound={patchRound} />
             <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
+            <UsageCard players={event.players} usage={usage} />
           </>
         )}
         {tab === "scores" && (
@@ -255,6 +258,87 @@ function HoleCapCard({ event, saveEvent }: { event: EventDoc; saveEvent: (patch:
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+/**
+ * Who has opened the app — the Wednesday-evening question — and, for curiosity after the
+ * trip, how much it was used. Read on open, refreshed on tap; nothing here affects scores.
+ */
+function UsageCard({ players, usage }: { players: FieldPlayer[]; usage: { list: () => Promise<UsageDay[]> } }) {
+  const [days, setDays] = useState<UsageDay[] | null>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    usage
+      .list()
+      .then((d) => {
+        if (alive) setDays(d);
+      })
+      .catch(() => {
+        if (alive) setDays([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [usage]);
+  const byPlayer = new Map<string, { lastSeen: number; opens: number; views: Record<string, number>; days: number }>();
+  for (const day of days ?? []) {
+    for (const [id, u] of Object.entries(day.players)) {
+      const cur = byPlayer.get(id) ?? { lastSeen: 0, opens: 0, views: {}, days: 0 };
+      cur.lastSeen = Math.max(cur.lastSeen, u.lastSeen ?? 0);
+      cur.opens += u.opens ?? 0;
+      cur.days += 1;
+      for (const [k, n] of Object.entries(u.views ?? {})) cur.views[k] = (cur.views[k] ?? 0) + n;
+      byPlayer.set(id, cur);
+    }
+  }
+  const seen = players.filter((p) => byPlayer.has(p.id));
+  const missing = players.filter((p) => !byPlayer.has(p.id));
+  const when = (at: number) =>
+    new Date(at).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  return (
+    <section className="mx-4 mt-3 card p-3.5">
+      <button onClick={() => setOpen((v) => !v)} className="w-full text-left">
+        <h2 className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">App usage</h2>
+        <p className="text-sm mt-0.5">
+          {days === null ? (
+            <span className="text-slate-500">Loading…</span>
+          ) : (
+            <>
+              <span className="font-semibold">{seen.length} of {players.length}</span> have opened the app
+              {missing.length > 0 && missing.length <= 8 && (
+                <span className="text-slate-500"> · not yet: {missing.map((p) => p.name).join(", ")}</span>
+              )}
+            </>
+          )}
+        </p>
+      </button>
+      {open && days && (
+        <ul className="mt-3 space-y-1.5 text-[12px]">
+          {[...seen]
+            .sort((a, b) => (byPlayer.get(b.id)?.lastSeen ?? 0) - (byPlayer.get(a.id)?.lastSeen ?? 0))
+            .map((p) => {
+              const u = byPlayer.get(p.id)!;
+              const top = Object.entries(u.views)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([k, n]) => `${k} ${n}`)
+                .join(" · ");
+              return (
+                <li key={p.id} className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate">
+                    <span className="text-slate-200">{p.name}</span>
+                    <span className="text-slate-500 num"> · {u.days} day{u.days > 1 ? "s" : ""} · {u.opens} open{u.opens > 1 ? "s" : ""}</span>
+                    {top && <span className="text-slate-600 num"> · {top}</span>}
+                  </span>
+                  <span className="num text-slate-500 shrink-0">{when(u.lastSeen)}</span>
+                </li>
+              );
+            })}
+        </ul>
+      )}
     </section>
   );
 }

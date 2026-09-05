@@ -142,7 +142,7 @@ export default function InfoScreen({
 
       <div className="px-4 mt-4 space-y-3">
         {activeSection === "news" && showNews && (
-          <News announcements={announcements} admin={admin} saveEvent={saveEvent} />
+          <News announcements={announcements} admin={admin} saveEvent={saveEvent} author={me?.name} />
         )}
         {activeSection === "schedule" &&
           rounds.map((r) => <RoundCard key={r.id} round={r} event={event} me={me} />)}
@@ -594,10 +594,13 @@ function News({
   announcements,
   admin,
   saveEvent,
+  author,
 }: {
   announcements: Announcement[];
   admin: boolean;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
+  /** The poster's name — announcements read as messages from someone, not from the system. */
+  author?: string;
 }) {
   const [draft, setDraft] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -607,7 +610,7 @@ function News({
     const text = draft.trim();
     if (!text) return;
     await saveEvent({
-      announcements: [{ id: `a${Date.now()}`, text, at: Date.now() }, ...announcements],
+      announcements: [{ id: `a${Date.now()}`, text, at: Date.now(), by: author }, ...announcements],
     });
     setDraft("");
   }
@@ -651,7 +654,10 @@ function News({
       {sorted.map((a) => (
         <div key={a.id} className="card p-3.5">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[12px] text-slate-500 num">{stamp(a.at)}</span>
+            <span className="text-[12px] text-slate-500 num">
+              {a.by && <span className="font-sans font-semibold text-slate-400">{a.by} · </span>}
+              {stamp(a.at)}
+            </span>
             {admin &&
               (confirmDelete === a.id ? (
                 <span className="flex gap-2 shrink-0">

@@ -120,6 +120,18 @@ export interface Announcement {
   text: string;
   /** Date.now() when posted. */
   at: number;
+  /** Who posted it — a player's name, or "Hector" for the app's own announcements. */
+  by?: string;
+}
+
+/**
+ * One day of app usage, for the organiser's curiosity after the trip: who opened the
+ * app, how often, and which tabs they looked at. Nothing here affects scoring.
+ */
+export interface UsageDay {
+  /** YYYY-MM-DD, local time of the phone that wrote it. */
+  date: string;
+  players: Record<string, { lastSeen: number; opens: number; views: Record<string, number> }>;
 }
 
 export interface EventDoc {

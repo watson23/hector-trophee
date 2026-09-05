@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSession } from "./hooks/useSession";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { useTournament } from "./hooks/useTournament";
@@ -88,6 +88,16 @@ export default function App() {
     () => t.event?.players.find((p) => p.id === session.playerId) ?? null,
     [t.event, session.playerId],
   );
+
+  // Usage bookkeeping: one "open" per signed-in session, and each tab as it is shown.
+  const openRecorded = useRef<string | null>(null);
+  useEffect(() => {
+    if (!t.ready || !session.playerId || openRecorded.current === session.playerId) return;
+    openRecorded.current = session.playerId;
+    t.usage.open();
+    t.usage.view(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t.ready, session.playerId]);
 
   /** The round being played: whatever the organiser has opened, else the next one up. */
   const activeRound = useMemo(() => {
@@ -268,6 +278,7 @@ export default function App() {
               setAdminOpen(false);
             }}
             backups={t.backups}
+            usage={t.usage}
           />
         ) : (
           <>
@@ -387,6 +398,7 @@ export default function App() {
               const draft = draftRoundOf(t.rounds);
               if (draft) setRoundSel(draft.id);
             }
+            t.usage.view(next);
             setTab(next);
           }}
           badges={{ info: newsUnread }}

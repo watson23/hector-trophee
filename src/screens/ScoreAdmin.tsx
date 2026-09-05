@@ -243,6 +243,7 @@ export default function ScoreAdmin({
             card={roundCards[subject.id]}
             onSet={(hole, value) => setHole(round.id, subject.id, hole, value)}
             capFor={(hole) => holeCap(event.holeCap, course.par[hole - 1], subject.strokes[hole - 1])}
+            editedBy={(id) => event.players.find((p) => p.id === id)?.name ?? id}
             onBack={() => setSubjectId(null)}
           />
         )}
@@ -484,6 +485,7 @@ function HoleEditor({
   card,
   onSet,
   capFor,
+  editedBy,
   onBack,
 }: {
   subject: Subject;
@@ -492,6 +494,8 @@ function HoleEditor({
   onSet: (hole: number, value: number | null) => void;
   /** The tournament's per-hole maximum for this player, or null without a cap rule. */
   capFor: (hole: number) => number | null;
+  /** Resolve the id stored on the card to a name. */
+  editedBy: (id: string) => string;
   onBack: () => void;
 }) {
   const [hole, setHole] = useState<number | null>(null);
@@ -545,6 +549,16 @@ function HoleEditor({
       </div>
       <p className="text-[11px] text-slate-600 mt-1.5">
         Cells show the score once entered, otherwise the hole number.
+        {card?.updatedBy && card.updatedAt && (
+          <>
+            {" "}
+            Last edited by <span className="text-slate-400">{editedBy(card.updatedBy)}</span>{" "}
+            <span className="num">
+              {new Date(card.updatedAt).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+            </span>
+            .
+          </>
+        )}
       </p>
 
       {hole && (

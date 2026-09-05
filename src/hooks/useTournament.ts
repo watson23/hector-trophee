@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Card, EventDoc, Round } from "../types";
+import type { Card, EventDoc, Round, UsageDay } from "../types";
 import { courses } from "../data/courses";
 import { computeTournament, effectiveTee, evaluateRound, snapshotHandicaps, type RoundResult } from "../lib/engine";
 import {
@@ -39,6 +39,14 @@ export interface TournamentState {
   mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   /** Redial the backend to unstick writes queued behind a stale connection. */
   nudge: (() => Promise<void>) | undefined;
+  /** Usage bookkeeping: opens and tab views per player per day, for the organiser's curiosity. */
+  usage: {
+    /** Call once per app open (per session). */
+    open: () => void;
+    /** A tab shown; batched and flushed every 30 s, or when the app goes to the background. */
+    view: (tab: string) => void;
+    list: () => Promise<UsageDay[]>;
+  };
   /** Snapshots of the whole tournament — see lib/backup.ts. */
   backups: BackupApi & {
     /** Like take(), but skips when nothing has changed since the last automatic one. */
@@ -233,7 +241,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
           // The prank-catcher: the temptation to "just see what happens" is real, and
           // a round of beers is the traditional price. The genuine hero will understand.
           const text = `🍾 HOLE-IN-ONE! ${who} aced the ${ordinal(hole)} at ${course} in round ${round.seq} — the first in Hector Trophée history. Champagne at the clubhouse! (In case this was a prank or a false alarm by ${who} after all, a round of beers on them should settle it.)`;
-          void store.saveEvent({ announcements: [...existing, { id, text, at: Date.now() }] }).catch(() => {});
+          void store.saveEvent({ announcements: [...existing, { id, text, at: Date.now(), by: "Hector" }] }).catch(() => {});
         }
       }
     },
@@ -332,6 +340,40 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     [store, takeBackup],
   );
 
+  // Views are counted locally and flushed in one write — a phone's tab-hopping must not
+  // become a write per tap. Nothing is recorded for the anonymous spectator.
+  const pendingViews = useRef<Record<string, number>>({});
+  const flushViews = useCallback(() => {
+    const views = pendingViews.current;
+    pendingViews.current = {};
+    if (!store || identity === "anon" || Object.keys(views).length === 0) return;
+    void store.recordUsage(identity, { views }).catch(() => {});
+  }, [store, identity]);
+  useEffect(() => {
+    const id = setInterval(flushViews, 30_000);
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flushViews();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onHide);
+      flushViews();
+    };
+  }, [flushViews]);
+  const usage = useMemo<TournamentState["usage"]>(
+    () => ({
+      open: () => {
+        if (store && identity !== "anon") void store.recordUsage(identity, { open: true }).catch(() => {});
+      },
+      view: (tab) => {
+        pendingViews.current[tab] = (pendingViews.current[tab] ?? 0) + 1;
+      },
+      list: async () => (store ? store.listUsage() : []),
+    }),
+    [store, identity],
+  );
+
   const backups = useMemo<TournamentState["backups"]>(
     () => ({
       take: (reason) => takeBackup(reason),
@@ -381,6 +423,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     saveRound,
     patchRound,
     mirrorFrom,
+    usage,
     backups,
     nudge: store?.nudge?.bind(store),
   };

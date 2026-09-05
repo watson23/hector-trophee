@@ -1,4 +1,4 @@
-import type { Card, EventDoc, Round } from "../types";
+import type { Card, EventDoc, Round, UsageDay } from "../types";
 import type { Snapshot } from "./backup";
 import { EVENT_ID, field } from "../data/field";
 import { defaultRoundsFor } from "../data/rounds";
@@ -72,6 +72,14 @@ export interface Store {
    * halfway on a weak signal must not leave the round with half its cards gone.
    */
   restoreRound(round: Round, cards: Card[], removeSubjectIds: string[], by: string): Promise<void>;
+  /** Usage bookkeeping (see types.ts UsageDay): one merge write per flush, per player, per day. */
+  recordUsage(playerId: string, delta: { open?: boolean; views?: Record<string, number> }): Promise<void>;
+  listUsage(): Promise<UsageDay[]>;
+}
+
+/** Today as YYYY-MM-DD in the phone's own time zone — a golf day, not a UTC one. */
+export function usageDate(now = new Date()): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
 export interface StoreError {
@@ -329,6 +337,23 @@ class LocalStore implements Store {
     for (const id of removeSubjectIds) delete current[id];
     for (const c of cards) current[c.subjectId] = { ...c, updatedAt: Date.now(), updatedBy: by };
     this.write(`cards_${round.id}`, current);
+  }
+
+  async recordUsage(playerId: string, delta: { open?: boolean; views?: Record<string, number> }): Promise<void> {
+    const all = this.read<Record<string, UsageDay["players"]>>("usage", {});
+    const day = (all[usageDate()] ??= {});
+    const me = (day[playerId] ??= { lastSeen: 0, opens: 0, views: {} });
+    me.lastSeen = Date.now();
+    if (delta.open) me.opens += 1;
+    for (const [k, n] of Object.entries(delta.views ?? {})) me.views[k] = (me.views[k] ?? 0) + n;
+    this.write("usage", all);
+  }
+
+  async listUsage(): Promise<UsageDay[]> {
+    const all = this.read<Record<string, UsageDay["players"]>>("usage", {});
+    return Object.entries(all)
+      .map(([date, players]) => ({ date, players }))
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
   }
 
   async listBackups(): Promise<Snapshot[]> {
