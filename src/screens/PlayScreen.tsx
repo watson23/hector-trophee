@@ -612,7 +612,7 @@ function OnCourse({
 
       {rows.some((r) => r.holeValue === null) && (
         <p className="-mt-1 text-[11px] text-slate-500 text-right pr-1 flex items-center justify-end gap-1">
-          <StrokeBall n={1} /> strokes received on this hole
+          <StrokeBall n={1} /> indicates 1 stroke received on this hole
         </p>
       )}
 
