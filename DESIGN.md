@@ -8,7 +8,9 @@ them deliberately, in tokens, never ad hoc per screen.
 ## Ground
 
 - The entire `slate` scale is **remapped** in `tailwind.config.js` to a true
-  neutral with a hair of violet (950 = `#0a0a0c`). Never reintroduce Tailwind's
+  neutral with a hair of violet (950 = `#0a0a0c`). Greys lifted twice after tester
+  feedback (last 5.9.2026): 400 ≈8.5:1, 500 ≈6.5:1, 600 ≈4.4:1 on the ground — small
+  grey captions must read as chosen, not faint. Never reintroduce Tailwind's
   default blue-cast slate/gray — it is the single most recognizable template tell.
 - Dark only, by choice: the app lives on phones outdoors and on TVs at night.
   There is no light theme and none is planned.

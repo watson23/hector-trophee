@@ -274,7 +274,9 @@ export default function RoundScreen({
                   // Scratch, once the card is complete: the number the terrace talks about.
                   // Not mid-round — 61 strokes after 13 holes is nobody's conversation.
                   f.spec.kind === "strokeplay" && !f.spec.net && p.thru >= 18 ? `${p.value} strokes` : null,
-                  f.spec.net ? `playing HCP ${p.playingHcp}` : null,
+                  // "HCP 15": a whole number in a round's context is the playing handicap
+                  // (the index is always a decimal) — the GameBook convention.
+                  f.spec.net ? `HCP ${p.playingHcp}` : null,
                 ]
                   .filter(Boolean)
                   .join(" · ") || undefined,
