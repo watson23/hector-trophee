@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { EventDoc } from "../types";
 import { checkPin } from "../lib/pin";
+import { currentSpace, spaceForCode, switchSpace } from "../lib/space";
 import HectorMark from "./HectorMark";
 
 interface Props {
@@ -25,6 +26,13 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, on
     e.preventDefault();
     setChecking(true);
     setError(null);
+    // A space word in the code box moves this copy of the app — installed or not —
+    // into that space; it reloads and asks for the event code there.
+    const space = spaceForCode(pin);
+    if (space && space !== currentSpace()) {
+      switchSpace(space);
+      return;
+    }
     const ok = await checkPin(pin, event.pinHash);
     setChecking(false);
     if (ok) onUnlock();

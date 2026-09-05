@@ -8,7 +8,7 @@ import type { RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
-import { SPACES, spaceLink, switchSpace, type Space } from "../lib/space";
+import { SPACES, spaceLink, spaceMeta, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import BackupAdmin, { type BackupApi } from "./BackupAdmin";
 import HandicapRefresh from "../components/HandicapRefresh";
@@ -217,6 +217,11 @@ function InviteLink({ space }: { space: Space }) {
     <div className="mt-2.5 flex items-center justify-between gap-3 text-[12px]">
       <span className="min-w-0 truncate text-slate-500">
         Invite a tester: <span className="num text-slate-400">{link.replace(/^https?:\/\//, "")}</span>
+        {spaceMeta(space).code && (
+          <>
+            {" "}· or type <span className="num text-slate-400">{spaceMeta(space).code}</span> as the event code
+          </>
+        )}
       </span>
       <button
         onClick={async () => {

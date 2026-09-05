@@ -16,32 +16,53 @@ import { EVENT_ID } from "../data/field";
 export type Space = "live" | "test" | "field" | "tapiola";
 
 /** Every space the app knows, in the order Admin lists them. */
-export const SPACES: { id: Space; label: string; description: string; tone: "live" | "test" | "field" }[] = [
+export const SPACES: {
+  id: Space;
+  label: string;
+  description: string;
+  tone: "live" | "test" | "field";
+  /**
+   * Typed on the event-code screen, this word moves the device into the space — the
+   * way into a field event for a copy of the app the invite link can't reach (an
+   * installed one), without organiser access. The tournament needs no word.
+   */
+  code?: string;
+}[] = [
   {
     id: "live",
     label: "Tournament",
     description: "The real data everyone sees at Konopiště.",
     tone: "live",
+    code: "KONOPISTE",
   },
   {
     id: "test",
     label: "Test sandbox",
     description: "Same structure as the tournament, separate data — for playing around and for mirroring the live event.",
     tone: "test",
+    code: "SANDBOX",
   },
   {
     id: "field",
     label: "Field test · Hirsala",
     description: "Real rounds at Hirsala Golf (Sep 2026), fully separate from the tournament.",
     tone: "field",
+    code: "HIRSALA",
   },
   {
     id: "tapiola",
     label: "Field test · Tapiola",
     description: "Lasse's nine at Tapiola Golf, Sat 5.9 06:30 — its own event, nothing shared.",
     tone: "field",
+    code: "TAPIOLA",
   },
 ];
+
+/** The space a typed code names, if any — case-insensitive, whitespace ignored. */
+export function spaceForCode(input: string): Space | null {
+  const word = input.trim().toUpperCase();
+  return SPACES.find((s) => s.code === word)?.id ?? null;
+}
 
 export function spaceMeta(space: Space) {
   return SPACES.find((s) => s.id === space) ?? SPACES[0];
