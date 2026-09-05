@@ -56,7 +56,8 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 - Leaderboards are **de-boxed**: full-bleed rows with hairline dividers
   (`divide-slate-800`-ish), never cards-in-cards.
 - Leader marker: gold inset bar (`shadow-[inset_3px_0_0]`) + gold name and
-  score. Violet bar = spectator's followed player. These bars carry meaning —
+  score. Violet bar = spectator's followed player; a softer violet wash with a violet
+  name = the signed-in player's own row and pair (no bar, no star). These bars carry meaning —
   never add colored left borders as decoration.
 - Display = **how the score is spoken**: stroke formats lead with to-par
   ("−12 (60)"); Stableford leads with points ("40 (−4)").
