@@ -301,9 +301,10 @@ function Field({ event, me, rounds }: { event: EventDoc; me: FieldPlayer | null;
    */
   const draftRound = rounds.find((r) => r.formats.some((f) => f.hector?.source === "betterIndividual"));
   const atDraft = (p: FieldPlayer) => draftRound?.handicaps?.[p.id] ?? p.hi;
-  // Ordered by the index that decided the bucket, so the list keeps its Thursday shape.
+  // The pools are fixed after the draft, but within a pool the order follows the current
+  // index — a good week moves you up the list even if it can't move you between buckets.
   const buckets = ([1, 2] as const).map((b) =>
-    event.players.filter((p) => p.bucket === b).sort((a, x) => (drafted ? atDraft(a) - atDraft(x) : a.hi - x.hi)),
+    event.players.filter((p) => p.bucket === b).sort((a, x) => a.hi - x.hi),
   );
 
   return (
