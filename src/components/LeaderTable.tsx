@@ -133,7 +133,7 @@ export default function LeaderTable({
       <table ref={tableEl} className="w-full table-fixed text-sm">
         {/* Widths are tuned so a pair name like "Sami H + Kristian H" fits on a 375px screen. */}
         <colgroup>
-          <col className="w-8" />
+          <col className="w-10" />
           <col />
           <col className={wideThru ? "w-[4rem]" : "w-[4.5rem]"} />
           <col className="w-[2.9rem]" />
@@ -174,11 +174,11 @@ export default function LeaderTable({
                           : ""
                   }`}
                 >
-                  {/* The position sits on the name's line, not centred between the name
-                      and the detail line below it. */}
+                  {/* The position: big enough to read as information, centred on the row
+                      — at this size it holds its own against the two-line name cell. */}
                   <td
-                    className={`pl-2.5 pt-[13px] pb-2.5 align-top num text-xs font-semibold ${
-                      r.leader ? "text-gold-400" : "text-slate-500"
+                    className={`pl-2 py-2.5 num text-[15px] font-semibold ${
+                      r.leader ? "text-gold-400" : "text-slate-400"
                     }`}
                   >
                     {r.label}
