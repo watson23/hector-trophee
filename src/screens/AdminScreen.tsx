@@ -232,8 +232,8 @@ function InviteLink({ space }: { space: Space }) {
 }
 
 /**
- * The tournament's maximum score on a hole. Tradition caps a blow-up (par + 5, or a net
- * double bogey — the committee to confirm which); with a rule set, the entry sheet offers
+ * The tournament's maximum score on a hole. Tradition caps a blow-up (par + 5, or net
+ * double bogey + 2 — the committee to confirm which); with a rule set, the entry sheet offers
  * the cap as a button and stores anything above it as the cap.
  */
 function HoleCapCard({ event, saveEvent }: { event: EventDoc; saveEvent: (patch: Partial<EventDoc>) => Promise<void> }) {

@@ -147,7 +147,7 @@ export interface EventDoc {
   draftConcluded?: boolean;
   /**
    * The tournament's maximum score on a hole, if it plays with one: "par5" = par + 5,
-   * "ndb" = net double bogey (par + 2 + the strokes received on the hole). Entry offers
+   * "ndb" = net double bogey + 2 (par + 4 + the strokes received on the hole). Entry offers
    * it as a button, and anything entered above it is stored as the cap — which is also
    * what a picked-up ball ("–") scores.
    */
