@@ -890,83 +890,86 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
   const k = data ? Math.max(1, data.h / 280) : 1;
   return (
     <div className="mt-3 flex flex-col items-center">
-      <div className="relative inline-block">
-        {/* The viewport keeps the fitted map's size; the layer inside pans and scales
-            under a pinch (see usePinchZoom), clipped to the same frame. */}
-        <div
-          ref={viewportRef}
-          {...handlers}
-          style={viewportStyle}
-          className="relative overflow-hidden rounded-md select-none"
-        >
-          <div style={zoomStyle} className="relative">
+      {/* The frame is the whole content width at the fitted map's height, so a long
+          straight hole — a thin strip when fitted — has room to grow into under a pinch.
+          The layer inside pans and scales (see usePinchZoom), clipped to the frame. */}
+      <div
+        ref={viewportRef}
+        {...handlers}
+        style={viewportStyle}
+        className="relative w-full overflow-hidden rounded-md select-none"
+      >
+        <div style={zoomStyle} className="flex justify-center">
+          <div className="relative inline-block">
             <img
               src={holeMapUrl(courseId, hole)!}
               alt={`Hole ${hole} layout`}
               loading="eager"
               draggable={false}
-              className="block max-h-[280px] w-auto max-w-[80vw] pointer-events-none"
+              className="block max-h-[280px] w-auto max-w-[66vw] pointer-events-none"
             />
             {hasArcs && showArcs && data && teePos && arcs && (
-              <svg
-                viewBox={`0 0 ${data.w} ${data.h}`}
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                aria-hidden="true"
-              >
-                {["150", "200", "250"].map((m) => {
-                  const a = arcs[m];
-                  if (!a) return null;
-                  const main = m === "200";
-                  return (
-                    <g key={m}>
-                      <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-                      <path
-                        d={a.d}
-                        fill="none"
-                        stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
-                        strokeWidth={main ? 1.5 : 1}
-                        strokeDasharray={main ? undefined : "3 3"}
-                        vectorEffect="non-scaling-stroke"
-                        strokeLinecap="round"
-                      />
-                    </g>
-                  );
-                })}
-                {/* The marker wears the tee's colour — the one you are playing from. */}
-                <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
-                <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-              </svg>
+              <>
+                <svg
+                  viewBox={`0 0 ${data.w} ${data.h}`}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  aria-hidden="true"
+                >
+                  {["150", "200", "250"].map((m) => {
+                    const a = arcs[m];
+                    if (!a) return null;
+                    const main = m === "200";
+                    return (
+                      <g key={m}>
+                        <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                        <path
+                          d={a.d}
+                          fill="none"
+                          stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
+                          strokeWidth={main ? 1.5 : 1}
+                          strokeDasharray={main ? undefined : "3 3"}
+                          vectorEffect="non-scaling-stroke"
+                          strokeLinecap="round"
+                        />
+                      </g>
+                    );
+                  })}
+                  {/* The marker wears the tee's colour — the one you are playing from. */}
+                  <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
+                  <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+                </svg>
+                {/* The distance labels sit beside the fitted map; zoomed in, the arcs are
+                    legible on their own and the labels would scale with the drawing. */}
+                {!zoomed && (
+                  <>
+                    {["150", "200", "250"].map((m) => {
+                      const a = arcs[m];
+                      if (!a) return null;
+                      const main = m === "200";
+                      return (
+                        <span
+                          key={m}
+                          className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] ${
+                            main ? "font-semibold text-slate-200" : "text-slate-500"
+                          }`}
+                          style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
+                        >
+                          ≈{m}{main ? " m" : ""}
+                        </span>
+                      );
+                    })}
+                    <span
+                      className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] text-slate-500"
+                      style={{ top: `${(teePos.y / data.h) * 100}%` }}
+                    >
+                      0 m
+                    </span>
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
-        {/* The distance labels sit beside the fitted map; zoomed in, the arcs are
-            legible on their own and the labels would point at the wrong rows. */}
-        {hasArcs && showArcs && data && teePos && arcs && !zoomed && (
-          <>
-            {["150", "200", "250"].map((m) => {
-              const a = arcs[m];
-              if (!a) return null;
-              const main = m === "200";
-              return (
-                <span
-                  key={m}
-                  className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] ${
-                    main ? "font-semibold text-slate-200" : "text-slate-500"
-                  }`}
-                  style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
-                >
-                  ≈{m}{main ? " m" : ""}
-                </span>
-              );
-            })}
-            <span
-              className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] text-slate-500"
-              style={{ top: `${(teePos.y / data.h) * 100}%` }}
-            >
-              0 m
-            </span>
-          </>
-        )}
       </div>
       {/* One quiet line: the toggle, and while the arcs are on, the caveat — the "≈"
           on every label already says "estimate"; this says from what. Zoomed in, the

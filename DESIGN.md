@@ -89,7 +89,9 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   bright and bold in the net row, and the pair's counted net as a `PAIR` row; marks 28px.
   Single cards 30px; a scramble is one card per pair at 32px.
 - **Hole map zoom** (`usePinchZoom`): the page never zooms (`maximum-scale=1`), so the
-  map has its own gesture — pinch about the fingers' midpoint up to 4×, one-finger pan
+  map has its own gesture in a frame the full content width at the fitted height (a long
+  straight hole is a thin strip fitted, and needs the room) — pinch about the fingers'
+  midpoint up to 4×, one-finger pan
   once zoomed, double tap in or back out, trackpad pinch on a desk. Fitted, the page
   still scrolls over it (`touch-action: pan-y`); zoomed, the map takes the touch and the
   distance labels step aside for a `Reset zoom` link.
