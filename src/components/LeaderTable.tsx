@@ -134,7 +134,7 @@ export default function LeaderTable({
       <table ref={tableEl} className="w-full table-fixed text-sm">
         {/* Widths are tuned so a pair name like "Sami H + Kristian H" fits on a 375px screen. */}
         <colgroup>
-          <col className="w-12" />
+          <col className="w-11" />
           <col />
           <col className={wideThru ? "w-[4rem]" : "w-[4.5rem]"} />
           <col className="w-[2.9rem]" />
