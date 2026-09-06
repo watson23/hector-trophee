@@ -161,7 +161,13 @@ export function courseHeroUrl(courseId: string): string | null {
   return heroImage[courseId] ?? null;
 }
 
+/**
+ * The hole drawing, bundled with the app (public/holes, via scripts/fetch-hole-maps.py)
+ * so the service worker precaches all 36 at install: instant when flicking through
+ * holes, and there without signal. They used to load from hector.golf on first view,
+ * which on a phone on mobile data was a visible pause per hole. Same pixel size as the
+ * originals — holeArcs.json places the distance arcs in those coordinates.
+ */
 export function holeMapUrl(courseId: string, hole: number): string | null {
-  const slug = hectorSlug[courseId];
-  return slug ? `https://hector.golf/images/courses/${slug}/holes/${hole}.png` : null;
+  return hectorSlug[courseId] ? `/holes/${courseId}/${hole}.webp` : null;
 }
