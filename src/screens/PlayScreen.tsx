@@ -723,13 +723,13 @@ function EntrySheet({
         ))}
       </div>
 
-      <div className="mt-3 flex gap-2">
-        <button className="btn-ghost basis-1/3 py-3" onClick={onClose}>
-          Done
-        </button>
+      {/* One way on: Next hole. "Done" used to sit beside it and land in the same place,
+          which read as two buttons for one job. Leaving without moving on — fixing an
+          earlier hole, say — is the quiet link beneath. */}
+      <div className="mt-3">
         {hole < 18 || !complete ? (
           <button
-            className="btn-primary basis-2/3 py-3 text-lg"
+            className="btn-primary w-full py-3.5 text-lg"
             disabled={!allScored}
             onClick={() => {
               // From the 18th with holes still open (a back-nine start), on to the 1st.
@@ -740,10 +740,16 @@ function EntrySheet({
             Next hole →
           </button>
         ) : (
-          <button className="btn-primary basis-2/3 py-3 text-lg" onClick={onFinish}>
+          <button className="btn-primary w-full py-3.5 text-lg" onClick={onFinish}>
             Finish round
           </button>
         )}
+        <button
+          onClick={onClose}
+          className="mt-2 w-full text-center text-[13px] text-slate-500 underline underline-offset-4 py-1.5"
+        >
+          Back to hole {hole} without moving on
+        </button>
       </div>
       {hole === 18 && !complete && (
         <p className="mt-2 text-[12px] text-slate-500 text-center num">
