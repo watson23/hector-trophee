@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { Card, Course, EventDoc, FormatSpec } from "../types";
 import type { FormatResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
@@ -26,7 +26,7 @@ interface Cell {
 interface Line {
   id: string;
   name: string;
-  /** The name column of a pair block has room for a first name only. */
+  /** First name, for a pair label when the engine has not built one yet. */
   first: string;
   mine: boolean;
   cells: Cell[];
@@ -55,23 +55,22 @@ type Variant = "pair" | "card" | "team";
 
 const METRICS: Record<
   Variant,
-  { block: string; head: string; name: string; headline: string; mark: ScoreSize; grossPad: string; total: string; sub: string; subPad: string }
+  { block: string; head: string; headline: string; mark: ScoreSize; grossPad: string; total: string; sub: string; subPad: string }
 > = {
+  // Handoff 3a: a four-ball's whole card fits one 390×844 screen, so every gap is measured.
   pair: {
-    block: "mt-2.5 pt-1.5",
-    head: "h-[26px]",
-    name: "text-[15px]",
-    headline: "text-2xl",
+    block: "mt-1.5 pt-1",
+    head: "h-[22px] mt-0.5",
+    headline: "text-[22px]",
     mark: "pair",
     grossPad: "pb-2",
     total: "h-7 text-[17px]",
     sub: "text-[12px]",
-    subPad: "pb-1",
+    subPad: "pb-[3px]",
   },
   card: {
     block: "mt-2 pt-[5px]",
     head: "h-[26px]",
-    name: "text-[15px]",
     headline: "text-2xl",
     mark: "card",
     grossPad: "pb-[9px]",
@@ -82,7 +81,6 @@ const METRICS: Record<
   team: {
     block: "mt-3.5 pt-2",
     head: "h-7",
-    name: "text-base",
     headline: "text-[26px]",
     mark: "lg",
     grossPad: "pb-2.5",
@@ -151,7 +149,7 @@ export default function Scorecard({
 
   const scramble = subjects.some((s) => s.id.startsWith("team__"));
   const figure: Figure = !selected ? "gross" : selected.kind === "stableford" ? "pts" : selected.net ? "net" : "gross";
-  const { blocks, grouped } = buildBlocks(course, subjects, cards, event, flightIds, specs, formats, selected, figure);
+  const { blocks, grouped, unit } = buildBlocks(course, subjects, cards, event, flightIds, specs, formats, selected, figure);
   const variant: Variant = scramble ? "team" : grouped ? "pair" : "card";
   const m = METRICS[variant];
   const subLabel = figure === "pts" ? "pts" : figure === "net" ? "net" : null;
@@ -235,37 +233,40 @@ export default function Scorecard({
         const pairBlock = b.lines.length > 1;
         return (
           <div key={b.key} className={`border-t border-slate-700 ${m.block}`}>
-            <div className={`flex items-baseline justify-between gap-2 ${m.head}`}>
-              <span className={`${m.name} font-semibold leading-none truncate ${b.mine ? "text-violet-300" : "text-slate-100"}`}>
-                {b.label}
-              </span>
-              <span className="flex items-baseline gap-1.5 shrink-0">
-                {b.caption && <span className="num text-[12px] leading-none text-slate-400">{b.caption}</span>}
-                <span className={`score ${m.headline} leading-none ${b.mine ? "text-violet-300" : "text-slate-100"}`}>
-                  {b.headline}
+            {pairBlock && (
+              /* The pair's line: a small mono label, since the players' names are the
+                 ones read, and the pair's figure — counted net to par, or both cards' points. */
+              <div className="flex items-baseline justify-between gap-2 h-6">
+                <span className={`num text-[12px] font-semibold tracking-wider truncate ${b.mine ? "text-violet-300" : "text-slate-100"}`}>
+                  {b.label}
                 </span>
-                <span className="num text-[11px] font-semibold leading-none tracking-[.08em] text-slate-500">{b.unit}</span>
-              </span>
-            </div>
+                <Figure caption={b.caption} headline={b.headline} unit={b.unit} mine={b.mine} size="text-[22px]" />
+              </div>
+            )}
 
-            <div className={`${GRID} items-end`}>
-              {b.lines.map((line) => {
-                const entered = holes.filter((i) => line.cells[i].gross !== null);
-                const nineGross = entered.reduce((a, i) => a + (line.cells[i].gross ?? 0), 0);
-                const subEntered = holes.filter((i) => line.cells[i].sub !== null);
-                const nineSub = subEntered.reduce((a, i) => a + (line.cells[i].sub ?? 0), 0);
-                return (
-                  <Rows key={line.id}>
-                    {/* Row 1: the name (in a pair block) or "gross", the marks, the nine's strokes. */}
-                    <div
-                      className={`self-end truncate leading-none ${
-                        pairBlock
-                          ? `text-[13px] font-semibold pb-2 ${line.mine ? "text-violet-300" : "text-slate-100"}`
-                          : `num text-[11px] text-slate-600 ${m.grossPad}`
+            {b.lines.map((line) => {
+              const entered = holes.filter((i) => line.cells[i].gross !== null);
+              const nineGross = entered.reduce((a, i) => a + (line.cells[i].gross ?? 0), 0);
+              const subEntered = holes.filter((i) => line.cells[i].sub !== null);
+              const nineSub = subEntered.reduce((a, i) => a + (line.cells[i].sub ?? 0), 0);
+              return (
+                <div key={line.id}>
+                  {/* The name line: whole-round totals — gross (to par) in the caption, the
+                      selected format's figure as the headline. */}
+                  <div className={`flex items-baseline justify-between gap-2 ${m.head}`}>
+                    <span
+                      className={`${variant === "team" ? "text-base" : "text-[15px]"} font-semibold leading-none truncate ${
+                        line.mine ? "text-violet-300" : "text-slate-100"
                       }`}
                     >
-                      {pairBlock ? line.first : "gross"}
-                    </div>
+                      {line.name}
+                    </span>
+                    <Figure caption={line.caption} headline={line.headline} unit={unit} mine={line.mine} size={m.headline} />
+                  </div>
+
+                  <div className={`${GRID} items-end`}>
+                    {/* Row 1: "gross", the marks, the nine's strokes. */}
+                    <div className={`self-end num text-[11px] leading-none text-slate-600 ${m.grossPad}`}>gross</div>
                     {holes.map((i) => (
                       <div key={i} className="flex justify-center">
                         <ScoreMark
@@ -303,35 +304,35 @@ export default function Scorecard({
                         </div>
                       </>
                     )}
-                  </Rows>
-                );
-              })}
-
-              {b.pairRow && (
-                <>
-                  <div className="num text-[11px] font-semibold tracking-[.06em] text-violet-300 border-t border-slate-800 pt-1 h-[26px] flex items-center">
-                    PAIR
                   </div>
-                  {holes.map((i) => (
-                    <div
-                      key={`pr${i}`}
-                      className={`border-t border-slate-800 pt-1 h-[26px] flex items-center justify-center score text-[18px] ${netTint(
-                        b.pairRow?.[i] ?? null,
-                        course.par[i],
-                      )}`}
-                    >
-                      {b.pairRow?.[i] ?? "·"}
-                    </div>
-                  ))}
-                  <PairNine values={b.pairRow} holes={holes} />
-                </>
-              )}
-            </div>
+                </div>
+              );
+            })}
+
+            {b.pairRow && (
+              <div className={`${GRID} mt-0.5`}>
+                <div className="num text-[11px] font-semibold tracking-wider text-violet-300 border-t border-slate-800 h-[26px] flex items-center">
+                  PAIR
+                </div>
+                {holes.map((i) => (
+                  <div
+                    key={`pr${i}`}
+                    className={`border-t border-slate-800 h-[26px] flex items-center justify-center score text-[18px] ${netTint(
+                      b.pairRow?.[i] ?? null,
+                      course.par[i],
+                    )}`}
+                  >
+                    {b.pairRow?.[i] ?? "·"}
+                  </div>
+                ))}
+                <PairNine values={b.pairRow} holes={holes} />
+              </div>
+            )}
           </div>
         );
       })}
 
-      <div className="mt-3">
+      <div className="mt-2">
         <ScoreLegend
           strokeLabel={scramble ? "Team stroke" : "Stroke"}
           note={bbTab ? "· bright net = pair's counted ball" : undefined}
@@ -341,12 +342,12 @@ export default function Scorecard({
       {/* Navigation lives at the bottom, in the same slot on every view, each button
           named by where it lands: the current hole on the left (zoom in), the round's
           leaderboard on the right (zoom out). */}
-      <div className="mt-3 flex gap-2">
-        <button className="btn-ghost basis-1/2 py-3" onClick={onBack}>
+      <div className="mt-2 flex gap-2">
+        <button className="btn-ghost basis-1/2 py-2.5" onClick={onBack}>
           ← Hole {currentHole}
         </button>
         {onShowWholeRound && selected && (
-          <button className="btn-ghost basis-1/2 py-3" onClick={() => onShowWholeRound(selected.id)}>
+          <button className="btn-ghost basis-1/2 py-2.5" onClick={() => onShowWholeRound(selected.id)}>
             Leaderboard →
           </button>
         )}
@@ -355,9 +356,15 @@ export default function Scorecard({
   );
 }
 
-/** A keyed fragment: grid cells for one line, laid straight into the parent grid. */
-function Rows({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+/** Caption · headline · unit, the cluster at the right of every name line. */
+function Figure({ caption, headline, unit, mine, size }: { caption: string; headline: string; unit: string; mine: boolean; size: string }) {
+  return (
+    <span className="flex items-baseline gap-1.5 shrink-0">
+      {caption && <span className="num text-[12px] leading-none text-slate-400">{caption}</span>}
+      <span className={`score ${size} leading-none ${mine ? "text-violet-300" : "text-slate-100"}`}>{headline}</span>
+      <span className="num text-[11px] font-semibold leading-none tracking-[.08em] text-slate-500">{unit}</span>
+    </span>
+  );
 }
 
 function PairNine({ values, holes }: { values: (number | null)[]; holes: number[] }) {
@@ -397,7 +404,7 @@ function buildBlocks(
   formats: FormatResult[],
   selected: FormatSpec | undefined,
   figure: Figure,
-): { blocks: Block[]; grouped: boolean } {
+): { blocks: Block[]; grouped: boolean; unit: string } {
   const result = selected ? formats.find((f) => f.spec.id === selected.id) : undefined;
   const unit = figure === "pts" ? "PTS" : figure === "net" ? "NET" : "GROSS";
 
@@ -430,12 +437,16 @@ function buildBlocks(
           : figure === "net"
             ? formatToPar(subTotal - parPlayed)
             : formatToPar(grossTotal - parPlayed);
+    const netTotal = played.reduce((a, c) => a + (c.gross ?? 0) - c.strokes, 0);
+    const grossPart = `${grossTotal} (${formatToPar(grossTotal - parPlayed)})`;
     const caption =
       played.length === 0
         ? ""
         : figure === "gross"
           ? `${grossTotal} strokes`
-          : `${grossTotal} · ${formatToPar(grossTotal - parPlayed)} gross`;
+          : figure === "pts"
+            ? `${grossPart} · net ${formatToPar(netTotal - parPlayed)}`
+            : `${grossPart} gross`;
     return { id: s.id, name: s.name, first: s.name.split(" ")[0], mine: Boolean(s.mine), cells, headline, caption };
   };
 
@@ -505,7 +516,7 @@ function buildBlocks(
     blocks.push({ key: s.id, label: line.name, mine: line.mine, headline: line.headline, caption: line.caption, unit, lines: [line] });
   }
 
-  return { blocks, grouped: blocks.some((b) => b.lines.length > 1) };
+  return { blocks, grouped: blocks.some((b) => b.lines.length > 1), unit };
 }
 
 /** "+3" → 3, "−2" → −2, "E" → 0, "17" → 17. */
