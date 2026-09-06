@@ -343,6 +343,7 @@ export default function PlayScreen({
             cards={cards}
             event={event}
             flightIds={flightIds}
+            specs={round.formats}
             formats={result?.formats ?? []}
             mainId={(round.formats.find((f) => f.hector) ?? round.formats[0])?.id}
             currentHole={hole}

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import type { Card, Course, EventDoc } from "../types";
+import { useState, type ReactNode } from "react";
+import type { Card, Course, EventDoc, FormatSpec } from "../types";
 import type { FormatResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
-import ScoreMark, { ScoreLegend } from "./ScoreMark";
+import ScoreMark, { ScoreLegend, type ScoreSize } from "./ScoreMark";
 
 /** A card being shown: one per player, or one per pair in a scramble. */
 interface Subject {
@@ -12,55 +12,101 @@ interface Subject {
   mine?: boolean;
 }
 
-/** The second, quieter line under a card's gross marks: what the main game counted. */
-interface SubLine {
-  /** "net" or "pts" — the caption at the row's end. */
-  label: "net" | "pts";
-  values: (number | null)[];
+/** One hole on one card, under the selected format. */
+interface Cell {
+  gross: number | null;
+  strokes: number;
+  /** What the selected format made of the hole: net strokes or points. Null on a gross tab. */
+  sub: number | null;
+  /** Better Ball: this ball counted for the pair on this hole (ties count both). */
+  counted: boolean;
 }
 
-interface Row {
+/** One card's two rows — the gross marks and the figure beneath them. */
+interface Line {
+  id: string;
+  name: string;
+  /** The name column of a pair block has room for a first name only. */
+  first: string;
+  mine: boolean;
+  cells: Cell[];
+  headline: string;
+  caption: string;
+}
+
+/** A section of the card: a pair with its two players, or a single card. */
+interface Block {
   key: string;
   label: string;
   mine: boolean;
-  /** Gross strokes per hole — the big coloured marks a golfer reads first. */
-  gross: (number | null)[];
-  /** Handicap strokes per hole, for the dots above the marks. */
-  strokes?: number[];
-  /** The main game's figure per hole, small and monochrome beneath the marks. */
-  sub?: SubLine;
-  /** Gross to par over the holes played — the headline. */
   headline: string;
-  /** Beneath the headline: "85 strokes · net −1", "43 strokes · 9 holes · 22 pts". */
-  subline: string;
+  caption: string;
+  unit: string;
+  lines: Line[];
+  /** Better Ball tab only: the pair's counted net per hole, as its own row. */
+  pairRow?: (number | null)[];
 }
 
-/** A pair's counted score per hole on a Better Ball day — a second board, not a second card. */
-interface PairRow {
-  key: string;
-  label: string;
-  mine: boolean;
-  perHole: (number | null)[];
-  headline: string;
-}
+/** How the selected format is read: points, net strokes, or gross. */
+type Figure = "pts" | "net" | "gross";
 
-interface Boards {
-  players: Row[];
-  /** Present only on a Better Ball day: the pairs' counted net per hole. */
-  pairs?: { id: string; label: string; rows: PairRow[] };
-  /** The Round-tab board the players card zooms out to. */
-  playersBoardId: string;
-}
+/** The three densities the design set: pair blocks, single cards, scramble team cards. */
+type Variant = "pair" | "card" | "team";
+
+const METRICS: Record<
+  Variant,
+  { block: string; head: string; name: string; headline: string; mark: ScoreSize; grossPad: string; total: string; sub: string; subPad: string }
+> = {
+  pair: {
+    block: "mt-2.5 pt-1.5",
+    head: "h-[26px]",
+    name: "text-[15px]",
+    headline: "text-2xl",
+    mark: "pair",
+    grossPad: "pb-2",
+    total: "h-7 text-[17px]",
+    sub: "text-[12px]",
+    subPad: "pb-1",
+  },
+  card: {
+    block: "mt-2 pt-[5px]",
+    head: "h-[26px]",
+    name: "text-[15px]",
+    headline: "text-2xl",
+    mark: "card",
+    grossPad: "pb-[9px]",
+    total: "h-[30px] text-lg",
+    sub: "text-[12px]",
+    subPad: "pb-1",
+  },
+  team: {
+    block: "mt-3.5 pt-2",
+    head: "h-7",
+    name: "text-base",
+    headline: "text-[26px]",
+    mark: "lg",
+    grossPad: "pb-2.5",
+    total: "h-8 text-lg",
+    sub: "text-[13px]",
+    subPad: "pt-1 pb-1.5",
+  },
+};
+
+/** Name column, nine holes, the nine's total — the one grid every row sits on. */
+const GRID =
+  "grid grid-cols-[44px_repeat(9,minmax(0,1fr))_32px] min-[390px]:grid-cols-[50px_repeat(9,minmax(0,1fr))_34px] gap-x-0.5";
 
 /**
- * The scorecard, one nine at a time — one card per player, the way GameBook taught
- * everyone to read one: the gross score big and coloured against par, with the stroke
- * dot above where a handicap stroke was received, and beneath it, small and plain, what
- * the round's main game made of the hole (net strokes, or Stableford points). The Round
- * tab still has a board per format; the card is where you read your own round.
+ * The scorecard, one nine at a time, laid out the way the Claude Design handoff of
+ * 6.9.2026 settled it (layouts 1c / 2a / 2b): one shared Hole · SI · Par header, then a
+ * block per pair on a Better Ball day — the two players' gross marks with the counted
+ * ball as a row beneath — or a block per card on any other day, where the name column
+ * turns into the row labels "gross" and "net" (or "pts") so the two figures are never
+ * confused. The tabs are the round's formats; the headline figure follows the selected
+ * one (net to par, points, or gross to par) with the gross total in the caption.
  *
- * On a Better Ball day a second board shows the pairs' counted score per hole. A scramble
- * is scored on one card per pair, so its players card already is the team card.
+ * The gross score is always the big coloured mark against par with the stroke dot above
+ * where a handicap stroke was received — the notation everyone learnt from GameBook.
  * Tapping a hole number opens the entry sheet on that hole.
  */
 export default function Scorecard({
@@ -69,6 +115,7 @@ export default function Scorecard({
   cards,
   event,
   flightIds,
+  specs,
   formats,
   mainId,
   currentHole,
@@ -81,9 +128,11 @@ export default function Scorecard({
   cards: Record<string, Card | undefined>;
   event: EventDoc;
   flightIds: string[];
+  /** The round's formats, in programme order — the tabs, present before any score is in. */
+  specs: FormatSpec[];
   /** The round's computed formats (may be empty before any scores). */
   formats: FormatResult[];
-  /** Id of the round's main format — its figure is the one beneath the marks. */
+  /** Id of the round's main format — the tab the card opens on. */
   mainId: string | undefined;
   currentHole: number;
   onPickHole: (hole: number) => void;
@@ -92,52 +141,61 @@ export default function Scorecard({
   /** Zoom out to the Round tab on this board — the third step of hole → group → field. */
   onShowWholeRound?: (boardId: string) => void;
 }) {
-  const boards = buildBoards(course, subjects, cards, event, flightIds, formats, mainId);
-  const [view, setView] = useState<"players" | "pairs">("players");
-  const showPairs = view === "pairs" && boards.pairs;
+  const [picked, setPicked] = useState<string | null>(null);
+  const selected = specs.find((s) => s.id === picked) ?? specs.find((s) => s.id === mainId) ?? specs[0];
   const [nine, setNine] = useState<"out" | "in">(currentHole > 9 ? "in" : "out");
   const from = nine === "in" ? 9 : 0;
   const holes = Array.from({ length: 9 }, (_, i) => from + i);
   const nineLabel = nine === "in" ? "In" : "Out";
   const nineParSum = holes.reduce((a, i) => a + course.par[i], 0);
-  const grid = "grid grid-cols-[repeat(9,minmax(0,1fr))_2.4rem] gap-x-0.5";
+
+  const scramble = subjects.some((s) => s.id.startsWith("team__"));
+  const figure: Figure = !selected ? "gross" : selected.kind === "stableford" ? "pts" : selected.net ? "net" : "gross";
+  const { blocks, grouped } = buildBlocks(course, subjects, cards, event, flightIds, specs, formats, selected, figure);
+  const variant: Variant = scramble ? "team" : grouped ? "pair" : "card";
+  const m = METRICS[variant];
+  const subLabel = figure === "pts" ? "pts" : figure === "net" ? "net" : null;
+  const bbTab = selected?.kind === "betterball";
 
   return (
     <div>
-      {boards.pairs && (
-        <div className="flex gap-1.5 flex-wrap mb-3">
-          {(["players", "pairs"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`pill font-semibold ${
-                view === v ? "bg-violet-600 text-white" : "border border-slate-700 bg-slate-900 text-slate-400"
-              }`}
-            >
-              {v === "players" ? "Cards" : boards.pairs!.label}
-            </button>
-          ))}
+      {/* Format tabs on the left — one per format on the round, so a single format is a
+          label — and the nine on the right: the two controls that change what the grid says. */}
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex gap-1.5 flex-wrap min-w-0">
+          {specs.map((s) => {
+            const on = s.id === selected?.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setPicked(s.id)}
+                className={`rounded-full px-2.5 py-1 text-[13px] font-semibold leading-[1.4] whitespace-nowrap border ${
+                  on ? "bg-violet-600 border-violet-600 text-white" : "bg-slate-900 border-slate-700 text-slate-400"
+                }`}
+              >
+                {tabLabel(s)}
+              </button>
+            );
+          })}
         </div>
-      )}
-
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex gap-1.5">
+        <div className="flex gap-0.5 bg-slate-900 border border-slate-800 rounded-full p-0.5 shrink-0">
           {(["out", "in"] as const).map((n) => (
             <button
               key={n}
               onClick={() => setNine(n)}
-              className={`pill font-semibold ${
-                nine === n ? "bg-slate-700 text-slate-100" : "border border-slate-700 bg-slate-900 text-slate-400"
+              className={`rounded-full px-2.5 py-[3px] num text-[12px] font-semibold ${
+                nine === n ? "bg-slate-700 text-slate-100" : "text-slate-500"
               }`}
             >
-              {n === "out" ? "Out · 1–9" : "In · 10–18"}
+              {n === "out" ? "Out" : "In"}
             </button>
           ))}
         </div>
-        <div className="text-[12px] text-slate-500 num">Par {nineParSum}</div>
       </div>
 
-      <div className={`${grid} items-end`}>
+      {/* The shared header: hole numbers (tappable), stroke index, par. */}
+      <div className={`${GRID} gap-y-0.5 items-end`}>
+        <div className="num text-[11px] font-semibold text-slate-500 tracking-[.06em] leading-none">HOLE</div>
         {holes.map((i) => {
           const h = i + 1;
           const current = h === currentHole;
@@ -146,125 +204,149 @@ export default function Scorecard({
               key={h}
               onClick={() => onPickHole(h)}
               aria-label={`Score hole ${h}`}
-              /* The hole number is an index, so it is set as a caption; the par
-                 beneath is data — in the score face, at the scores' colour for par,
-                 so it reads as the row every result is measured against. */
-              className={`num text-[11px] font-semibold py-1 rounded-md ${
-                current ? "text-violet-300 bg-violet-950/60" : "text-slate-500"
+              className={`num text-[12px] font-semibold leading-none py-1 rounded-md ${
+                current ? "text-violet-300 bg-violet-950/80" : "text-slate-500"
               }`}
             >
               {h}
             </button>
           );
         })}
-        <div className="num text-[11px] font-semibold text-slate-500 text-center py-1">{nineLabel}</div>
+        <div className="num text-[11px] font-semibold text-slate-500 text-center leading-none">{nineLabel}</div>
+
+        <div className="num text-[11px] font-semibold text-slate-600 tracking-[.06em] leading-none">SI</div>
         {holes.map((i) => (
-          <div key={`p${i}`} className="score text-[17px] text-slate-300 text-center">
+          <div key={`si${i}`} className="num text-[11px] text-slate-600 text-center leading-none">
+            {course.si[i]}
+          </div>
+        ))}
+        <div />
+
+        <div className="num text-[11px] font-semibold text-slate-500 tracking-[.06em] leading-none">PAR</div>
+        {holes.map((i) => (
+          <div key={`p${i}`} className="score text-[17px] leading-[1.1] text-slate-300 text-center">
             {course.par[i]}
           </div>
         ))}
-        <div className="score text-[17px] text-slate-400 text-center">{nineParSum}</div>
+        <div className="score text-[17px] leading-[1.1] text-slate-400 text-center">{nineParSum}</div>
       </div>
 
-      {!showPairs &&
-        boards.players.map((r) => {
-          const entered = holes.filter((i) => r.gross[i] !== null);
-          const nineGross = entered.reduce((a, i) => a + (r.gross[i] ?? 0), 0);
-          const subEntered = r.sub ? holes.filter((i) => r.sub!.values[i] !== null && r.sub!.values[i] !== undefined) : [];
-          const nineSub = subEntered.reduce((a, i) => a + (r.sub!.values[i] ?? 0), 0);
-          return (
-            <div key={r.key} className="border-t border-slate-800 mt-3 pt-2.5">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <span className={`text-base font-semibold truncate ${r.mine ? "text-violet-300" : ""}`}>
-                  {r.label}
+      {blocks.map((b) => {
+        const pairBlock = b.lines.length > 1;
+        return (
+          <div key={b.key} className={`border-t border-slate-700 ${m.block}`}>
+            <div className={`flex items-baseline justify-between gap-2 ${m.head}`}>
+              <span className={`${m.name} font-semibold leading-none truncate ${b.mine ? "text-violet-300" : "text-slate-100"}`}>
+                {b.label}
+              </span>
+              <span className="flex items-baseline gap-1.5 shrink-0">
+                {b.caption && <span className="num text-[12px] leading-none text-slate-400">{b.caption}</span>}
+                <span className={`score ${m.headline} leading-none ${b.mine ? "text-violet-300" : "text-slate-100"}`}>
+                  {b.headline}
                 </span>
-                <span className="shrink-0 text-right">
-                  <span className={`score text-2xl block leading-none ${r.mine ? "text-violet-300" : ""}`}>
-                    {r.headline}
-                  </span>
-                  {r.subline && <span className="num text-[12px] text-slate-400 block mt-0.5">{r.subline}</span>}
-                </span>
-              </div>
-              <div className={`${grid} items-end`}>
-                {holes.map((i) => (
-                  <div key={i} className="flex justify-center">
-                    <ScoreMark value={r.gross[i]} par={course.par[i]} strokes={r.strokes?.[i] ?? 0} size="lg" />
+                <span className="num text-[11px] font-semibold leading-none tracking-[.08em] text-slate-500">{b.unit}</span>
+              </span>
+            </div>
+
+            <div className={`${GRID} items-end`}>
+              {b.lines.map((line) => {
+                const entered = holes.filter((i) => line.cells[i].gross !== null);
+                const nineGross = entered.reduce((a, i) => a + (line.cells[i].gross ?? 0), 0);
+                const subEntered = holes.filter((i) => line.cells[i].sub !== null);
+                const nineSub = subEntered.reduce((a, i) => a + (line.cells[i].sub ?? 0), 0);
+                return (
+                  <Rows key={line.id}>
+                    {/* Row 1: the name (in a pair block) or "gross", the marks, the nine's strokes. */}
+                    <div
+                      className={`self-end truncate leading-none ${
+                        pairBlock
+                          ? `text-[13px] font-semibold pb-2 ${line.mine ? "text-violet-300" : "text-slate-100"}`
+                          : `num text-[11px] text-slate-600 ${m.grossPad}`
+                      }`}
+                    >
+                      {pairBlock ? line.first : "gross"}
+                    </div>
+                    {holes.map((i) => (
+                      <div key={i} className="flex justify-center">
+                        <ScoreMark
+                          value={line.cells[i].gross}
+                          par={course.par[i]}
+                          strokes={line.cells[i].strokes}
+                          size={m.mark}
+                        />
+                      </div>
+                    ))}
+                    <div
+                      className={`score text-center flex items-center justify-center ${m.total} ${
+                        entered.length === 9 ? "text-slate-100" : "text-slate-500"
+                      }`}
+                    >
+                      {entered.length > 0 ? nineGross : "–"}
+                    </div>
+
+                    {/* Row 2: what the selected format made of each hole. On a Better Ball
+                        tab the counted ball is bright and bold, the other one quiet. */}
+                    {subLabel && (
+                      <>
+                        <div className={`num text-[11px] leading-tight text-slate-600 ${m.subPad}`}>{subLabel}</div>
+                        {holes.map((i) => {
+                          const c = line.cells[i];
+                          const tone = !bbTab ? "text-slate-400" : c.counted ? "text-slate-100 font-bold" : "text-slate-600";
+                          return (
+                            <div key={`s${i}`} className={`num text-center leading-tight ${m.sub} ${m.subPad} ${tone}`}>
+                              {c.sub ?? ""}
+                            </div>
+                          );
+                        })}
+                        <div className={`num text-center leading-tight text-slate-500 ${m.sub} ${m.subPad}`}>
+                          {subEntered.length > 0 ? nineSub : ""}
+                        </div>
+                      </>
+                    )}
+                  </Rows>
+                );
+              })}
+
+              {b.pairRow && (
+                <>
+                  <div className="num text-[11px] font-semibold tracking-[.06em] text-violet-300 border-t border-slate-800 pt-1 h-[26px] flex items-center">
+                    PAIR
                   </div>
-                ))}
-                {/* The marks carry a 6px stroke-dot lane above a 32px box; the total sits
-                    on the same 32px line at the bottom, so it reads level with the digits. */}
-                <div
-                  className={`score text-lg text-center self-end h-8 flex items-center justify-center ${
-                    entered.length === 9 ? "text-slate-100" : "text-slate-500"
-                  }`}
-                >
-                  {entered.length > 0 ? nineGross : "–"}
-                </div>
-              </div>
-              {r.sub && (
-                /* What the main game made of each hole — net strokes or points — small
-                   and plain, the colour having done its work on the gross marks above. */
-                <div className={`${grid} mt-0.5 num text-[12px] text-slate-400`}>
                   {holes.map((i) => (
-                    <div key={`s${i}`} className="text-center">
-                      {r.sub!.values[i] ?? ""}
+                    <div
+                      key={`pr${i}`}
+                      className={`border-t border-slate-800 pt-1 h-[26px] flex items-center justify-center score text-[18px] ${netTint(
+                        b.pairRow?.[i] ?? null,
+                        course.par[i],
+                      )}`}
+                    >
+                      {b.pairRow?.[i] ?? "·"}
                     </div>
                   ))}
-                  <div className="text-center text-slate-500">
-                    {subEntered.length > 0 ? `${nineSub} ${r.sub.label}` : r.sub.label}
-                  </div>
-                </div>
+                  <PairNine values={b.pairRow} holes={holes} />
+                </>
               )}
             </div>
-          );
-        })}
+          </div>
+        );
+      })}
 
-      {showPairs &&
-        boards.pairs!.rows.map((r) => {
-          const entered = holes.filter((i) => r.perHole[i] !== null && r.perHole[i] !== undefined);
-          const nineSum = entered.reduce((a, i) => a + (r.perHole[i] ?? 0), 0);
-          return (
-            <div key={r.key} className="border-t border-slate-800 mt-3 pt-2.5">
-              <div className="flex items-baseline justify-between gap-2 mb-1">
-                <span className={`text-base font-semibold truncate ${r.mine ? "text-violet-300" : ""}`}>
-                  {r.label}
-                </span>
-                <span className={`score text-2xl shrink-0 ${r.mine ? "text-violet-300" : ""}`}>{r.headline}</span>
-              </div>
-              <div className={`${grid} items-end`}>
-                {holes.map((i) => (
-                  <div key={i} className="flex justify-center">
-                    <NetCell value={r.perHole[i] ?? null} par={course.par[i]} />
-                  </div>
-                ))}
-                <div
-                  className={`score text-lg text-center self-end h-8 flex items-center justify-center ${
-                    entered.length === 9 ? "text-slate-100" : "text-slate-500"
-                  }`}
-                >
-                  {entered.length > 0 ? nineSum : "–"}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-      <div className="mt-4">
-        <ScoreLegend />
+      <div className="mt-3">
+        <ScoreLegend
+          strokeLabel={scramble ? "Team stroke" : "Stroke"}
+          note={bbTab ? "· bright net = pair's counted ball" : undefined}
+        />
       </div>
 
       {/* Navigation lives at the bottom, in the same slot on every view, each button
           named by where it lands: the current hole on the left (zoom in), the round's
           leaderboard on the right (zoom out). */}
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex gap-2">
         <button className="btn-ghost basis-1/2 py-3" onClick={onBack}>
           ← Hole {currentHole}
         </button>
-        {onShowWholeRound && (
-          <button
-            className="btn-ghost basis-1/2 py-3"
-            onClick={() => onShowWholeRound(showPairs ? boards.pairs!.id : boards.playersBoardId)}
-          >
+        {onShowWholeRound && selected && (
+          <button className="btn-ghost basis-1/2 py-3" onClick={() => onShowWholeRound(selected.id)}>
             Leaderboard →
           </button>
         )}
@@ -273,115 +355,167 @@ export default function Scorecard({
   );
 }
 
-/** A pair's counted net on a hole: a number tinted against par, the same steps as the marks. */
-function NetCell({ value, par }: { value: number | null; par: number }) {
-  if (value === null) {
-    return <span className="inline-flex w-8 h-8 items-center justify-center text-slate-700">·</span>;
-  }
-  const tint =
-    value <= 0
-      ? "text-gold-300"
-      : value - par <= -2
-        ? "text-amber-200"
-        : value - par === -1
-          ? "text-rose-300"
-          : value - par === 0
-            ? "text-slate-50"
-            : value - par === 1
-              ? "text-sky-300"
-              : "text-blue-400";
-  return <span className={`inline-flex w-8 h-8 items-center justify-center score text-[20px] ${tint}`}>{value}</span>;
+/** A keyed fragment: grid cells for one line, laid straight into the parent grid. */
+function Rows({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }
 
-function buildBoards(
+function PairNine({ values, holes }: { values: (number | null)[]; holes: number[] }) {
+  const entered = holes.filter((i) => values[i] !== null && values[i] !== undefined);
+  const sum = entered.reduce((a, i) => a + (values[i] ?? 0), 0);
+  return (
+    <div
+      className={`border-t border-slate-800 pt-1 h-[26px] flex items-center justify-center score text-[17px] ${
+        entered.length === 9 ? "text-slate-100" : "text-slate-500"
+      }`}
+    >
+      {entered.length > 0 ? sum : "–"}
+    </div>
+  );
+}
+
+/** A counted net figure tinted against par, the same steps as the marks; an empty hole is a dot. */
+function netTint(value: number | null, par: number): string {
+  if (value === null) return "text-slate-700";
+  if (value <= 0) return "text-gold-300";
+  const d = value - par;
+  return d <= -2 ? "text-amber-200" : d === -1 ? "text-rose-300" : d === 0 ? "text-slate-50" : d === 1 ? "text-sky-300" : "text-blue-400";
+}
+
+/** Short in the tab: two formats must fit beside the nine switch, and the header already says the game. */
+export function tabLabel(spec: FormatSpec): string {
+  return spec.label.replace(/^(Better Ball|Scramble) Stroke Play/, "$1").replace(/^Stableford NET$/, "Stableford");
+}
+
+function buildBlocks(
   course: Course,
   subjects: Subject[],
   cards: Record<string, Card | undefined>,
   event: EventDoc,
   flightIds: string[],
+  specs: FormatSpec[],
   formats: FormatResult[],
-  mainId: string | undefined,
-): Boards {
-  const flight = new Set(flightIds);
+  selected: FormatSpec | undefined,
+  figure: Figure,
+): { blocks: Block[]; grouped: boolean } {
+  const result = selected ? formats.find((f) => f.spec.id === selected.id) : undefined;
+  const unit = figure === "pts" ? "PTS" : figure === "net" ? "NET" : "GROSS";
 
-  // The main game's individual figure: the main format if it is played per player,
-  // else the first per-player net or Stableford format on the round.
-  const individual = formats.filter((f) => f.teams.length === 0 || f.spec.teamCard);
-  const mainFormat =
-    individual.find((f) => f.spec.id === mainId && (f.spec.net || f.spec.kind === "stableford")) ??
-    individual.find((f) => f.spec.net || f.spec.kind === "stableford");
-
-  const players: Row[] = subjects.map((s) => {
+  const lineFor = (s: Subject): Line => {
     const gross = course.par.map((_, i) => cards[s.id]?.holes?.[String(i + 1)] ?? null);
-    let strokesTotal = 0;
-    let parPlayed = 0;
-    course.par.forEach((par, i) => {
-      const g = gross[i];
-      if (!g) return;
-      strokesTotal += g;
-      parPlayed += par;
+    const engineRow = s.id.startsWith("team__")
+      ? result?.teams.find((t) => `team__${t.pairId}` === s.id)
+      : result?.players.find((p) => p.playerId === s.id);
+    const cells: Cell[] = gross.map((g, i) => {
+      // On a gross tab the handicap plays no part, so the dots would only ask a question.
+      const strokes = figure === "gross" ? 0 : (s.strokes[i] ?? 0);
+      let sub: number | null = null;
+      if (g !== null) {
+        // Points come from the engine (it knows the rules); net is gross minus strokes,
+        // the one rule the app scores by, so it agrees with every board.
+        if (figure === "pts") sub = engineRow?.perHole[i] ?? null;
+        else if (figure === "net") sub = g - strokes;
+      }
+      return { gross: g, strokes, sub, counted: false };
     });
-    const thru = gross.filter((v) => v !== null).length;
+    const played = cells.filter((c) => c.gross !== null);
+    const grossTotal = played.reduce((a, c) => a + (c.gross ?? 0), 0);
+    const parPlayed = cells.reduce((a, c, i) => a + (c.gross === null ? 0 : course.par[i]), 0);
+    const subTotal = cells.reduce((a, c) => a + (c.sub ?? 0), 0);
+    const headline =
+      played.length === 0
+        ? "—"
+        : figure === "pts"
+          ? String(subTotal)
+          : figure === "net"
+            ? formatToPar(subTotal - parPlayed)
+            : formatToPar(grossTotal - parPlayed);
+    const caption =
+      played.length === 0
+        ? ""
+        : figure === "gross"
+          ? `${grossTotal} strokes`
+          : `${grossTotal} · ${formatToPar(grossTotal - parPlayed)} gross`;
+    return { id: s.id, name: s.name, first: s.name.split(" ")[0], mine: Boolean(s.mine), cells, headline, caption };
+  };
 
-    let sub: SubLine | undefined;
-    let subFigure: string | null = null;
-    if (mainFormat) {
-      if (s.id.startsWith("team__")) {
-        const t = mainFormat.teams.find((x) => `team__${x.pairId}` === s.id);
-        if (t) {
-          sub = { label: "net", values: t.perHole };
-          subFigure = t.thru > 0 ? `net ${formatToPar(t.toPar)}` : null;
+  const lines = new Map(subjects.map((s) => [s.id, lineFor(s)]));
+
+  // Pair blocks only where the round is played in pairs on the players' own cards (Better
+  // Ball); a scramble is one card per pair already, and an individual day stays individual.
+  const bbSpec = specs.find((s) => s.kind === "betterball");
+  const bbResult = bbSpec ? formats.find((f) => f.spec.id === bbSpec.id) : undefined;
+  const blocks: Block[] = [];
+  const used = new Set<string>();
+
+  if (bbSpec && !subjects.some((s) => s.id.startsWith("team__"))) {
+    const pairs = event.pairs
+      .filter((p) => lines.has(p.aId) && lines.has(p.bId))
+      .sort((a, b) => firstIndex(a.aId, a.bId, flightIds) - firstIndex(b.aId, b.bId, flightIds));
+    for (const pair of pairs) {
+      const a = lines.get(pair.aId);
+      const b = lines.get(pair.bId);
+      if (!a || !b) continue;
+      used.add(a.id).add(b.id);
+      const team = bbResult?.teams.find((t) => t.pairId === pair.id);
+      const label = team?.label ?? `${a.first} & ${b.first}`;
+      if (selected?.id === bbSpec.id) {
+        const perHole = team?.perHole ?? course.par.map(() => null);
+        for (const line of [a, b]) {
+          line.cells.forEach((c, i) => {
+            c.counted = c.sub !== null && c.sub === perHole[i];
+          });
         }
+        const thru = team?.thru ?? 0;
+        blocks.push({
+          key: pair.id,
+          label,
+          mine: a.mine || b.mine,
+          headline: thru > 0 && team ? formatToPar(team.toPar) : "—",
+          caption: thru > 0 ? `thru ${thru}` : "",
+          unit: "PAIR NET",
+          lines: [a, b],
+          pairRow: perHole,
+        });
       } else {
-        const p = mainFormat.players.find((x) => x.playerId === s.id);
-        if (p) {
-          const pts = mainFormat.spec.kind === "stableford";
-          sub = { label: pts ? "pts" : "net", values: p.perHole };
-          subFigure = p.thru > 0 ? (pts ? `${p.value} pts` : `net ${formatToPar(p.toPar ?? 0)}`) : null;
+        // An individual format read per pair: both cards together.
+        const played = [a, b].some((l) => l.cells.some((c) => c.gross !== null));
+        let headline = "—";
+        if (played) {
+          const sum = [a, b].reduce((acc, l) => acc + toNumber(l.headline), 0);
+          headline = figure === "pts" ? String(sum) : formatToPar(sum);
         }
+        blocks.push({
+          key: pair.id,
+          label,
+          mine: a.mine || b.mine,
+          headline,
+          caption: played ? "both cards" : "",
+          unit,
+          lines: [a, b],
+        });
       }
     }
-    const strokesText = thru > 0 ? `${strokesTotal} strokes${thru < 18 ? ` · ${thru} holes` : ""}` : "";
-    return {
-      key: s.id,
-      label: s.name,
-      mine: Boolean(s.mine),
-      gross,
-      strokes: s.strokes,
-      sub,
-      headline: thru > 0 ? formatToPar(strokesTotal - parPlayed) : "—",
-      subline: [strokesText, subFigure].filter(Boolean).join(" · "),
-    };
-  });
-
-  // Better Ball: the pairs' counted net per hole. (A scramble's team card is the players
-  // card itself, so it gets no second board.)
-  const bb = formats.find((f) => f.teams.length > 0 && !f.spec.teamCard);
-  let pairs: Boards["pairs"];
-  if (bb) {
-    const rows: PairRow[] = [];
-    for (const t of bb.teams) {
-      const pair = event.pairs.find((p) => p.id === t.pairId);
-      if (!pair || !(flight.has(pair.aId) || flight.has(pair.bId))) continue;
-      rows.push({
-        key: t.pairId,
-        label: t.label,
-        mine: subjects.some((s) => s.mine && (s.id === pair.aId || s.id === pair.bId)),
-        perHole: t.perHole,
-        headline: t.thru > 0 ? formatToPar(t.toPar) : "—",
-      });
-    }
-    rows.sort((a, b) => firstIndex(a.key, event, flightIds) - firstIndex(b.key, event, flightIds));
-    pairs = { id: bb.spec.id, label: bb.spec.label.replace(/ Stroke Play NET$/, ""), rows };
   }
 
-  return { players, pairs, playersBoardId: mainFormat?.spec.id ?? "scratch" };
+  for (const s of subjects) {
+    if (used.has(s.id)) continue;
+    const line = lines.get(s.id);
+    if (!line) continue;
+    blocks.push({ key: s.id, label: line.name, mine: line.mine, headline: line.headline, caption: line.caption, unit, lines: [line] });
+  }
+
+  return { blocks, grouped: blocks.some((b) => b.lines.length > 1) };
 }
 
-function firstIndex(pairId: string, event: EventDoc, flightIds: string[]): number {
-  const pair = event.pairs.find((p) => p.id === pairId);
-  if (!pair) return 99;
-  const ia = flightIds.indexOf(pair.aId);
-  const ib = flightIds.indexOf(pair.bId);
+/** "+3" → 3, "−2" → −2, "E" → 0, "17" → 17. */
+function toNumber(headline: string): number {
+  if (headline === "E" || headline === "—") return 0;
+  return Number(headline.replace("−", "-").replace("+", ""));
+}
+
+function firstIndex(aId: string, bId: string, flightIds: string[]): number {
+  const ia = flightIds.indexOf(aId);
+  const ib = flightIds.indexOf(bId);
   return Math.min(ia < 0 ? 99 : ia, ib < 0 ? 99 : ib);
 }

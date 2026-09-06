@@ -13,15 +13,19 @@
  * the ring rather than tucked into its corner.
  */
 
-export type ScoreSize = "sm" | "md" | "lg";
+export type ScoreSize = "sm" | "md" | "pair" | "card" | "lg";
 
 const GEOM = {
   /** Inside an expanded leaderboard row — about 25px of column to work with. */
   sm: { box: "w-6 h-6", text: "text-[12px]", face: "num font-bold", dot: "w-[3px] h-[3px]", lane: "h-[5px]" },
   /** Round-tab breakdowns, which have the full width of the card. */
   md: { box: "w-[25px] h-[25px]", text: "text-[13px]", face: "num font-bold", dot: "w-[3.5px] h-[3.5px]", lane: "h-[6px]" },
-  /** The scorecard showing one nine — nine cells across the card, in the scoreboard
-      face so the numbers read from a cart. */
+  /** The scorecard's pair blocks: two players' marks under one pair, beside a name column. */
+  pair: { box: "w-7 h-7", text: "text-[18px]", face: "score", dot: "w-1 h-1", lane: "h-[6px]" },
+  /** A single card on the scorecard, beside the "gross" row label. */
+  card: { box: "w-[30px] h-[30px]", text: "text-[19px]", face: "score", dot: "w-1 h-1", lane: "h-[6px]" },
+  /** A scramble team card — one per pair, so the marks get the most room, in the
+      scoreboard face so the numbers read from a cart. */
   lg: { box: "w-8 h-8", text: "text-[20px]", face: "score", dot: "w-1 h-1", lane: "h-[6px]" },
 } as const;
 
@@ -134,7 +138,15 @@ function Glyph({ diff }: { diff: number }) {
   );
 }
 
-export function ScoreLegend() {
+export function ScoreLegend({
+  strokeLabel = "Stroke received",
+  note,
+}: {
+  /** "Team stroke" on a scramble card, where the dots are the pair's. */
+  strokeLabel?: string;
+  /** A trailing clause, e.g. what the bright figures in a Better Ball sub-row mean. */
+  note?: string;
+} = {}) {
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
       {[
@@ -151,8 +163,9 @@ export function ScoreLegend() {
       ))}
       <span className="inline-flex items-center gap-1">
         <span className="w-[3.5px] h-[3.5px] rounded-full bg-violet-400" />
-        Stroke received
+        {strokeLabel}
       </span>
+      {note && <span>{note}</span>}
     </div>
   );
 }

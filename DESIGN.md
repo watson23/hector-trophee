@@ -77,10 +77,15 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   (64/28 for a two-ball), no par ring (selection is the only highlight), one ‹ › hole
   nav, Done and `Next hole →` side by side — the latter enabled once the flight is
   scored and returning to the course.
-- **Scorecard**: one nine at a time (Out / In), never 18 columns on a phone. One
-  table: per card a name + round-headline line, then nine `lg` score marks and the
-  nine's total. No separate summary block; no SI/metres rows (stroke dots carry
-  the shots). Tapping a hole number opens the entry sheet on that hole.
+- **Scorecard** (Claude Design handoff, 6.9.2026 — layouts 1c / 2a / 2b): one nine at
+  a time (Out / In), never 18 columns. Tabs are the round's formats (main one first);
+  the headline follows the tab — net to par, points, or gross to par — with the gross
+  total in the caption, so net and gross are never confused. One shared header:
+  HOLE (tappable) · SI · PAR over a name column + nine cells + the nine's total. On a
+  Better Ball day a block per pair: each player's gross marks (28px) with `net` or
+  `pts` beneath, the counted ball bright and bold, and the pair's counted net as a
+  `PAIR` row. Any other day a block per card, where the name column becomes the row
+  labels `gross` / `net`; a scramble is the same block per pair at 32px marks.
 - The rule behind it: walking and entering are different moments with different
   needs; anything on the entry sheet that isn't scoring is clutter, anything on the
   course view that can be tapped by accident is a hazard.
