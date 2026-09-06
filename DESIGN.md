@@ -78,7 +78,8 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   nav, Done and `Next hole →` side by side — the latter enabled once the flight is
   scored and returning to the course.
 - **Scorecard** (Claude Design handoff, 6.9.2026 — option 3a, with 2a / 2b for the other
-  round types): one nine at a time (Out / In), never 18 columns. Tabs are the round's
+  round types): one nine at a time — the switch says `1–9` / `10–18`, the header's
+  last column says Out / In — never 18 columns. Tabs are the round's
   formats (main one first); the headline follows the tab — net to par, points, or gross
   to par. Caption rule everywhere: `61 (+9) gross` on a net tab, `61 (+9) · net +4` on
   Stableford, `65 strokes` on a gross tab — so net and gross are never confused. One

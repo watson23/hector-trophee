@@ -158,7 +158,9 @@ export default function Scorecard({
   return (
     <div>
       {/* Format tabs on the left — one per format on the round, so a single format is a
-          label — and the nine on the right: the two controls that change what the grid says. */}
+          label — and the nine on the right: the two controls that change what the grid says.
+          The nine's buttons carry the hole ranges, the plain reading; the golf words Out
+          and In stand in the header's last column, over that nine's totals. */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex gap-1.5 flex-wrap min-w-0">
           {specs.map((s) => {
@@ -185,7 +187,7 @@ export default function Scorecard({
                 nine === n ? "bg-slate-700 text-slate-100" : "text-slate-500"
               }`}
             >
-              {n === "out" ? "Out" : "In"}
+              {n === "out" ? "1–9" : "10–18"}
             </button>
           ))}
         </div>
