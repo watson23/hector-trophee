@@ -12,7 +12,7 @@ export default function PlaceBadge({ label, className = "" }: { label: string; c
   const win = label === "1" || label === "T1";
   return (
     <span
-      className={`inline-flex min-w-[2.125rem] justify-center rounded-md px-1.5 py-px num text-[13px] font-bold leading-[1.45] text-slate-950 ${
+      className={`inline-flex min-w-[1.75rem] justify-center rounded px-1 py-px num text-[12px] font-bold leading-[1.45] text-slate-950 ${
         win ? "bg-gold-400" : "bg-violet-200"
       } ${className}`}
     >

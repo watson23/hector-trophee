@@ -101,7 +101,7 @@ function RoundHead({
         <span className="text-[12px] text-slate-500 truncate">{day}</span>
       </span>
       <span className="flex items-baseline gap-2 shrink-0">
-        {place ? <PlaceBadge label={place} /> : <span className="inline-block min-w-[2.125rem]" />}
+        {place ? <PlaceBadge label={place} /> : <span className="inline-block min-w-[1.75rem]" />}
         {aside && <span className="num text-[12px] text-slate-500">{aside}</span>}
         <span className="score text-[17px] text-slate-100 w-14 text-right">{figure}</span>
       </span>
