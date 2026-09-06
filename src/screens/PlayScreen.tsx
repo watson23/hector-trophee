@@ -880,7 +880,7 @@ const HOLE_ARCS = holeArcs as unknown as Record<string, Record<string, HoleArc>>
  */
 function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number; tee: string; par: number }) {
   const [showArcs, setShowArcs] = usePersistentState("hectro_ui.holearcs", true);
-  const { viewportRef, handlers, viewportStyle, style: zoomStyle, zoomed, reset: resetZoom } = usePinchZoom(4);
+  const { viewportRef, handlers, viewportStyle, style: zoomStyle, zoomed, t: zoomT, reset: resetZoom } = usePinchZoom(4);
   const data = HOLE_ARCS[courseId]?.[String(hole)];
   const teePos = data?.tees[tee];
   const arcs = par >= 4 && data ? data.arcs[tee] : undefined;
@@ -938,9 +938,33 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
                   <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
                   <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
                 </svg>
-                {/* The distance labels sit beside the fitted map; zoomed in, the arcs are
-                    legible on their own and the labels would scale with the drawing. */}
-                {!zoomed && (
+                {/* The distance labels: beside the fitted map, where they read as a
+                    scale; zoomed in, on the arcs themselves — counter-scaled so they stay
+                    11px while the drawing grows, on a dark pill so they read on grass. */}
+                {zoomed ? (
+                  <>
+                    {["150", "200", "250"].map((m) => {
+                      const a = arcs[m];
+                      if (!a) return null;
+                      const main = m === "200";
+                      return (
+                        <span
+                          key={m}
+                          className={`absolute whitespace-nowrap num text-[11px] leading-none rounded px-1 py-0.5 bg-black/65 ${
+                            main ? "font-semibold text-white" : "text-slate-200"
+                          }`}
+                          style={{
+                            left: `${(a.mid[0] / data.w) * 100}%`,
+                            top: `${(a.mid[1] / data.h) * 100}%`,
+                            transform: `translate(-50%, -50%) scale(${1 / zoomT.s})`,
+                          }}
+                        >
+                          ≈{m} m
+                        </span>
+                      );
+                    })}
+                  </>
+                ) : (
                   <>
                     {["150", "200", "250"].map((m) => {
                       const a = arcs[m];
@@ -988,7 +1012,6 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
               {showArcs ? "Hide distances" : "Show distances"}
             </button>
             {showArcs && <span>· estimated from the course drawing</span>}
-            <span>· pinch to zoom</span>
           </>
         ) : (
           <span className="py-1">Pinch to zoom</span>
