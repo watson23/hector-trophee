@@ -12,7 +12,6 @@ import { strokePlayResult } from "../lib/formats";
 import { formatToPar, formatToParFine } from "../lib/leaderboard";
 import { weightLabel } from "../lib/hector";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
-import HectorMark from "../components/HectorMark";
 import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
 import DraftBoard from "../components/DraftBoard";
 import { draftRoundOf, isDraftNight } from "../lib/draftNight";
@@ -327,7 +326,6 @@ export default function RoundScreen({
                   lowerIsBetter
                   scoreHeader="To par"
                   gapDecimals={0}
-                  leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
                   highlightKeys={isTeam ? highlightPairs : highlightPlayers}
                   mineKeys={mineKeys}
                 />
@@ -392,8 +390,7 @@ export default function RoundScreen({
                     rows={pairRows}
                     lowerIsBetter
                     scoreHeader="To par"
-                    leaderMark={<HectorMark className="w-3 h-3 shrink-0 text-gold-400" />}
-                    highlightKeys={highlightPairs}
+                      highlightKeys={highlightPairs}
                     mineKeys={mineKeys}
                   />
                 </div>
