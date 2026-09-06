@@ -1,7 +1,6 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
-import { usePinchZoom } from "../hooks/usePinchZoom";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
@@ -880,143 +879,139 @@ const HOLE_ARCS = holeArcs as unknown as Record<string, Record<string, HoleArc>>
  */
 function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number; tee: string; par: number }) {
   const [showArcs, setShowArcs] = usePersistentState("hectro_ui.holearcs", true);
-  const { viewportRef, handlers, viewportStyle, style: zoomStyle, zoomed, t: zoomT, reset: resetZoom } = usePinchZoom(4);
+  const [large, setLarge] = useState(false);
   const data = HOLE_ARCS[courseId]?.[String(hole)];
   const teePos = data?.tees[tee];
   const arcs = par >= 4 && data ? data.arcs[tee] : undefined;
   const hasArcs = Boolean(arcs && teePos && Object.keys(arcs).length > 0);
-  // Marker sizes are in image pixels; the map is drawn ~280px tall, so scale them up
-  // for tall images to land at the same size on screen.
-  const k = data ? Math.max(1, data.h / 280) : 1;
+
+  // The enlarged map covers the page; the page must not scroll under it, and Escape
+  // closes it the way a tap does.
+  useEffect(() => {
+    if (!large) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLarge(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [large]);
+
+  /*
+   * One drawing, two sizes. Inline it is a 280px strip under the hole card; a tap
+   * opens it at the height of the screen. A pinch used to do this and lost twice on
+   * the course: the page claimed the gesture on iOS, and a glove has no fingertip.
+   * A tap has neither problem, and a second tap is the way back.
+   */
+  const drawing = (heightClass: string) => (
+    <div className="relative inline-block">
+      <img
+        src={holeMapUrl(courseId, hole)!}
+        alt={`Hole ${hole} layout`}
+        loading="eager"
+        draggable={false}
+        className={`block w-auto ${heightClass}`}
+      />
+      {hasArcs && showArcs && data && teePos && arcs && (
+        <>
+          <svg viewBox={`0 0 ${data.w} ${data.h}`} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+            {["150", "200", "250"].map((m) => {
+              const a = arcs[m];
+              if (!a) return null;
+              const main = m === "200";
+              return (
+                <g key={m}>
+                  <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                  <path
+                    d={a.d}
+                    fill="none"
+                    stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
+                    strokeWidth={main ? 1.5 : 1}
+                    strokeDasharray={main ? undefined : "3 3"}
+                    vectorEffect="non-scaling-stroke"
+                    strokeLinecap="round"
+                  />
+                </g>
+              );
+            })}
+            {/* The marker wears the tee's colour — the one you are playing from. Sized in
+                image pixels against a 280px rendering; larger renderings scale it up
+                along with the drawing, which is what a bigger map should do. */}
+            <circle cx={teePos.x} cy={teePos.y} r={3.2 * Math.max(1, data.h / 280)} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
+            <circle cx={teePos.x} cy={teePos.y} r={3.2 * Math.max(1, data.h / 280)} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+          </svg>
+          {["150", "200", "250"].map((m) => {
+            const a = arcs[m];
+            if (!a) return null;
+            const main = m === "200";
+            return (
+              <span
+                key={m}
+                className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num ${large ? "text-[13px]" : "text-[11px]"} ${
+                  main ? "font-semibold text-slate-200" : "text-slate-500"
+                }`}
+                style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
+              >
+                ≈{m}m
+              </span>
+            );
+          })}
+          <span
+            className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-slate-500 ${large ? "text-[13px]" : "text-[11px]"}`}
+            style={{ top: `${(teePos.y / data.h) * 100}%` }}
+          >
+            0m
+          </span>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="mt-3 flex flex-col items-center">
-      {/* The frame is the whole content width at the fitted map's height, so a long
-          straight hole — a thin strip when fitted — has room to grow into under a pinch.
-          The layer inside pans and scales (see usePinchZoom), clipped to the frame. */}
-      <div
-        ref={viewportRef}
-        {...handlers}
-        style={viewportStyle}
-        className="relative w-full overflow-hidden rounded-md select-none"
+      <button
+        type="button"
+        onClick={() => setLarge(true)}
+        aria-label={`Enlarge the hole ${hole} map`}
+        className="flex w-full justify-center rounded-md active:opacity-80"
       >
-        <div style={zoomStyle} className="flex justify-center">
-          <div className="relative inline-block">
-            <img
-              src={holeMapUrl(courseId, hole)!}
-              alt={`Hole ${hole} layout`}
-              loading="eager"
-              draggable={false}
-              className="block max-h-[280px] w-auto max-w-[66vw] pointer-events-none"
-            />
-            {hasArcs && showArcs && data && teePos && arcs && (
-              <>
-                <svg
-                  viewBox={`0 0 ${data.w} ${data.h}`}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  aria-hidden="true"
-                >
-                  {["150", "200", "250"].map((m) => {
-                    const a = arcs[m];
-                    if (!a) return null;
-                    const main = m === "200";
-                    return (
-                      <g key={m}>
-                        <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-                        <path
-                          d={a.d}
-                          fill="none"
-                          stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
-                          strokeWidth={main ? 1.5 : 1}
-                          strokeDasharray={main ? undefined : "3 3"}
-                          vectorEffect="non-scaling-stroke"
-                          strokeLinecap="round"
-                        />
-                      </g>
-                    );
-                  })}
-                  {/* The marker wears the tee's colour — the one you are playing from. */}
-                  <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
-                  <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-                </svg>
-                {/* The distance labels: beside the fitted map, where they read as a
-                    scale; zoomed in, on the arcs themselves — counter-scaled so they stay
-                    11px while the drawing grows, on a dark pill so they read on grass. */}
-                {zoomed ? (
-                  <>
-                    {["150", "200", "250"].map((m) => {
-                      const a = arcs[m];
-                      if (!a) return null;
-                      const main = m === "200";
-                      return (
-                        <span
-                          key={m}
-                          className={`absolute whitespace-nowrap num text-[11px] leading-none rounded px-1 py-0.5 bg-black/65 ${
-                            main ? "font-semibold text-white" : "text-slate-200"
-                          }`}
-                          style={{
-                            left: `${(a.mid[0] / data.w) * 100}%`,
-                            top: `${(a.mid[1] / data.h) * 100}%`,
-                            transform: `translate(-50%, -50%) scale(${1 / zoomT.s})`,
-                          }}
-                        >
-                          ≈{m}m
-                        </span>
-                      );
-                    })}
-                  </>
-                ) : (
-                  <>
-                    {["150", "200", "250"].map((m) => {
-                      const a = arcs[m];
-                      if (!a) return null;
-                      const main = m === "200";
-                      return (
-                        <span
-                          key={m}
-                          className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] ${
-                            main ? "font-semibold text-slate-200" : "text-slate-500"
-                          }`}
-                          style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
-                        >
-                          ≈{m}m
-                        </span>
-                      );
-                    })}
-                    <span
-                      className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] text-slate-500"
-                      style={{ top: `${(teePos.y / data.h) * 100}%` }}
-                    >
-                      0m
-                    </span>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+        {drawing("max-h-[280px] max-w-[66vw]")}
+      </button>
       {/* One quiet line: the toggle, and while the arcs are on, the caveat — the "≈"
-          on every label already says "estimate"; this says from what. Zoomed in, the
-          line offers the way back. */}
+          on every label already says "estimate"; this says from what. */}
       <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600">
-        {zoomed ? (
-          <button onClick={resetZoom} className="font-medium text-slate-500 underline underline-offset-4 py-1">
-            Reset zoom
-          </button>
-        ) : hasArcs ? (
+        {hasArcs ? (
           <>
-            <button
-              onClick={() => setShowArcs((v) => !v)}
-              className="font-medium text-slate-500 underline underline-offset-4 py-1"
-            >
+            <button onClick={() => setShowArcs((v) => !v)} className="font-medium text-slate-500 underline underline-offset-4 py-1">
               {showArcs ? "Hide distances" : "Show distances"}
             </button>
             {showArcs && <span>· estimated from the course drawing</span>}
           </>
         ) : (
-          <span className="py-1">Pinch to zoom</span>
+          <span className="py-1">Tap the map to enlarge</span>
         )}
       </div>
+
+      {large && (
+        <div
+          role="dialog"
+          aria-label={`Hole ${hole} map`}
+          onClick={() => setLarge(false)}
+          className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+        >
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+            <span className="text-[13px] font-semibold text-slate-300">
+              Hole {hole} <span className="text-slate-500 font-normal">· par {par}</span>
+            </span>
+            <span className="text-[12px] text-slate-500">Tap anywhere to close</span>
+          </div>
+          {drawing("max-h-[calc(100dvh-120px)] max-w-[80vw]")}
+        </div>
+      )}
     </div>
   );
 }

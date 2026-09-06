@@ -90,13 +90,10 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   a block per pair under a small mono pair label with the pair's figure, the counted ball
   bright and bold in the net row, and the pair's counted net as a `PAIR` row; marks 28px.
   Single cards 30px; a scramble is one card per pair at 32px.
-- **Hole map zoom** (`usePinchZoom`): the page never zooms (`maximum-scale=1`), so the
-  map has its own gesture in a frame the full content width at the fitted height (a long
-  straight hole is a thin strip fitted, and needs the room) — pinch about the fingers'
-  midpoint up to 4×, one-finger pan
-  once zoomed, double tap in or back out, trackpad pinch on a desk. Fitted, the page
-  still scrolls over it (`touch-action: pan-y`); zoomed, the map takes the touch and the
-  distance labels step aside for a `Reset zoom` link.
+- **Hole map, two sizes**: a 280px strip under the hole card; a tap opens the same
+  drawing, arcs and labels at the height of the screen, and a tap anywhere closes it.
+  A pinch was tried (6.9) and dropped: iOS handed the gesture to the page scroll, and a
+  gloved hand has no fingertip. Tap has neither problem.
 - The rule behind it: walking and entering are different moments with different
   needs; anything on the entry sheet that isn't scoring is clutter, anything on the
   course view that can be tapped by accident is a hazard.
