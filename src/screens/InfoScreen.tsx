@@ -390,7 +390,7 @@ function CourseCard({ courseId }: { courseId: string }) {
           <div className="font-semibold text-sm">{course.name}</div>
           <div className="text-[12px] text-slate-500 num">
             Par {course.par.reduce((a, b) => a + b, 0)} ·{" "}
-            {course.tees[tee].cr}/{course.tees[tee].slope} · {course.tees[tee].metres} m
+            {course.tees[tee].cr}/{course.tees[tee].slope} · {course.tees[tee].metres}m
           </div>
         </div>
         <span className="text-slate-500 text-xs">{open ? "Hide" : "Card"}</span>

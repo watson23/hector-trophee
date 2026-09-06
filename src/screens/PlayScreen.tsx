@@ -538,7 +538,7 @@ function OnCourse({
         </div>
         <div className="mt-2 text-sm text-slate-400 num">
           Par {par} · SI {si}
-          {metres ? ` · ${metres} m` : ""}
+          {metres ? ` · ${metres}m` : ""}
         </div>
         {/* The hole map is the feature for a course most of the field has played
             once or never: a real button, not a pill in the meta line. The choice
@@ -709,7 +709,7 @@ function EntrySheet({
           <div className="score text-4xl leading-none">{hole}</div>
           <div className="text-[12px] text-slate-500 num mt-0.5">
             Par {par} · SI {si}
-            {metres ? ` · ${metres} m` : ""}
+            {metres ? ` · ${metres}m` : ""}
           </div>
         </div>
         <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
@@ -959,7 +959,7 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
                             transform: `translate(-50%, -50%) scale(${1 / zoomT.s})`,
                           }}
                         >
-                          ≈{m} m
+                          ≈{m}m
                         </span>
                       );
                     })}
@@ -978,7 +978,7 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
                           }`}
                           style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
                         >
-                          ≈{m}{main ? " m" : ""}
+                          ≈{m}m
                         </span>
                       );
                     })}
@@ -986,7 +986,7 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
                       className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] text-slate-500"
                       style={{ top: `${(teePos.y / data.h) * 100}%` }}
                     >
-                      0 m
+                      0m
                     </span>
                   </>
                 )}
