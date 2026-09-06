@@ -7,6 +7,7 @@ import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
+import { currentSpace, spaceForCode, spaceMeta, switchSpace } from "../lib/space";
 import { Header } from "../components/Chrome";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import FlightList from "../components/FlightList";
@@ -170,6 +171,7 @@ export default function InfoScreen({
             ) : (
               <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
             )}
+            <SpaceWord />
           </div>
         )}
         <p className="text-[12px] text-slate-600 mt-3 text-center leading-relaxed">
@@ -735,6 +737,64 @@ function ShareTV() {
     >
       {copied ? "Link copied ✓" : "Share Hector TV"}
     </button>
+  );
+}
+
+/**
+ * The space words (SANDBOX, HIRSALA, …) used to work only on the event-code screen —
+ * which a signed-in tester never sees again, so a word handed over in the group chat
+ * had nowhere to go. This is that box, one tap away on every phone.
+ */
+function SpaceWord() {
+  const [open, setOpen] = useState(false);
+  const [word, setWord] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="hover:text-slate-400 py-2">
+        Have a code?
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="card p-3.5 basis-full space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const space = spaceForCode(word);
+        if (!space) {
+          setError("Not a code this app knows. Codes move this phone between the tournament and the test spaces.");
+          return;
+        }
+        if (space === currentSpace()) {
+          setError(`You're already in ${spaceMeta(space).label}.`);
+          return;
+        }
+        switchSpace(space);
+      }}
+    >
+      <div className="flex gap-2">
+        <input
+          autoFocus
+          type="text"
+          autoComplete="off"
+          autoCapitalize="characters"
+          className={`input flex-1 num text-center uppercase ${error ? "ring-2 ring-rose-500" : ""}`}
+          placeholder="Code word"
+          value={word}
+          onChange={(e) => {
+            setWord(e.target.value);
+            setError(null);
+          }}
+        />
+        <button className="btn-primary px-4" type="submit" disabled={!word.trim()}>
+          Go
+        </button>
+      </div>
+      {error && <p className="text-[12px] text-rose-300 text-left leading-relaxed">{error}</p>}
+    </form>
   );
 }
 

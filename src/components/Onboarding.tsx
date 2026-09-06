@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventDoc } from "../types";
 import { checkPin } from "../lib/pin";
-import { currentSpace, spaceForCode, switchSpace } from "../lib/space";
+import { clearJustSwitched, currentSpace, peekJustSwitched, spaceForCode, spaceMeta, switchSpace } from "../lib/space";
 import HectorMark from "./HectorMark";
 
 interface Props {
@@ -21,6 +21,14 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, on
   // A beat of confirmation before the choice sticks: twenty names, and a mis-tap here
   // means scoring the week under someone else's identity.
   const [picked, setPicked] = useState<string | null>(null);
+  // Typing a space word reloads onto this very screen, now in the other space — which
+  // looks exactly like a failed attempt unless the screen says what just happened.
+  // Read in the initializer, cleared in an effect: a strict-mode double initializer
+  // would otherwise take the flag on the first call and find nothing on the second.
+  const [moved] = useState(() => peekJustSwitched());
+  useEffect(() => {
+    clearJustSwitched();
+  }, []);
 
   async function submitPin(e: React.FormEvent) {
     e.preventDefault();
@@ -29,8 +37,14 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, on
     // A space word in the code box moves this copy of the app — installed or not —
     // into that space; it reloads and asks for the event code there.
     const space = spaceForCode(pin);
-    if (space && space !== currentSpace()) {
-      switchSpace(space);
+    if (space) {
+      if (space !== currentSpace()) {
+        switchSpace(space);
+        return;
+      }
+      setChecking(false);
+      setPin("");
+      setError(`You're already in ${spaceMeta(space).label}. This box now wants the event code.`);
       return;
     }
     const ok = await checkPin(pin, event.pinHash);
@@ -70,6 +84,12 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, on
               placeholder="•••••"
             />
           </div>
+          {moved && !error && (
+            <p className="text-sm text-sky-300 leading-relaxed">
+              Moved to <strong className="font-semibold">{spaceMeta(moved).label}</strong>. Now the event code, the
+              same one as before.
+            </p>
+          )}
           {error && <p className="text-rose-400 text-sm">{error}</p>}
           <button type="submit" className="btn-primary w-full" disabled={!pin || checking}>
             {checking ? "Checking…" : "Continue"}

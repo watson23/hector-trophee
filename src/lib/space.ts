@@ -98,13 +98,36 @@ export function spaceLink(space: Space): string {
   return `${location.origin}/?space=${space}`;
 }
 
+const SWITCHED_KEY = "hectro_space_switched";
+
 export function switchSpace(space: Space): void {
   try {
     localStorage.setItem(KEY, space);
+    // The reload lands on a screen that looks just like the one before it; this lets
+    // that screen say the move happened. Session-scoped: it is about this one reload.
+    sessionStorage.setItem(SWITCHED_KEY, space);
   } catch {
     /* without storage there is only ever the live space */
   }
   location.reload();
+}
+
+/** The space this page was just moved into by a code word, or null. Cleared separately. */
+export function peekJustSwitched(): Space | null {
+  try {
+    const v = sessionStorage.getItem(SWITCHED_KEY);
+    return isSpace(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearJustSwitched(): void {
+  try {
+    sessionStorage.removeItem(SWITCHED_KEY);
+  } catch {
+    /* nothing stored, nothing to clear */
+  }
 }
 
 export function eventIdFor(space: Space): string {
