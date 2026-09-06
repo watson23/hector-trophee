@@ -104,8 +104,10 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 - **Trophée breakdowns** (expanded row): one header line per round — `R1` in the score
   face, the day quiet, then the placing badge and the round's figure a size up — with
   the formats that made it on a thin rail beneath at 13px, their arithmetic at 11px.
-  Placing badges are three tiers at a fixed width so they read as a column: a win
-  solid gold, a podium place outlined bright, the rest quiet.
+  Placings are the one `PlaceBadge` the app uses everywhere — the leaderboards'
+  position column and these round headers — black on light purple, gold for a win,
+  fixed width so a column of them lines up. One look for one meaning: a player
+  scanning their week picks out every placing at a glance.
 
 ## Motion
 

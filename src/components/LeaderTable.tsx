@@ -1,6 +1,7 @@
 import { Fragment, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { formatDiff, formatThru, rank } from "../lib/leaderboard";
+import PlaceBadge from "./PlaceBadge";
 
 export interface LeaderRow {
   key: string;
@@ -133,7 +134,7 @@ export default function LeaderTable({
       <table ref={tableEl} className="w-full table-fixed text-sm">
         {/* Widths are tuned so a pair name like "Sami H + Kristian H" fits on a 375px screen. */}
         <colgroup>
-          <col className="w-10" />
+          <col className="w-12" />
           <col />
           <col className={wideThru ? "w-[4rem]" : "w-[4.5rem]"} />
           <col className="w-[2.9rem]" />
@@ -174,14 +175,10 @@ export default function LeaderTable({
                           : ""
                   }`}
                 >
-                  {/* The position: big enough to read as information, centred on the row
-                      — at this size it holds its own against the two-line name cell. */}
-                  <td
-                    className={`pl-2 py-2.5 num text-[15px] font-semibold ${
-                      r.leader ? "text-gold-400" : "text-slate-400"
-                    }`}
-                  >
-                    {r.label}
+                  {/* The position as the one placing badge the app uses everywhere, so a
+                      row here and a round in a Trophée breakdown read as the same thing. */}
+                  <td className="pl-1.5 py-2.5">
+                    <PlaceBadge label={r.label} />
                   </td>
                   <td className="py-2.5 pr-2">
                     <div

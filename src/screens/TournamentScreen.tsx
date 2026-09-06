@@ -7,6 +7,7 @@ import { courses } from "../data/courses";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import { Header, Segmented } from "../components/Chrome";
 import HectorMark from "../components/HectorMark";
+import PlaceBadge from "../components/PlaceBadge";
 import Champions, { isTournamentComplete } from "../components/Champions";
 import { PREVIOUS } from "../data/history";
 
@@ -58,13 +59,6 @@ function begunRounds(rounds: Round[], rows: { perRound: Record<string, unknown> 
 }
 
 /** "1st", "T3", "10th" — a round's placing, the way it's said. */
-function placeText(label: string): string {
-  if (label.startsWith("T")) return label;
-  const n = Number(label);
-  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : (["th", "st", "nd", "rd"][n % 10] ?? "th");
-  return `${n}${suffix}`;
-}
-
 /**
  * Where every row placed on one round. The breakdown's figures explain the total's
  * arithmetic; the placings explain its shape — a week of "1st, T3, 10th" and a week
@@ -79,27 +73,6 @@ function placesOn<E extends { thru: number }>(
   const entries = table.flatMap((r) => (r.perRound[roundId] ? [{ key: r.key, e: r.perRound[roundId] }] : []));
   const ranked = rank(entries, (x) => value(x.e), lowerIsBetter, (x) => x.e.thru > 0);
   return new Map(ranked.filter((x) => x.position > 0).map((x) => [x.item.key, x.label]));
-}
-
-/**
- * The round's placing, as a badge that reads at a glance down a column: a win is solid
- * gold, a podium place outlined bright, the rest quiet. Fixed width, so the badges line
- * up whatever the label.
- */
-function Place({ label }: { label?: string }) {
-  if (!label) return <span className="inline-block w-9" />;
-  const n = Number(label.replace("T", ""));
-  const tone =
-    n === 1
-      ? "bg-gold-400 text-slate-950 font-bold"
-      : n <= 3
-        ? "border border-slate-400 text-slate-100 font-semibold"
-        : "border border-slate-800 text-slate-500 font-semibold";
-  return (
-    <span className={`inline-flex w-9 justify-center rounded-md py-px text-[11px] num leading-[1.4] ${tone}`}>
-      {placeText(label)}
-    </span>
-  );
 }
 
 /**
@@ -128,7 +101,7 @@ function RoundHead({
         <span className="text-[12px] text-slate-500 truncate">{day}</span>
       </span>
       <span className="flex items-baseline gap-2 shrink-0">
-        <Place label={place} />
+        {place ? <PlaceBadge label={place} /> : <span className="inline-block min-w-[2.125rem]" />}
         {aside && <span className="num text-[12px] text-slate-500">{aside}</span>}
         <span className="score text-[17px] text-slate-100 w-14 text-right">{figure}</span>
       </span>
