@@ -629,9 +629,19 @@ function OnCourse({
       )}
 
       {complete ? (
-        <button className="btn-primary w-full py-4 text-lg" onClick={onFinish}>
-          Finish round
-        </button>
+        <>
+          <button className="btn-primary w-full py-4 text-lg" onClick={onFinish}>
+            Finish round
+          </button>
+          {/* A full card is not a locked one: a wrong 5 on the 7th is still fixable from
+              here, on the hole in view — without the finish button's weight. */}
+          <button
+            onClick={onEnter}
+            className="w-full text-center text-[13px] font-medium text-slate-400 underline underline-offset-4 py-1"
+          >
+            Fix a score · hole {hole}
+          </button>
+        </>
       ) : (
         <button className="btn-primary w-full py-4 text-lg" onClick={onEnter}>
           Enter scores · hole {hole}
