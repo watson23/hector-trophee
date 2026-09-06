@@ -166,8 +166,10 @@ export default function LeaderTable({
                   }}
                   onClick={() => expandable && setOpen(isOpen ? null : r.item.key)}
                   className={`border-t border-slate-800 ${expandable ? "cursor-pointer active:bg-slate-800/60" : ""} ${
+                    /* The leader is gold three times over — badge, name, figure — so
+                       the row needs no rail of its own. */
                     r.leader
-                      ? "shadow-[inset_3px_0_0_theme(colors.gold.400)]"
+                      ? ""
                       : fav
                         ? "bg-violet-500/10 shadow-[inset_2px_0_0_theme(colors.violet.500)]"
                         : mine
