@@ -944,28 +944,60 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
             <circle cx={teePos.x} cy={teePos.y} r={3.2 * Math.max(1, data.h / 280)} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
             <circle cx={teePos.x} cy={teePos.y} r={3.2 * Math.max(1, data.h / 280)} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
           </svg>
-          {["150", "200", "250"].map((m) => {
-            const a = arcs[m];
-            if (!a) return null;
-            const main = m === "200";
-            return (
+          {/* Labels: beside the strip when inline, where the arcs sit against the edge
+              and there is no room on them; on the arcs themselves when enlarged, on a
+              dark pill, so a label never drifts away from its line on a dogleg. */}
+          {large ? (
+            <>
+              {["150", "200", "250"].map((m) => {
+                const a = arcs[m];
+                if (!a) return null;
+                const main = m === "200";
+                return (
+                  <span
+                    key={m}
+                    className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap num text-[12px] leading-none rounded px-1.5 py-1 bg-black/70 ${
+                      main ? "font-semibold text-white" : "text-slate-200"
+                    }`}
+                    style={{ left: `${(a.mid[0] / data.w) * 100}%`, top: `${(a.mid[1] / data.h) * 100}%` }}
+                  >
+                    ≈{m}m
+                  </span>
+                );
+              })}
               <span
-                key={m}
-                className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num ${large ? "text-[13px]" : "text-[11px]"} ${
-                  main ? "font-semibold text-slate-200" : "text-slate-500"
-                }`}
-                style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
+                className="absolute -translate-y-1/2 whitespace-nowrap num text-[12px] leading-none rounded px-1.5 py-1 bg-black/70 text-slate-200"
+                style={{ left: `calc(${(teePos.x / data.w) * 100}% + 14px)`, top: `${(teePos.y / data.h) * 100}%` }}
               >
-                ≈{m}m
+                0m
               </span>
-            );
-          })}
-          <span
-            className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-slate-500 ${large ? "text-[13px]" : "text-[11px]"}`}
-            style={{ top: `${(teePos.y / data.h) * 100}%` }}
-          >
-            0m
-          </span>
+            </>
+          ) : (
+            <>
+              {["150", "200", "250"].map((m) => {
+                const a = arcs[m];
+                if (!a) return null;
+                const main = m === "200";
+                return (
+                  <span
+                    key={m}
+                    className={`absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] ${
+                      main ? "font-semibold text-slate-200" : "text-slate-500"
+                    }`}
+                    style={{ top: `${(a.mid[1] / data.h) * 100}%` }}
+                  >
+                    ≈{m}m
+                  </span>
+                );
+              })}
+              <span
+                className="absolute left-full ml-1.5 -translate-y-1/2 whitespace-nowrap num text-[11px] text-slate-500"
+                style={{ top: `${(teePos.y / data.h) * 100}%` }}
+              >
+                0m
+              </span>
+            </>
+          )}
         </>
       )}
     </div>
