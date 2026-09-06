@@ -64,7 +64,8 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
 - Weight labels are percentages ("H 50%"), never fraction glyphs.
 - Score marks: shape encodes result (ring = birdie, square = bogey, doubled =
   eagle/double), numeral stays bright; on the one-nine scorecard the `lg` mark is a
-  32px cell with a 20px scoreboard-face numeral. Legend lives on the scorecard.
+  32px cell with a 20px scoreboard-face numeral. No legend: the notation is the
+  one every golfer knows, and a minute with the card explains the rest.
 
 ## In-round Play: two modes, never one screen
 

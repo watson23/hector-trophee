@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Card, Course, EventDoc, FormatSpec } from "../types";
 import type { FormatResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
-import ScoreMark, { ScoreLegend, type ScoreSize } from "./ScoreMark";
+import ScoreMark, { type ScoreSize } from "./ScoreMark";
 
 /** A card being shown: one per player, or one per pair in a scramble. */
 interface Subject {
@@ -333,13 +333,6 @@ export default function Scorecard({
           </div>
         );
       })}
-
-      <div className="mt-2">
-        <ScoreLegend
-          strokeLabel={scramble ? "Team stroke" : "Stroke"}
-          note={bbTab ? "· bright net = pair's counted ball" : undefined}
-        />
-      </div>
 
       {/* Navigation lives at the bottom, in the same slot on every view, each button
           named by where it lands: the current hole on the left (zoom in), the round's
