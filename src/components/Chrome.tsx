@@ -327,7 +327,8 @@ export function Segmented<T extends string>({
   onChange,
 }: {
   value: T;
-  options: { id: T; label: string }[];
+  /** `dot` marks a segment with something unread — News with a fresh announcement. */
+  options: { id: T; label: string; dot?: boolean }[];
   onChange: (v: T) => void;
 }) {
   // Five segments (Admin) don't fit at the usual size on a phone: tighter padding
@@ -339,13 +340,14 @@ export function Segmented<T extends string>({
         <button
           key={o.id}
           onClick={() => onChange(o.id)}
-          className={`flex-1 rounded-full py-1.5 font-semibold transition-colors truncate ${
+          className={`relative flex-1 rounded-full py-1.5 font-semibold transition-colors truncate ${
             dense ? "px-1 text-[12px]" : "px-3 text-xs"
           } ${
             value === o.id ? "bg-violet-600 text-white" : "text-slate-400 hover:text-slate-200"
           }`}
         >
           {o.label}
+          {o.dot && <span className="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-amber-400" />}
         </button>
       ))}
     </div>

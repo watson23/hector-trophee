@@ -7,7 +7,7 @@ import { courseHandicap } from "../lib/handicap";
 import { effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
-import { Header } from "../components/Chrome";
+import { Header, Segmented } from "../components/Chrome";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import FlightList from "../components/FlightList";
 import { PREVIOUS } from "../data/history";
@@ -116,29 +116,20 @@ export default function InfoScreen({
         />
       </div>
 
-      {/* Section idents, not pills: tracked caps on a hairline, the active one
-          underlined — the same voice as the chyron and the TV bar. */}
-      <div className="px-4 flex gap-4 overflow-x-auto border-b border-slate-800">
-        {(["news", "schedule", "field", "courses", "formats"] as const)
+      {/* The sections as the app's segmented control — the same one Trophée and Admin
+          use — rather than tracked-caps idents on a hairline, which drowned in the text
+          below on the wordier pages. */}
+      <Segmented
+        value={activeSection}
+        onChange={setSection}
+        options={(["news", "schedule", "field", "courses", "formats"] as const)
           .filter((sec) => sec !== "news" || showNews)
-          .map((sec) => (
-            <button
-              key={sec}
-              onClick={() => setSection(sec)}
-              className={`relative shrink-0 pt-1 pb-2.5 num text-[12px] tracking-[0.14em] uppercase transition-colors ${
-                activeSection === sec ? "text-violet-300 font-semibold" : "text-slate-500"
-              }`}
-            >
-              {sec}
-              {activeSection === sec && (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-violet-500" />
-              )}
-              {sec === "news" && unread && (
-                <span className="absolute top-0 -right-1.5 w-2 h-2 rounded-full bg-amber-400" />
-              )}
-            </button>
-          ))}
-      </div>
+          .map((sec) => ({
+            id: sec,
+            label: sec.charAt(0).toUpperCase() + sec.slice(1),
+            dot: sec === "news" && unread,
+          }))}
+      />
 
       <div className="px-4 mt-4 space-y-3">
         {activeSection === "news" && showNews && (
