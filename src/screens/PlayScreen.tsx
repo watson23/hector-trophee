@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
+import { usePinchZoom } from "../hooks/usePinchZoom";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
@@ -869,6 +870,7 @@ const HOLE_ARCS = holeArcs as unknown as Record<string, Record<string, HoleArc>>
  */
 function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number; tee: string; par: number }) {
   const [showArcs, setShowArcs] = usePersistentState("hectro_ui.holearcs", true);
+  const { viewportRef, handlers, viewportStyle, style: zoomStyle, zoomed, reset: resetZoom } = usePinchZoom(4);
   const data = HOLE_ARCS[courseId]?.[String(hole)];
   const teePos = data?.tees[tee];
   const arcs = par >= 4 && data ? data.arcs[tee] : undefined;
@@ -879,42 +881,58 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
   return (
     <div className="mt-3 flex flex-col items-center">
       <div className="relative inline-block">
-        <img
-          src={holeMapUrl(courseId, hole)!}
-          alt={`Hole ${hole} layout`}
-          loading="eager"
-          className="block max-h-[280px] w-auto max-w-[80vw]"
-        />
-        {hasArcs && showArcs && data && teePos && arcs && (
+        {/* The viewport keeps the fitted map's size; the layer inside pans and scales
+            under a pinch (see usePinchZoom), clipped to the same frame. */}
+        <div
+          ref={viewportRef}
+          {...handlers}
+          style={viewportStyle}
+          className="relative overflow-hidden rounded-md select-none"
+        >
+          <div style={zoomStyle} className="relative">
+            <img
+              src={holeMapUrl(courseId, hole)!}
+              alt={`Hole ${hole} layout`}
+              loading="eager"
+              draggable={false}
+              className="block max-h-[280px] w-auto max-w-[80vw] pointer-events-none"
+            />
+            {hasArcs && showArcs && data && teePos && arcs && (
+              <svg
+                viewBox={`0 0 ${data.w} ${data.h}`}
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                aria-hidden="true"
+              >
+                {["150", "200", "250"].map((m) => {
+                  const a = arcs[m];
+                  if (!a) return null;
+                  const main = m === "200";
+                  return (
+                    <g key={m}>
+                      <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                      <path
+                        d={a.d}
+                        fill="none"
+                        stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
+                        strokeWidth={main ? 1.5 : 1}
+                        strokeDasharray={main ? undefined : "3 3"}
+                        vectorEffect="non-scaling-stroke"
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  );
+                })}
+                {/* The marker wears the tee's colour — the one you are playing from. */}
+                <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
+                <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+              </svg>
+            )}
+          </div>
+        </div>
+        {/* The distance labels sit beside the fitted map; zoomed in, the arcs are
+            legible on their own and the labels would point at the wrong rows. */}
+        {hasArcs && showArcs && data && teePos && arcs && !zoomed && (
           <>
-            <svg
-              viewBox={`0 0 ${data.w} ${data.h}`}
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              aria-hidden="true"
-            >
-              {["150", "200", "250"].map((m) => {
-                const a = arcs[m];
-                if (!a) return null;
-                const main = m === "200";
-                return (
-                  <g key={m}>
-                    <path d={a.d} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={main ? 4 : 3} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-                    <path
-                      d={a.d}
-                      fill="none"
-                      stroke={main ? "#fff" : "rgba(255,255,255,0.85)"}
-                      strokeWidth={main ? 1.5 : 1}
-                      strokeDasharray={main ? undefined : "3 3"}
-                      vectorEffect="non-scaling-stroke"
-                      strokeLinecap="round"
-                    />
-                  </g>
-                );
-              })}
-              {/* The marker wears the tee's colour — the one you are playing from. */}
-              <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={4} vectorEffect="non-scaling-stroke" />
-              <circle cx={teePos.x} cy={teePos.y} r={3.2 * k} fill={teeHex[tee] ?? "#fff"} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-            </svg>
             {["150", "200", "250"].map((m) => {
               const a = arcs[m];
               if (!a) return null;
@@ -941,18 +959,28 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
         )}
       </div>
       {/* One quiet line: the toggle, and while the arcs are on, the caveat — the "≈"
-          on every label already says "estimate"; this says from what. */}
-      {hasArcs && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600">
-          <button
-            onClick={() => setShowArcs((v) => !v)}
-            className="font-medium text-slate-500 underline underline-offset-4 py-1"
-          >
-            {showArcs ? "Hide distances" : "Show distances"}
+          on every label already says "estimate"; this says from what. Zoomed in, the
+          line offers the way back. */}
+      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600">
+        {zoomed ? (
+          <button onClick={resetZoom} className="font-medium text-slate-500 underline underline-offset-4 py-1">
+            Reset zoom
           </button>
-          {showArcs && <span>· estimated from the course drawing</span>}
-        </div>
-      )}
+        ) : hasArcs ? (
+          <>
+            <button
+              onClick={() => setShowArcs((v) => !v)}
+              className="font-medium text-slate-500 underline underline-offset-4 py-1"
+            >
+              {showArcs ? "Hide distances" : "Show distances"}
+            </button>
+            {showArcs && <span>· estimated from the course drawing</span>}
+            <span>· pinch to zoom</span>
+          </>
+        ) : (
+          <span className="py-1">Pinch to zoom</span>
+        )}
+      </div>
     </div>
   );
 }
