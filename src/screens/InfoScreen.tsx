@@ -466,6 +466,14 @@ function CourseCard({ courseId }: { courseId: string }) {
  * derived from the live round configs rather than hardcoded, so an admin edit to a
  * format or weight shows up in the rules too.
  */
+/** A rules-sheet heading and paragraph, one size for the whole Formats page. */
+function H({ children, tone = "text-slate-100" }: { children: React.ReactNode; tone?: string }) {
+  return <h3 className={`text-[15px] font-semibold ${tone}`}>{children}</h3>;
+}
+function P({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <p className={`text-[13px] text-slate-400 leading-relaxed ${className}`}>{children}</p>;
+}
+
 function Formats({ rounds }: { rounds: Round[] }) {
   const par = 72;
   const level = levelParTotal(
@@ -488,115 +496,108 @@ function Formats({ rounds }: { rounds: Round[] }) {
   const victorRounds = rounds.filter((r) => r.formats.some((f) => f.victor));
 
   const sourceLabel: Record<string, string> = {
-    betterIndividual: "the better player's round",
-    team: "the pair's score",
-    bothIndividuals: "each player's round, both counted",
+    betterIndividual: "better player",
+    team: "pair",
+    bothIndividuals: "both players",
   };
 
   const formats = [
-    {
-      title: "Stableford NET",
-      body: "Points per hole against your net score: 2 for a net par, 3 for a birdie, 1 for a bogey, 0 for anything worse. This is what the Victor trophy is scored on, and it decides the draft order after round 1.",
-    },
-    {
-      title: "Stroke Play",
-      body: "Total strokes. SCR means gross, no handicap. NET subtracts your handicap strokes hole by hole.",
-    },
-    {
-      title: "Better Ball Stroke Play NET",
-      body: "Both of you play your own ball; on each hole the pair takes the lower net score.",
-    },
-    {
-      title: "Scramble Stroke Play NET",
-      body: "One ball for the pair — everyone plays from the best shot. One card, one team handicap at 20% allowance.",
-    },
+    { title: "Stableford NET", body: "Points per hole on your net score: par 2, birdie 3, bogey 1, worse 0." },
+    { title: "Stroke Play", body: "Total strokes. SCR is gross; NET takes your handicap strokes off hole by hole." },
+    { title: "Better Ball NET", body: "Own ball each; the pair counts the lower net score on every hole." },
+    { title: "Scramble NET", body: "One ball for the pair, played from the better shot. One card, team handicap at 20%." },
   ];
 
   return (
-    <div>
-      {/* The pair competition first: it is the main event, and the one nobody can
-          rescore in their head without the rules in front of them. De-boxed into a
-          rules sheet: hairline sections, tracked-caps headings. */}
-      <div className="py-4 pt-1">
-        <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-violet-300">
-          The Hector · pairs
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-          A <strong className="text-slate-300 font-semibold">stroke total — lower wins</strong>.
-          Each round adds a weighted share of the pair's result:
-        </p>
-        <ul className="mt-2 space-y-1">
-          {hectorRounds.map(({ round, f }) => (
-            <li key={`${round.id}-${f.id}`} className="text-[12px] text-slate-400 flex gap-1.5">
-              <span className="num font-bold text-violet-400 shrink-0 w-5">R{round.seq}</span>
-              <span>
-                <span className="num font-semibold text-slate-300">{weightLabel(f.hector!.pct)}</span>{" "}
-                of {sourceLabel[f.hector!.source] ?? "the score"} —{" "}
-                {f.label.replace(/ Stroke Play/, "")}
+    <div className="space-y-3">
+      {/* The pair competition first: the main event, and the one nobody can rescore in
+          their head without the rules in front of them. Cards like the schedule's, a real
+          heading each, the weights as a small table — one line per round — and the rules
+          that follow as short notes. */}
+      <div className="card p-4">
+        <H tone="text-violet-300">The Hector · pairs</H>
+        <P className="mt-1">
+          A <strong className="text-slate-200 font-semibold">stroke total — lower wins</strong>. Each
+          round adds a weighted share of the pair's result:
+        </P>
+        <table className="mt-2.5 w-full text-[13px]">
+          <tbody>
+            {hectorRounds.map(({ round, f }) => (
+              <tr key={`${round.id}-${f.id}`} className="border-t border-slate-800 first:border-0">
+                <td className="py-1 num font-bold text-violet-400 w-8">R{round.seq}</td>
+                <td className="py-1 num font-semibold text-slate-200 w-12">{weightLabel(f.hector!.pct)}</td>
+                <td className="py-1 text-slate-300">{f.label.replace(/ Stroke Play/, "")}</td>
+                <td className="py-1 text-right text-slate-500">{sourceLabel[f.hector!.source] ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <ul className="mt-3 space-y-1.5 text-[13px] text-slate-400 leading-relaxed">
+          <li className="flex gap-2">
+            <span className="text-slate-600 shrink-0">·</span>
+            <span>
+              Standings show <strong className="text-slate-200 font-semibold">to par</strong>, weighted the
+              same way — a bogey in a 50% round costs +0.5 — so pairs mid-round compare fairly.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="text-slate-600 shrink-0">·</span>
+            <span>
+              Stableford rounds count as strokes:{" "}
+              <span className="num text-slate-300">2 × par − (points + 36)</span>. 39 points on a par 72 is
+              69 strokes.
+            </span>
+          </li>
+          {bonusRounds.map(({ round, f }) => (
+            <li key={round.id} className="flex gap-2">
+              <span className="text-amber-400 shrink-0">·</span>
+              <span className="text-amber-400/90">
+                R{round.seq} bonuses on gross scores:
+                {f.bonuses!.birdie ? ` a birdie takes ${f.bonuses!.birdie.toFixed(1)} off the total` : ""}
+                {f.bonuses!.eagle ? `, an eagle ${f.bonuses!.eagle.toFixed(1)}` : ""}.
               </span>
             </li>
           ))}
+          <li className="flex gap-2">
+            <span className="text-slate-600 shrink-0">·</span>
+            <span className="text-slate-500">
+              Level par all week is <span className="num text-slate-400">{level.toFixed(1)}</span>. The{" "}
+              {PREVIOUS.year} title: <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span>{" "}
+              by {PREVIOUS.hector.label}.
+            </span>
+          </li>
         </ul>
-        <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-          Standings show <strong className="text-slate-300 font-semibold">to par</strong>, so
-          pairs mid-round compare fairly — each hole lands with its round's weight, and a
-          bogey in a 50% round costs +0.5. The stroke total sits behind each pair's
-          breakdown.
-        </p>
-        <p className="text-xs text-slate-400 mt-2.5 leading-relaxed">
-          Stableford rounds convert to strokes first:{" "}
-          <span className="num text-slate-300">strokes = 2 × par − (points + 36)</span> — so 39
-          points on a par-72 course counts as 69 strokes.
-        </p>
-        {bonusRounds.map(({ round, f }) => (
-          <p key={round.id} className="text-xs text-amber-400/90 mt-2 leading-relaxed">
-            Round {round.seq} pays bonuses on <em>gross</em> scores:
-            {f.bonuses!.birdie ? ` every birdie takes ${f.bonuses!.birdie.toFixed(1)} off the total` : ""}
-            {f.bonuses!.eagle ? `, an eagle ${f.bonuses!.eagle.toFixed(1)}` : ""}.
-          </p>
-        ))}
-        <p className="text-xs text-slate-500 mt-2.5 leading-relaxed">
-          For scale: a pair at level par all week finishes on{" "}
-          <span className="num text-slate-400">{level.toFixed(1)}</span>. The {PREVIOUS.year}{" "}
-          title was won on{" "}
-          <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span> by{" "}
-          {PREVIOUS.hector.label}.
-        </p>
       </div>
 
-      <div className="py-4 border-t border-slate-800">
-        <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-violet-300">
-          The draft
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-          Round 1 is played individually; its Stableford order is the pick order on Thursday
-          night. Best round picks first, from the opposite bucket, and so on until ten pairs
-          stand. One exception: last year's winners defend their title together by right, so
-          they are paired before the draft starts and sit it out.
-        </p>
+      <div className="card p-4">
+        <H tone="text-amber-300">The Victor · individual</H>
+        <P className="mt-1">
+          Your Stableford points from the {victorRounds.length} Stableford rounds
+          {victorRounds.length > 0 && <> ({victorRounds.map((r) => `R${r.seq}`).join(" + ")})</>}, added up.
+          Highest wins.
+        </P>
       </div>
 
-      <div className="py-4 border-t border-slate-800">
-        <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-amber-300">
-          The Victor · individual
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-          Your Stableford NET points from the {victorRounds.length} Stableford rounds
-          {victorRounds.length > 0 && (
-            <> ({victorRounds.map((r) => `R${r.seq}`).join(" + ")})</>
-          )}
-          , added up. Highest wins.
-        </p>
+      <div className="card p-4">
+        <H>The draft</H>
+        <P className="mt-1">
+          Round 1 is individual, and its Stableford order is Thursday night's pick order: best round picks
+          first, from the other bucket, until ten pairs stand. Last year's winners defend together and sit
+          the draft out.
+        </P>
       </div>
 
-      {formats.map((i) => (
-        <div key={i.title} className="py-4 border-t border-slate-800">
-          <h3 className="num text-[12px] tracking-[0.18em] uppercase font-semibold text-slate-300">
-            {i.title}
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{i.body}</p>
-        </div>
-      ))}
+      <div className="card p-4">
+        <H>Formats</H>
+        <dl className="mt-2 space-y-2.5">
+          {formats.map((i) => (
+            <div key={i.title}>
+              <dt className="text-[13px] font-semibold text-slate-200">{i.title}</dt>
+              <dd className="text-[13px] text-slate-400 leading-relaxed">{i.body}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </div>
   );
 }
