@@ -101,6 +101,12 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   needs; anything on the entry sheet that isn't scoring is clutter, anything on the
   course view that can be tapped by accident is a hazard.
 
+- **Trophée breakdowns** (expanded row): one header line per round — `R1` in the score
+  face, the day quiet, then the placing badge and the round's figure a size up — with
+  the formats that made it on a thin rail beneath at 13px, their arithmetic at 11px.
+  Placing badges are three tiers at a fixed width so they read as a column: a win
+  solid gold, a podium place outlined bright, the rest quiet.
+
 ## Motion
 
 - Row re-ranking glides via FLIP, **gated to actual order changes** (WebKit

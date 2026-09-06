@@ -81,18 +81,64 @@ function placesOn<E extends { thru: number }>(
   return new Map(ranked.filter((x) => x.position > 0).map((x) => [x.item.key, x.label]));
 }
 
+/**
+ * The round's placing, as a badge that reads at a glance down a column: a win is solid
+ * gold, a podium place outlined bright, the rest quiet. Fixed width, so the badges line
+ * up whatever the label.
+ */
 function Place({ label }: { label?: string }) {
-  if (!label) return null;
-  const first = label === "1" || label === "T1";
+  if (!label) return <span className="inline-block w-9" />;
+  const n = Number(label.replace("T", ""));
+  const tone =
+    n === 1
+      ? "bg-gold-400 text-slate-950 font-bold"
+      : n <= 3
+        ? "border border-slate-400 text-slate-100 font-semibold"
+        : "border border-slate-800 text-slate-500 font-semibold";
   return (
-    <span
-      className={`ml-1.5 inline-block rounded-md px-1.5 py-px text-[11px] num font-semibold align-middle ${
-        first ? "bg-gold-400/15 text-gold-400" : "bg-slate-800 text-slate-300"
-      }`}
-    >
+    <span className={`inline-flex w-9 justify-center rounded-md py-px text-[11px] num leading-[1.4] ${tone}`}>
       {placeText(label)}
     </span>
   );
+}
+
+/**
+ * A round's header line in a breakdown: the round and day on the left, the placing and
+ * the round's figure on the right — the figure in the score face, a size up, so the
+ * eye lands on it before any of the explanation beneath.
+ */
+function RoundHead({
+  seq,
+  day,
+  place,
+  figure,
+  aside,
+}: {
+  seq: number;
+  day: string;
+  place?: string;
+  figure: string;
+  /** A quieter companion to the figure — the to-par beside a points total. */
+  aside?: string;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="flex items-baseline gap-1.5 min-w-0">
+        <span className="score text-[15px] text-violet-300">R{seq}</span>
+        <span className="text-[12px] text-slate-500 truncate">{day}</span>
+      </span>
+      <span className="flex items-baseline gap-2 shrink-0">
+        <Place label={place} />
+        {aside && <span className="num text-[12px] text-slate-500">{aside}</span>}
+        <span className="score text-[17px] text-slate-100 w-14 text-right">{figure}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Short in the breakdown: the game's name, not its rulebook title. */
+function shortFormat(label: string): string {
+  return label.replace(/^(Better Ball|Scramble) Stroke Play/, "$1");
 }
 
 function bonusLabel({ birdies, eagles }: { birdies: number; eagles: number }): string {
@@ -155,7 +201,7 @@ export default function TournamentScreen({
     movement: movement[row.key],
     played: row.roundsPlayed > 0,
     detail: (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {/* The official figure lives here: the breakdown below explains it. */}
         <div className="flex justify-between gap-3 text-xs border-b border-slate-800 pb-2">
           <span className="text-slate-400">Stroke total</span>
@@ -165,42 +211,43 @@ export default function TournamentScreen({
           const entry = row.perRound[r.id];
           if (!entry) return null;
           return (
-            <div key={r.id}>
-              <div className="flex justify-between gap-3 text-[12px] font-semibold text-slate-400 mb-0.5">
-                <span>
-                  Round {r.seq} · {r.day}
-                  <Place label={hectorPlaces.get(r.id)?.get(row.key)} />
-                </span>
-                <span className="num text-slate-300">{formatToParFine(entry.toPar, 2)}</span>
+            <div key={r.id} className="pt-1">
+              <RoundHead
+                seq={r.seq}
+                day={r.day}
+                place={hectorPlaces.get(r.id)?.get(row.key)}
+                figure={formatToParFine(entry.toPar, 2)}
+              />
+              {/* The formats that made the round's figure, on a rail under the header:
+                  what counted, at what weight, from which raw score. */}
+              <div className="mt-1 ml-1 border-l border-slate-800 pl-2.5 space-y-1.5">
+                {entry.detail.map((d, i) => (
+                  <div key={`${d.formatId}-${i}`}>
+                    <div className="flex justify-between gap-3 text-[13px]">
+                      <span className="truncate text-slate-300">{shortFormat(d.label)}</span>
+                      <span className="shrink-0 num">
+                        <span className="font-semibold text-slate-200">{d.points.toFixed(2)}</span>{" "}
+                        <span className="text-slate-500">({formatToParFine(d.toPar, 2)})</span>
+                      </span>
+                    </div>
+                    {/*
+                      Spell the arithmetic out — "(33% of 39 pts = 69)" parsed as "33% of
+                      39 equals 69", three different things smashed together. The weight
+                      label is deliberately "33%" rather than ⅓: the fraction glyphs are
+                      unreadable at this size, and percentages are how this group has
+                      always talked about the weights. The engine still computes 1/3.
+                    */}
+                    <div className="text-[11px] text-slate-500 leading-relaxed">
+                      {d.converted !== undefined
+                        ? `${weightLabel(d.pct)} of ${d.who ?? "the better player"}'s ${d.raw} pts, which equals ${d.converted} strokes`
+                        : `${weightLabel(d.pct)} of ${d.raw} strokes`}
+                      {d.bonus && d.bonus.points > 0 && (
+                        <> · less {d.bonus.points} for {bonusLabel(d.bonus)}</>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {entry.detail.map((d, i) => (
-                <div key={`${d.formatId}-${i}`} className="mt-1.5 first:mt-0">
-                  <div className="flex justify-between gap-3 text-xs">
-                    <span className="truncate text-slate-300">{d.label}</span>
-                    <span className="shrink-0 num">
-                      <span className="font-semibold text-slate-100">
-                        {d.points.toFixed(2)}
-                      </span>{" "}
-                      <span className="text-slate-500">({formatToParFine(d.toPar, 2)})</span>
-                    </span>
-                  </div>
-                  {/*
-                    Spell the arithmetic out — "(33% of 39 pts = 69)" parsed as "33% of
-                    39 equals 69", three different things smashed together. The weight
-                    label is deliberately "33%" rather than ⅓: the fraction glyphs are
-                    unreadable at this size, and percentages are how this group has
-                    always talked about the weights. The engine still computes 1/3.
-                  */}
-                  <div className="text-[12px] text-slate-500 leading-relaxed">
-                    {d.converted !== undefined
-                      ? `${weightLabel(d.pct)} of ${d.who ?? "the better player"}'s ${d.raw} pts, which equals ${d.converted} strokes`
-                      : `${weightLabel(d.pct)} of ${d.raw} strokes`}
-                    {d.bonus && d.bonus.points > 0 && (
-                      <> · less {d.bonus.points} for {bonusLabel(d.bonus)}</>
-                    )}
-                  </div>
-                </div>
-              ))}
             </div>
           );
         })}
@@ -228,20 +275,19 @@ export default function TournamentScreen({
     ),
     played: row.roundsPlayed > 0,
     detail: (
-      <div className="space-y-1">
+      <div className="space-y-2">
         {rounds.map((r) => {
           const entry = row.perRound[r.id];
           if (!entry) return null;
           return (
-            <div key={r.id} className="flex justify-between text-xs text-slate-400 num">
-              <span className="font-sans">
-                Round {r.seq} · {r.day}
-                <Place label={victorPlaces.get(r.id)?.get(row.key)} />
-              </span>
-              <span className="font-semibold text-slate-200">
-                {entry.points.toFixed(0)} pts{" "}
-                <span className="font-normal text-slate-500">({formatToPar(entry.toPar)})</span>
-              </span>
+            <div key={r.id} className="pt-0.5">
+              <RoundHead
+                seq={r.seq}
+                day={r.day}
+                place={victorPlaces.get(r.id)?.get(row.key)}
+                aside={formatToPar(entry.toPar)}
+                figure={`${entry.points.toFixed(0)} pts`}
+              />
             </div>
           );
         })}
