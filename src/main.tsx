@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { clearUpdateReady, markUpdateReady } from "./lib/updateReady";
 import "./index.css";
 
 /*
@@ -15,9 +16,14 @@ import "./index.css";
  *
  * When a new version is ready the swap waits for a quiet moment: the app in the
  * background, or half a minute since the last touch. An instant reload used to be able
- * to land mid-tap, or wipe an open confirm dialog.
+ * to land mid-tap, or wipe an open confirm dialog. Two exceptions, both learnt from
+ * testers who never paused: an update found within seconds of a page load is taken at
+ * once (the reload they just did is what they meant), and while a swap waits, a banner
+ * offers it by hand.
  */
 const QUIET_MS = 30_000;
+const FRESH_LOAD_MS = 5_000;
+const pageStart = Date.now();
 let lastTouch = Date.now();
 for (const type of ["pointerdown", "keydown", "touchstart"] as const) {
   document.addEventListener(type, () => (lastTouch = Date.now()), { capture: true, passive: true });
@@ -26,9 +32,18 @@ for (const type of ["pointerdown", "keydown", "touchstart"] as const) {
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
+    const swap = () => {
+      clearUpdateReady();
+      void updateSW(true);
+    };
+    if (Date.now() - pageStart < FRESH_LOAD_MS) {
+      swap();
+      return;
+    }
+    markUpdateReady(swap);
     const whenQuiet = () => {
       if (document.visibilityState === "hidden" || Date.now() - lastTouch > QUIET_MS) {
-        void updateSW(true);
+        swap();
         return;
       }
       setTimeout(whenQuiet, 5_000);

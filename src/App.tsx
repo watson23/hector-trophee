@@ -3,7 +3,7 @@ import { useSession } from "./hooks/useSession";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
-import { SpaceBanner, SyncBanner, TabBar, type Tab } from "./components/Chrome";
+import { SpaceBanner, SyncBanner, TabBar, UpdateBanner, type Tab } from "./components/Chrome";
 import { currentSpace, eventIdFor } from "./lib/space";
 import { draftRoundOf, isDraftNight } from "./lib/draftNight";
 
@@ -167,6 +167,7 @@ export default function App() {
     return (
       <div className="min-h-dvh">
         <SpaceBanner space={space} canSwitch={session.admin} />
+        <UpdateBanner />
         <TVBar following={following} players={t.event.players} onEdit={() => setEditFollows(true)} />
         <main className="max-w-lg mx-auto pb-32">
           {tvTab === "round" && (
@@ -244,6 +245,7 @@ export default function App() {
     return (
       <div className="min-h-dvh">
         <SpaceBanner space={space} canSwitch={session.admin} />
+        <UpdateBanner />
         <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
         <Onboarding
           event={t.event}
@@ -262,6 +264,7 @@ export default function App() {
   return (
     <div className="min-h-dvh">
       <SpaceBanner space={space} canSwitch={session.admin} />
+      <UpdateBanner />
       <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
 
       <main className="max-w-lg mx-auto pb-32">

@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import HectorMark from "./HectorMark";
 import { switchSpace, type Space, spaceMeta } from "../lib/space";
 import type { StoreError } from "../lib/store";
+import { useUpdateReady } from "../lib/updateReady";
 
 export type Tab = "play" | "round" | "tournament" | "info";
 
@@ -175,6 +176,26 @@ function useSlowSync(pending: number, delayMs = 2000): boolean {
  * Connection state. Firestore keeps accepting writes offline, so the message is about
  * whether other groups can see them yet — not whether scoring still works.
  */
+/**
+ * A new build is installed and waiting for a quiet moment to swap in. Most phones never
+ * see this — the swap happens while the app is pocketed — but a phone in constant use
+ * would otherwise stay on the old build indefinitely, and its owner would say "my app
+ * isn't updating". One tap takes the update now; every "where was I" state is persisted,
+ * so the reload lands back on the same screen.
+ */
+export function UpdateBanner() {
+  const apply = useUpdateReady();
+  if (!apply) return null;
+  return (
+    <div className="bg-violet-950 border-b border-violet-900 text-violet-200 text-xs px-4 py-2 text-center leading-relaxed">
+      New version ready.{" "}
+      <button onClick={apply} className="underline underline-offset-2 font-semibold">
+        Reload now
+      </button>
+    </div>
+  );
+}
+
 export function SyncBanner({
   online,
   pending,
