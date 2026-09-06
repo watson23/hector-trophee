@@ -37,7 +37,10 @@ const updateSW = registerSW({
       void updateSW(true);
     };
     if (Date.now() - pageStart < FRESH_LOAD_MS) {
-      swap();
+      // Not before the page has finished loading its own pieces: the swap deletes the
+      // old build's cache, and a chunk still on its way would find nothing there.
+      if (document.readyState === "complete") swap();
+      else window.addEventListener("load", swap, { once: true });
       return;
     }
     markUpdateReady(swap);
