@@ -1001,7 +1001,7 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
           role="dialog"
           aria-label={`Hole ${hole} map`}
           onClick={() => setLarge(false)}
-          className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+          className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
         >
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
             <span className="text-[13px] font-semibold text-slate-300">
