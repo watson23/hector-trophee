@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round, UsageDay } from "../types";
 import { courses } from "../data/courses";
+import { featAnnouncement, featFor, featId, type Feat } from "../lib/announce";
 import { computeTournament, effectiveTee, evaluateRound, snapshotHandicaps, type RoundResult } from "../lib/engine";
 import {
   getStore,
@@ -223,26 +224,43 @@ export function useTournament(identity: string, eventId: string): TournamentStat
       // Fire-and-forget by contract. The store has already put the failure on the
       // error channel; the rethrow only needs swallowing so it doesn't surface twice.
       void store?.setHole(roundId, subjectId, hole, value, identity).catch(() => {});
-      // A hole-in-one announces itself — the first in Hector Trophée history deserves
-      // more than a gold digit on one phone. Keyed by round/player/hole so a re-entry
-      // of the same ace doesn't post twice; a team card (scramble) counts for the pair.
-      if (value === 1 && store && round && event) {
-        const id = `ace-${roundId}-${subjectId}-${hole}`;
+      // A feat announces itself — Hector's own line in the News feed, since an ace or an
+      // eagle deserves more than a coloured digit on one phone. Keyed by round/card/hole
+      // so a re-entry never posts twice; a team card (scramble) counts for the pair. An
+      // eagle typed by mistake and corrected is withdrawn again; an ace stays — the beer
+      // clause in its text is there for exactly that.
+      if (store && round && event) {
         const existing = event.announcements ?? [];
-        if (!existing.some((a) => a.id === id)) {
-          const pair = subjectId.startsWith("team__")
-            ? event.pairs.find((p) => `team__${p.id}` === subjectId)
-            : undefined;
-          const who = pair
-            ? [pair.aId, pair.bId].map((pid) => event.players.find((p) => p.id === pid)?.name ?? pid).join(" + ")
-            : (event.players.find((p) => p.id === subjectId)?.name ?? subjectId);
-          const course = courses[round.courseId]?.shortName ?? round.courseId;
-          const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : (["th", "st", "nd", "rd"][n % 10] ?? "th")}`;
-          // The prank-catcher: the temptation to "just see what happens" is real, and
-          // a round of beers is the traditional price. The genuine hero will understand.
-          const text = `🍾 HOLE-IN-ONE! ${who} aced the ${ordinal(hole)} at ${course} in round ${round.seq} — the first in Hector Trophée history. Champagne at the clubhouse! (In case this was a prank or a false alarm by ${who} after all, a round of beers on them should settle it.)`;
-          void store.saveEvent({ announcements: [...existing, { id, text, at: Date.now(), by: "Hector" }] }).catch(() => {});
+        const par = courses[round.courseId]?.par[hole - 1];
+        const now = par ? featFor(value, par) : null;
+        const withdrawn: Feat[] = ["eagle", "albatross"];
+        const stale = withdrawn
+          .filter((k) => k !== now)
+          .map((k) => featId(k, roundId, subjectId, hole))
+          .filter((id) => existing.some((a) => a.id === id));
+        let next = stale.length ? existing.filter((a) => !stale.includes(a.id)) : existing;
+        if (now && value && par) {
+          const id = featId(now, roundId, subjectId, hole);
+          if (!next.some((a) => a.id === id)) {
+            const pair = subjectId.startsWith("team__")
+              ? event.pairs.find((p) => `team__${p.id}` === subjectId)
+              : undefined;
+            const who = pair
+              ? [pair.aId, pair.bId].map((pid) => event.players.find((p) => p.id === pid)?.name ?? pid).join(" + ")
+              : (event.players.find((p) => p.id === subjectId)?.name ?? subjectId);
+            const a = featAnnouncement({
+              value,
+              par,
+              hole,
+              who,
+              team: Boolean(pair),
+              course: courses[round.courseId]?.shortName ?? round.courseId,
+              roundSeq: round.seq,
+            });
+            if (a) next = [...next, { id, text: a.text, at: Date.now(), by: "Hector" }];
+          }
         }
+        if (next !== existing) void store.saveEvent({ announcements: next }).catch(() => {});
       }
     },
     [store, identity],
