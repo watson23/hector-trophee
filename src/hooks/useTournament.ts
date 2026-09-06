@@ -340,6 +340,51 @@ export function useTournament(identity: string, eventId: string): TournamentStat
     [store, takeBackup],
   );
 
+  /*
+   * Sync robustness for phones that sleep. iOS suspends Safari (and installed apps)
+   * within seconds of the screen locking, and the SDK's stream comes back on a
+   * backoff timer; a score typed in the first seconds after unlocking can then sit
+   * behind a half-dead channel, and the other phones see it late. So: redial on every
+   * return to the foreground after more than a few seconds away, on regaining the
+   * network, and whenever the pending-write count has sat unchanged for ten seconds.
+   */
+  const hiddenSince = useRef<number | null>(null);
+  const lastNudge = useRef(0);
+  const nudgeNow = useCallback(
+    (why: string) => {
+      if (!store?.nudge) return;
+      if (Date.now() - lastNudge.current < 5_000) return;
+      lastNudge.current = Date.now();
+      void store.nudge().catch(() => {});
+      if (import.meta.env.DEV) console.info(`[sync] redial: ${why}`);
+    },
+    [store],
+  );
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenSince.current = Date.now();
+      } else if (hiddenSince.current !== null && Date.now() - hiddenSince.current > 5_000) {
+        hiddenSince.current = null;
+        nudgeNow("back to the foreground");
+      }
+    };
+    const onOnline = () => nudgeNow("network back");
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onOnline);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [nudgeNow]);
+  useEffect(() => {
+    if (pending === 0) return;
+    // Pending writes that make no progress for ten seconds: redial once, then let the
+    // banner's manual retry take over.
+    const id = setTimeout(() => nudgeNow("writes stuck"), 10_000);
+    return () => clearTimeout(id);
+  }, [pending, nudgeNow]);
+
   // Views are counted locally and flushed in one write — a phone's tab-hopping must not
   // become a write per tap. Nothing is recorded for the anonymous spectator.
   const pendingViews = useRef<Record<string, number>>({});
