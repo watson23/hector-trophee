@@ -189,8 +189,10 @@ describe("final-round bonuses, end to end", () => {
 
   it("applies bonuses only to the final round, as the sheet does", () => {
     // Round 4 is also a scramble, but carries no Bonus columns in the spreadsheet.
-    expect(defaultRounds[3].formats[0].kind).toBe("scramble");
-    expect(defaultRounds[3].formats[0].bonuses).toBeUndefined();
+    // Since 7.9.2026 the 50% scramble is round 3 (Radecký); the bonus scramble stays round 6.
+    expect(defaultRounds[2].formats[0].kind).toBe("scramble");
+    expect(defaultRounds[2].formats[0].bonuses).toBeUndefined();
+    expect(defaultRounds[3].formats.map((f) => f.kind)).toEqual(["strokeplay", "stableford"]);
     expect(defaultRounds[5].formats[0].bonuses).toEqual({ birdie: 0.5, eagle: 1 });
   });
 });

@@ -1244,10 +1244,13 @@ function RoundEditorCard({
   // elsewhere and has no programme to stray from).
   const programme = defaultRounds.find((r) => r.id === round.id);
   const programmeCourses = new Set(defaultRounds.map((r) => r.courseId));
+  const formatsStrayed =
+    programme !== undefined &&
+    programme.formats.map((f) => f.id).join(",") !== round.formats.map((f) => f.id).join(",");
   const strayed =
     programme &&
     programmeCourses.has(round.courseId) &&
-    (programme.courseId !== round.courseId || programme.tee !== round.tee);
+    (programme.courseId !== round.courseId || programme.tee !== round.tee || formatsStrayed);
 
   /**
    * Opening a round freezes the handicaps it is played off. Handicaps are refreshed each
@@ -1347,9 +1350,18 @@ function RoundEditorCard({
         <p className="text-[12px] text-amber-400/90 leading-relaxed flex items-center justify-between gap-3">
           <span>
             Programme: {courses[programme.courseId]?.shortName} · {teeText(programme.tee)}
+            {formatsStrayed && ` · ${programme.formats.map((f) => f.label.replace(/ Stroke Play/, "")).join(" + ")}`}
           </span>
           <button
-            onClick={() => patch({ courseId: programme.courseId, tee: programme.tee, crOverride: undefined, slopeOverride: undefined })}
+            onClick={() =>
+              patch({
+                courseId: programme.courseId,
+                tee: programme.tee,
+                crOverride: undefined,
+                slopeOverride: undefined,
+                ...(formatsStrayed ? { formats: programme.formats } : {}),
+              })
+            }
             className="shrink-0 underline underline-offset-2"
           >
             Reset to programme

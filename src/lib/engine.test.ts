@@ -249,7 +249,8 @@ describe("evaluateRound", () => {
   });
 
   it("counts both individuals for the day 2 stroke play Hector points", () => {
-    const round = roundWith({ formats: defaultRounds[2].formats });
+    // The individual stroke play is round 4 since the 7.9.2026 reshuffle (it was round 3).
+    const round = roundWith({ formats: defaultRounds[3].formats });
     const result = evaluateRound({
       round,
       course: radecky,

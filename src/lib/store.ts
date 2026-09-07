@@ -121,6 +121,9 @@ export async function buildDefaultEvent(eventId: string = EVENT_ID): Promise<Eve
     pairs: [],
     // Lasse and Jari won in 2025.
     defendingPair: DEFENDING_PAIR,
+    // 2026 rule (Toni, 7.9): a hole costs at most par + 4. Events already stored keep
+    // whatever Admin has set — the organiser flips them by hand.
+    holeCap: "par4",
   };
 }
 

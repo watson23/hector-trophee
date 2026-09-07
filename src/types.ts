@@ -174,7 +174,7 @@ export interface EventDoc {
   holeCap?: HoleCapRule;
 }
 
-export type HoleCapRule = "none" | "par5" | "ndb";
+export type HoleCapRule = "none" | "par4" | "par5" | "ndb";
 
 /** A single scorecard. `holes` is a sparse map so per-hole writes merge. */
 export interface Card {

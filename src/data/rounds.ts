@@ -4,9 +4,11 @@ import type { FormatSpec, PlayingGroup, Round } from "../types";
  * The six 2026 rounds, per the official programme (received 1.9.2026).
  *
  * The formats confirmed the 2025 shape exactly; only the tees were news:
- * yellow / blue / white / white / blue / yellow. The rules committee is still
- * mulling whether to reshuffle the schedule (two scrambles on d'Este) — if they
- * do, courses and tees move here and in Admin, the formats travel with them.
+ * yellow / blue / white / white / blue / yellow. Then the committee (Toni, 7.9.2026)
+ * swapped R3 and R4 so each course gets a scramble: R3 is the 50% scramble at
+ * Radecký, R4 the individual stroke play at d'Este. Courses and tees stay with their
+ * slots; only the formats moved. Rounds already stored in Firestore do not follow this
+ * file — Admin's "Reset to programme" on the round card applies it.
  *
  * ⚠️ r2 and r5 play off blue, whose published CR/slope look like the ladies'
  * rating (see courses.ts) — the suspect-tee warning stays on in Admin/Info until
@@ -143,7 +145,7 @@ export const defaultRounds: Round[] = [
     status: "upcoming",
     teeTimeWindow: "14:27–15:12",
     groups: defaultGroups("14:27–15:12"),
-    formats: [strokePlayNet, stablefordVictor()],
+    formats: [scramble(0.5)],
   },
   {
     id: "r4",
@@ -155,7 +157,7 @@ export const defaultRounds: Round[] = [
     status: "upcoming",
     teeTimeWindow: "08:36–09:21",
     groups: defaultGroups("08:36–09:21"),
-    formats: [scramble(0.5)],
+    formats: [strokePlayNet, stablefordVictor()],
   },
   {
     id: "r5",

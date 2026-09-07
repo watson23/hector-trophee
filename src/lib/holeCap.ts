@@ -2,12 +2,14 @@ import type { HoleCapRule } from "../types";
 
 export const HOLE_CAP_LABEL: Record<HoleCapRule, string> = {
   none: "No cap",
+  par4: "Par + 4",
   par5: "Par + 5",
   ndb: "Net double bogey + 2",
 };
 
 export const HOLE_CAP_HELP: Record<HoleCapRule, string> = {
   none: "Every hole is scored as played.",
+  par4: "The most a hole can cost is par + 4, whoever you are — the 2026 rule.",
   par5: "The most a hole can cost is par + 5, whoever you are.",
   ndb: "The most a hole can cost is net double bogey + 2: par + 4 + the strokes you receive there.",
 };
@@ -15,6 +17,7 @@ export const HOLE_CAP_HELP: Record<HoleCapRule, string> = {
 /** The cap on one hole for one player, or null when the tournament plays without one. */
 export function holeCap(rule: HoleCapRule | undefined, par: number, strokesReceived: number): number | null {
   if (!rule || rule === "none") return null;
+  if (rule === "par4") return par + 4;
   if (rule === "par5") return par + 5;
   // Net double bogey + 2: par + 2 (double) + 2, plus the strokes received on the hole.
   return par + 4 + Math.max(0, strokesReceived);
