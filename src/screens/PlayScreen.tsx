@@ -515,14 +515,14 @@ function OnCourse({
           : partners.map((p) => p?.strokes[hole - 1] ?? 0),
         figure: t.thru > 0 ? formatToPar(t.toPar) : "—",
         // The running count sits where the choice is made: standing in the fairway,
-        // deciding whose ball to play. "Olli 1 · Jarkko 7 of 6 each" — the quota in the
+        // deciding whose ball to play. "Olli 1 · Jarkko 7 · min 6" — the quota in the
         // same breath, so nobody has to remember the rule.
         ...(t.drives && fr
           ? {
               teeShots: {
                 line: `${t.drives
                   .map((d) => `${(event.players.find((p) => p.id === d.playerId)?.name ?? "?").split(" ")[0]} ${d.used}`)
-                  .join(" · ")} of ${drivesRule(fr.spec)?.min ?? 6} each`,
+                  .join(" · ")} · min ${drivesRule(fr.spec)?.min ?? 6}`,
                 penalty: t.penalty ?? 0,
               },
             }
@@ -629,7 +629,7 @@ function OnCourse({
                     </Fragment>
                   ))}
                   {r.teeShots && (
-                    <span className="block num text-[12px] font-normal text-slate-400 leading-tight mt-0.5">
+                    <span className="block whitespace-normal num text-[12px] font-normal text-slate-400 leading-tight mt-0.5">
                       tee shots {r.teeShots.line}
                       {r.teeShots.penalty > 0 && (
                         <span className="text-amber-400"> · +{r.teeShots.penalty} pen</span>
