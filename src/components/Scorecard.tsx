@@ -197,7 +197,9 @@ export default function Scorecard({
       </div>
 
       {/* The shared header: hole numbers (tappable), stroke index, par. */}
-      <div className={`${GRID} gap-y-0.5 items-end`}>
+      {/* Rows centre on their content: a bottom alignment sat the small labels a notch
+          below the numbers they name. */}
+      <div className={`${GRID} gap-y-0.5 items-center`}>
         <div className="num text-[11px] font-semibold text-slate-500 tracking-[.06em] leading-none">HOLE</div>
         {holes.map((i) => {
           const h = i + 1;
