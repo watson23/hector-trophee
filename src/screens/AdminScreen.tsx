@@ -164,6 +164,9 @@ export default function AdminScreen({
             <ToolCard tone="danger" title="Clear a round" description="Delete every card in one round and put it back to upcoming. A snapshot is taken first.">
               <ScoreAdmin {...scoreAdminProps} sections={{ clear: true }} />
             </ToolCard>
+            <ToolCard title="Round status" description="Put any round at upcoming, open or final — reopen an earlier round for a correction, or shuffle the sandbox to another day. Two taps.">
+              <ScoreAdmin {...scoreAdminProps} sections={{ status: true }} />
+            </ToolCard>
             <ToolCard tone="danger" title="Reset everything" description="Scores, pairs and flights back to a clean event. Two taps, snapshot first, restorable from Backups.">
               <ScoreAdmin {...scoreAdminProps} sections={{ reset: true }} />
             </ToolCard>

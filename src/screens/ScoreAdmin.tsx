@@ -27,7 +27,7 @@ interface Props {
   /** Snapshot the tournament — called before anything here that destroys data. */
   backup: (reason: string) => Promise<unknown>;
   /** Which tools to render — each Tools card mounts one of these with its own state. */
-  sections: { fix?: boolean; clear?: boolean; mirror?: boolean; testData?: boolean; reset?: boolean };
+  sections: { fix?: boolean; clear?: boolean; mirror?: boolean; testData?: boolean; reset?: boolean; status?: boolean };
 }
 
 interface Subject {
@@ -105,6 +105,7 @@ export default function ScoreAdmin({
   const [confirmMirror, setConfirmMirror] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmSimulate, setConfirmSimulate] = useState<18 | 7 | null>(null);
+  const [confirmStatus, setConfirmStatus] = useState<Round["status"] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   // Test data belongs in the sandbox, structurally: in the tournament space the
   // simulate and fill tools do not render at all, so there is no flag to remember to
@@ -160,6 +161,9 @@ export default function ScoreAdmin({
       await Promise.all(
         generated.map((c) => setCard(round.id, c.subjectId, c.holes, scramble ? fakeDrives(c, event) : undefined)),
       );
+      // Filling a round means "we are playing it": an upcoming round goes live, so the
+      // sandbox looks the way the real day would and Today follows along.
+      if (round.status === "upcoming") await patchRound(round.id, { status: "open" });
     } finally {
       setBusy(null);
     }
@@ -171,10 +175,10 @@ export default function ScoreAdmin({
     try {
       await backup(`Before clearing round ${round.seq}`).catch(() => {});
       await Promise.all(subjects.map((s) => deleteCard(round.id, s.id)));
-      // Clearing a finished round un-finishes it: back to upcoming, snapshot dropped
-      // so the next open re-freezes handicaps. Without this, wiping the last round
-      // left every status final and the app stuck on "That's a wrap".
-      if (round.status === "final") {
+      // Clearing a round turns the clock back: upcoming again, whatever it was, with the
+      // handicap snapshot dropped so the next open re-freezes. Without this, wiping the
+      // last round left every status final and the app stuck on "That's a wrap".
+      if (round.status !== "upcoming") {
         await patchRound(round.id, { status: "upcoming", handicaps: undefined });
       }
     } finally {
@@ -185,7 +189,7 @@ export default function ScoreAdmin({
 
   return (
     <div className="px-4 space-y-4">
-      {(sections.fix || sections.clear || sections.testData) && (
+      {(sections.fix || sections.clear || sections.testData || sections.status) && (
       <>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {rounds.map((r) => (
@@ -401,6 +405,48 @@ export default function ScoreAdmin({
       </section>
       )}
 
+
+      {/* ---------------- round status, explicitly ---------------- */}
+      {sections.status && (
+      <section>
+        <p className="text-[12px] text-slate-400 leading-relaxed mb-2">
+          Round {round.seq} is <span className="font-semibold text-slate-200">{round.status}</span>. Day to day,
+          Today opens and closes rounds; this is for putting any round anywhere — reopening an earlier one
+          for a correction, or shuffling the sandbox to see a different day.
+        </p>
+        <div className="flex gap-1">
+          {(["upcoming", "open", "final"] as const).map((s) => {
+            const current = round.status === s;
+            const asking = confirmStatus === s;
+            return (
+              <button
+                key={s}
+                disabled={current || Boolean(busy)}
+                onClick={() => {
+                  if (!asking) {
+                    setConfirmStatus(s);
+                    return;
+                  }
+                  setConfirmStatus(null);
+                  void patchRound(round.id, { status: s });
+                }}
+                className={`flex-1 rounded-lg py-2 text-xs font-semibold capitalize disabled:opacity-60 ${
+                  current
+                    ? s === "open"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-violet-600 text-white"
+                    : asking
+                      ? "bg-rose-600 text-white"
+                      : "bg-slate-800 text-slate-400"
+                }`}
+              >
+                {asking ? `Yes, ${s}` : s}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+      )}
 
       {/* ---------------- reset — never one tap ---------------- */}
       {sections.reset && (
