@@ -5,7 +5,7 @@ import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
 import { applyCap, holeCap } from "../lib/holeCap";
-import { effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
+import { drivesRule, effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
@@ -485,6 +485,8 @@ function OnCourse({
     /** Strokes to show before the hole is played (per partner for a pair). */
     strokes: number[];
     figure: string;
+    /** Scramble: each player's tee shots used so far, and the quota — the fairway decision. */
+    teeShots?: { line: string; penalty: number };
   };
   const rows: Row[] = [];
   if (fr && fr.teams.length > 0) {
@@ -512,6 +514,19 @@ function OnCourse({
           ? [teamSubject.strokes[hole - 1]]
           : partners.map((p) => p?.strokes[hole - 1] ?? 0),
         figure: t.thru > 0 ? formatToPar(t.toPar) : "—",
+        // The running count sits where the choice is made: standing in the fairway,
+        // deciding whose ball to play. "Olli 1 · Jarkko 7 of 6 each" — the quota in the
+        // same breath, so nobody has to remember the rule.
+        ...(t.drives && fr
+          ? {
+              teeShots: {
+                line: `${t.drives
+                  .map((d) => `${(event.players.find((p) => p.id === d.playerId)?.name ?? "?").split(" ")[0]} ${d.used}`)
+                  .join(" · ")} of ${drivesRule(fr.spec)?.min ?? 6} each`,
+                penalty: t.penalty ?? 0,
+              },
+            }
+          : {}),
       });
     }
   } else {
@@ -613,6 +628,14 @@ function OnCourse({
                       )}
                     </Fragment>
                   ))}
+                  {r.teeShots && (
+                    <span className="block num text-[12px] font-normal text-slate-400 leading-tight mt-0.5">
+                      tee shots {r.teeShots.line}
+                      {r.teeShots.penalty > 0 && (
+                        <span className="text-amber-400"> · +{r.teeShots.penalty} pen</span>
+                      )}
+                    </span>
+                  )}
                 </span>
                 <span className={`${cell} flex justify-center`}>
                   {r.holeValue !== null ? (
