@@ -41,8 +41,9 @@ function markWelcomed(playerId: string) {
  * hello before the Play tab's plain front page. The falcon lands, the name comes up,
  * the postcard of Konopiště fades in, one line says what the app is for, and a single
  * button lets them through. Two movements: the falcon lands and the title follows, then a
- * breath; then the name, the place, the text and the button flow in half a second apart
- * with 0.7 s eased reveals. Button at 4.6 s. With reduced motion everything is there.
+ * breath; then the name, the place, the text and the button flow in 0.7 s apart, each a
+ * slow one-second reveal (the slow reveals are what looked good; the quick ones did not).
+ * Button at 5.3 s. With reduced motion everything is there.
  */
 export default function Welcome({
   name,
@@ -91,17 +92,17 @@ export default function Welcome({
       <div className="relative flex-1 flex flex-col justify-end px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))]">
         <div className="flex-1" />
         <HectorMark className="welcome-mark w-16 h-16 text-gold-400 mb-5" />
-        <p className="welcome-step text-[12px] font-semibold uppercase tracking-[0.28em] text-gold-400" style={{ animationDelay: "1500ms" }}>
+        <p className="welcome-step text-[12px] font-semibold uppercase tracking-[0.28em] text-gold-400" style={{ animationDelay: "1600ms" }}>
           Hector Trophée 2026
         </p>
-        <h1 className="welcome-step font-serif text-[44px] leading-[1.05] font-semibold mt-2" style={{ animationDelay: "3000ms" }}>
+        <h1 className="welcome-step font-serif text-[44px] leading-[1.05] font-semibold mt-2" style={{ animationDelay: "3200ms" }}>
           Welcome, {first}.
         </h1>
         {/* Where and when, on its own beat, in the postcard-caption voice. */}
-        <p className="welcome-step num text-[12px] tracking-[0.14em] uppercase text-slate-400 mt-4" style={{ animationDelay: "3500ms" }}>
+        <p className="welcome-step num text-[12px] tracking-[0.14em] uppercase text-slate-400 mt-4" style={{ animationDelay: "3900ms" }}>
           {venue} · {dates.replace(/,?\s*\d{4}\s*$/, "")}
         </p>
-        <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-3 max-w-sm" style={{ animationDelay: "4000ms" }}>
+        <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-3 max-w-sm" style={{ animationDelay: "5300ms" }}>
           World's best amateur golfers clash once again. {words[rounds] ?? rounds} rounds on two courses, two
           trophies, and one week to decide who carries the Hector home. Your card, your flight and the standings
           are all in here. You just need to hit the shots. Good luck!
