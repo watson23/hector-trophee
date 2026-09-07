@@ -31,8 +31,8 @@ function markWelcomed(playerId: string) {
  * The first thing a player sees after picking their name, once per phone: a warm
  * hello before the Play tab's plain front page. The falcon lands, the name comes up,
  * the postcard of Konopiště fades in, one line says what the app is for, and a single
- * button lets them through. Staged with CSS delays; with reduced motion everything is
- * simply there.
+ * button lets them through. Staged with CSS delays over about four seconds — a moment
+ * nobody expects, so it is given room; with reduced motion everything is simply there.
  */
 export default function Welcome({
   name,
@@ -81,13 +81,13 @@ export default function Welcome({
       <div className="relative flex-1 flex flex-col justify-end px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))]">
         <div className="flex-1" />
         <HectorMark className="welcome-mark w-16 h-16 text-gold-400 mb-5" />
-        <p className="welcome-step text-[12px] font-semibold uppercase tracking-[0.28em] text-gold-400" style={{ animationDelay: "500ms" }}>
+        <p className="welcome-step text-[12px] font-semibold uppercase tracking-[0.28em] text-gold-400" style={{ animationDelay: "1600ms" }}>
           Hector Trophée 2026
         </p>
-        <h1 className="welcome-step font-serif text-[44px] leading-[1.05] font-semibold mt-2" style={{ animationDelay: "700ms" }}>
+        <h1 className="welcome-step font-serif text-[44px] leading-[1.05] font-semibold mt-2" style={{ animationDelay: "2100ms" }}>
           Welcome, {first}.
         </h1>
-        <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-4 max-w-sm" style={{ animationDelay: "1000ms" }}>
+        <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-4 max-w-sm" style={{ animationDelay: "2800ms" }}>
           {venue}, {dates.replace(/,?\s*\d{4}\s*$/, "")}. World's best amateur golfers clash once again.{" "}
           {words[rounds] ?? rounds} rounds on two courses, two trophies, and one week to decide who carries the
           Hector home. Your card, your flight and the standings are all in here. You just need to hit the shots.
@@ -96,7 +96,7 @@ export default function Welcome({
         <button
           onClick={done}
           className="welcome-step btn-primary w-full py-4 text-lg mt-7"
-          style={{ animationDelay: "1300ms" }}
+          style={{ animationDelay: "3500ms" }}
         >
           Let's go →
         </button>
