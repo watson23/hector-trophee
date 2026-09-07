@@ -88,9 +88,10 @@ export default function Welcome({
           Welcome, {first}.
         </h1>
         <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-4 max-w-sm" style={{ animationDelay: "1000ms" }}>
-          {venue}, {dates.replace(/,?\s*\d{4}\s*$/, "")}. {words[rounds] ?? rounds} rounds on two courses, two trophies,
-          and one week to decide who carries the falcon home. Your card, your flight and the standings are all
-          in here. Play well.
+          {venue}, {dates.replace(/,?\s*\d{4}\s*$/, "")}. World's best amateur golfers clash once again.{" "}
+          {words[rounds] ?? rounds} rounds on two courses, two trophies, and one week to decide who carries the
+          Hector home. Your card, your flight and the standings are all in here. You just need to hit the shots.
+          Good luck!
         </p>
         <button
           onClick={done}
