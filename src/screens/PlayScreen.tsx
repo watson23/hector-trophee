@@ -551,45 +551,66 @@ function OnCourse({
   const strokeText = (n: number) => (n > 0 ? `−${n}` : n < 0 ? `+${Math.abs(n)}` : "0");
 
   return (
-    <div className="mt-3 px-4 space-y-3">
+    <div className="mt-3 px-4 space-y-2.5">
       {/* Browsable: step back to see what happened, ahead to see what's coming.
           The hole in view is the one Enter scores opens on — fixing hole 6 is
           just browsing there first. */}
-      <div className="card px-3 py-4 text-center">
-        <div className="flex items-center justify-between gap-2">
-          <NavButton dir="prev" disabled={false} onClick={() => setHoleNo(hole === 1 ? 18 : hole - 1)} />
-          <div>
-            <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
-              Hole
+      <div className="card px-3 py-3 text-center">
+        {showMap && holeMapUrl(round.courseId, hole) ? (
+          /* Map open (design 5a, 7.9.2026): the hole block turns into two columns so four
+             players still fit one screen — the hole, its facts and the arrows on the
+             left, a 200px drawing with its distances on the right, "Hide map" and
+             "Enlarge" beneath it. With the map hidden the block below is today's, which
+             already fits four rows with room to spare. */
+          <div className="grid grid-cols-[1fr_auto] gap-2 items-stretch text-left">
+            <div className="flex flex-col justify-between pl-1 pt-0.5">
+              <div>
+                <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">Hole</div>
+                <div className="score text-[64px] leading-none mt-1.5">{hole}</div>
+                <div className="mt-2 text-sm text-slate-400 num leading-relaxed">
+                  Par {par} · SI {si}
+                  {metres ? <br /> : null}
+                  {metres ? `${metres}m` : ""}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <NavButton dir="prev" disabled={false} onClick={() => setHoleNo(hole === 1 ? 18 : hole - 1)} />
+                <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
+              </div>
             </div>
-            <div className="score text-6xl leading-none mt-0.5">{hole}</div>
+            <HoleMap courseId={round.courseId} hole={hole} tee={round.tee} par={par} compact onHide={() => setShowMap(false)} />
           </div>
-          <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
-        </div>
-        <div className="mt-2 text-sm text-slate-400 num">
-          Par {par} · SI {si}
-          {metres ? ` · ${metres}m` : ""}
-        </div>
-        {/* The hole map is the feature for a course most of the field has played
-            once or never: a real button, not a pill in the meta line. The choice
-            persists, so once opened it stays open hole after hole. */}
-        {holeMapUrl(round.courseId, hole) && (
-          <button
-            onClick={() => setShowMap((v) => !v)}
-            className={`mt-2.5 mx-auto flex h-8 items-center justify-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold ${
-              showMap
-                ? "bg-slate-800 text-slate-300"
-                : "bg-violet-600 text-white shadow-[0_2px_12px_rgba(83,64,173,0.35)]"
-            }`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5" aria-hidden="true">
-              <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
-            </svg>
-            {showMap ? "Hide map" : "Hole map"}
-          </button>
-        )}
-        {showMap && holeMapUrl(round.courseId, hole) && (
-          <HoleMap courseId={round.courseId} hole={hole} tee={round.tee} par={par} />
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <NavButton dir="prev" disabled={false} onClick={() => setHoleNo(hole === 1 ? 18 : hole - 1)} />
+              <div>
+                <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
+                  Hole
+                </div>
+                <div className="score text-6xl leading-none mt-0.5">{hole}</div>
+              </div>
+              <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
+            </div>
+            <div className="mt-2 text-sm text-slate-400 num">
+              Par {par} · SI {si}
+              {metres ? ` · ${metres}m` : ""}
+            </div>
+            {/* The hole map is the feature for a course most of the field has played
+                once or never: a real button, not a pill in the meta line. The choice
+                persists, so once opened it stays open hole after hole. */}
+            {holeMapUrl(round.courseId, hole) && (
+              <button
+                onClick={() => setShowMap(true)}
+                className="mt-2.5 mx-auto flex h-8 items-center justify-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold bg-violet-600 text-white shadow-[0_2px_12px_rgba(83,64,173,0.35)]"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5" aria-hidden="true">
+                  <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
+                </svg>
+                Hole map
+              </button>
+            )}
+          </>
         )}
 
         {/* One row per card, in flight order — the same order as the entry sheet, so
@@ -611,7 +632,7 @@ function OnCourse({
                 {/* A continuous hairline between rows — per-cell borders broke at the gaps. */}
                 {i > 0 && <span className="col-span-3 border-t border-slate-800/70" />}
                 <span
-                  className={`${cell} truncate ${r.label.length > 16 ? "text-base" : "text-lg"} ${
+                  className={`${cell} truncate ${r.label.length > 16 ? "text-[15px]" : "text-[17px]"} ${
                     r.mine ? "font-semibold text-violet-300" : "text-slate-200"
                   }`}
                 >
@@ -685,7 +706,7 @@ function OnCourse({
           Enter scores · hole {hole}
         </button>
       )}
-      <button className="btn-ghost w-full py-3" onClick={onShowCard}>
+      <button className="btn-ghost w-full py-2.5" onClick={onShowCard}>
         Scorecard →
       </button>
       {/* Back to the front page — only while the flight has nothing on the card yet,
@@ -968,7 +989,22 @@ const HOLE_ARCS = holeArcs as unknown as Record<string, Record<string, HoleArc>>
  * the green is the target. The overlay can be switched off for anyone who finds it
  * distracting; the choice sticks.
  */
-function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number; tee: string; par: number }) {
+function HoleMap({
+  courseId,
+  hole,
+  tee,
+  par,
+  compact = false,
+  onHide,
+}: {
+  courseId: string;
+  hole: number;
+  tee: string;
+  par: number;
+  /** Beside the hole block in the course view: 200px tall, distances kept, Hide/Enlarge chips. */
+  compact?: boolean;
+  onHide?: () => void;
+}) {
   const [showArcs, setShowArcs] = usePersistentState("hectro_ui.holearcs", true);
   const [large, setLarge] = useState(false);
   const data = HOLE_ARCS[courseId]?.[String(hole)];
@@ -1095,17 +1131,35 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
   );
 
   return (
-    <div className="mt-3 flex flex-col items-center">
+    <div className={compact ? "flex flex-col items-center gap-1.5 pr-10" : "mt-3 flex flex-col items-center"}>
       <button
         type="button"
         onClick={() => setLarge(true)}
         aria-label={`Enlarge the hole ${hole} map`}
-        className="flex w-full justify-center rounded-md active:opacity-80"
+        className={`flex justify-center rounded-md active:opacity-80 ${compact ? "h-[180px] items-center" : "w-full"}`}
       >
-        {drawing("max-h-[280px] max-w-[66vw]")}
+        {/* The widest drawing (Radecký 12, a dogleg) is 100px at this height; the labels
+            sit in the 40px kept clear to the right of the column. */}
+        {drawing(compact ? "max-h-[180px] max-w-[100px]" : "max-h-[280px] max-w-[66vw]")}
       </button>
-      {/* One quiet line: the toggle, and while the arcs are on, the caveat — the "≈"
-          on every label already says "estimate"; this says from what. */}
+      {compact ? (
+        <div className="flex gap-1.5">
+          <button
+            onClick={onHide}
+            className="h-7 rounded-lg px-2.5 bg-slate-800 text-slate-300 text-[12px] font-semibold flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3" aria-hidden="true">
+              <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" strokeLinejoin="round" strokeLinecap="round" />
+            </svg>
+            Hide map
+          </button>
+          <button onClick={() => setLarge(true)} className="h-7 rounded-lg px-2.5 border border-slate-700 text-slate-500 text-[12px] font-medium">
+            Enlarge
+          </button>
+        </div>
+      ) : (
+      /* One quiet line: the toggle, and while the arcs are on, the caveat — the "≈"
+          on every label already says "estimate"; this says from what. */
       <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600">
         {hasArcs ? (
           <>
@@ -1118,6 +1172,7 @@ function HoleMap({ courseId, hole, tee, par }: { courseId: string; hole: number;
           <span className="py-1">Tap the map to enlarge</span>
         )}
       </div>
+      )}
 
       {large && (
         <div
