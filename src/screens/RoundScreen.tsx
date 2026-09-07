@@ -176,21 +176,25 @@ export default function RoundScreen({
           <button
             key={r.id}
             onClick={() => onRoundChange(r.id)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold num transition-colors ${
+            /* Three states a chip can be in, readable at a glance (Lasse, 7.9): the live
+               round keeps its breathing dot when selected, only the hue turns violet;
+               finished rounds carry a firmer border and brighter numeral than the ones
+               still to come. Every chip has a border so none jumps in size on selection. */
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold num border transition-colors ${
               r.id === round.id
-                ? "bg-violet-600 text-white"
+                ? "bg-violet-600 border-violet-600 text-white"
                 : r.status === "open"
-                  ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
-                  : "bg-slate-900 text-slate-400 border border-slate-800"
+                  ? "bg-emerald-950 text-emerald-300 border-emerald-800"
+                  : r.status === "final"
+                    ? "bg-slate-900 text-slate-300 border-slate-600"
+                    : "bg-slate-900 text-slate-500 border-slate-800"
             }`}
           >
             R{r.seq}
             {/* Draft night: the chip says where the board is, for anyone who arrives
                 here sitting on another round. */}
             {isDraftNight(event, rounds) && draftRoundOf(rounds)?.id === r.id && " · Draft"}
-            {r.status === "open" && r.id !== round.id && (
-              <span className="live-dot ml-1 align-middle" />
-            )}
+            {r.status === "open" && <span className="live-dot ml-1 align-middle" />}
           </button>
         ))}
       </div>
