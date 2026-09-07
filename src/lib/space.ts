@@ -13,14 +13,14 @@ import { EVENT_ID } from "../data/field";
  * cache and subscriptions are all built for one event id, and a clean restart is
  * simpler and safer than trying to swap them live.
  */
-export type Space = "live" | "test" | "field" | "tapiola";
+export type Space = "live" | "test";
 
 /** Every space the app knows, in the order Admin lists them. */
 export const SPACES: {
   id: Space;
   label: string;
   description: string;
-  tone: "live" | "test" | "field";
+  tone: "live" | "test";
   /**
    * Typed on the event-code screen, this word moves the device into the space — the
    * way into a field event for a copy of the app the invite link can't reach (an
@@ -41,20 +41,6 @@ export const SPACES: {
     description: "Same structure as the tournament, separate data — for playing around and for mirroring the live event.",
     tone: "test",
     code: "SANDBOX",
-  },
-  {
-    id: "field",
-    label: "Field test · Hirsala",
-    description: "Real rounds at Hirsala Golf (Sep 2026), fully separate from the tournament.",
-    tone: "field",
-    code: "HIRSALA",
-  },
-  {
-    id: "tapiola",
-    label: "Field test · Tapiola",
-    description: "Lasse's nine at Tapiola Golf, Sat 5.9 06:30 — its own event, nothing shared.",
-    tone: "field",
-    code: "TAPIOLA",
   },
 ];
 
@@ -131,9 +117,5 @@ export function clearJustSwitched(): void {
 }
 
 export function eventIdFor(space: Space): string {
-  // The field space is a fully separate event for real-world test rounds
-  // (Hirsala, Sep 2026) — same app, different data, nothing shared.
-  if (space === "field") return "HIRSALA-FIELD";
-  if (space === "tapiola") return "TAPIOLA-FIELD";
   return space === "test" ? `${EVENT_ID}-test` : EVENT_ID;
 }

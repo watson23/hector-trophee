@@ -186,27 +186,8 @@ export const defaultRounds: Round[] = [
 ];
 
 
-/**
- * Field-test events get their own single round instead of the Konopiště programme:
- * seeded when the event's rounds collection is empty, editable in Admin like any round.
- */
-export function defaultRoundsFor(eventId: string): Round[] {
-  if (eventId === "TAPIOLA-FIELD") {
-    return [
-      {
-        id: "r1",
-        seq: 1,
-        day: "Sat 5.9",
-        date: "2026-09-05",
-        courseId: "tapiola",
-        tee: "yellow",
-        status: "upcoming",
-        teeTimeWindow: "06:30–06:30",
-        // Lasse is already in the 06:30 flight, so the round is playable the moment it opens.
-        groups: [{ ...defaultGroups("06:30–06:30", 1)[0], playerIds: ["lasse-k"] }],
-        formats: [stablefordVictor(), strokePlayGross],
-      },
-    ];
-  }
+/** The programme for an event id. Field-test events (Hirsala, Tapiola, Sep 2026) had their
+ * own here until 7.9; they served their purpose and are gone — a new one is easy to add. */
+export function defaultRoundsFor(_eventId: string): Round[] {
   return defaultRounds;
 }

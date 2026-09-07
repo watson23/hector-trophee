@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
-import { effectiveTee, hiFor, roundParticipants, teamCardId } from "../lib/engine";
+import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
 import { fakeDrives, generateRoundCards } from "../lib/testdata";
@@ -10,15 +10,6 @@ import { resetTournament, simulateTournament } from "../lib/simulate";
 import { EVENT_ID } from "../data/field";
 import type { Space } from "../lib/space";
 
-/**
- * ⚠️ REMOVE BEFORE THE TRIP (flip to false before Thu 24 Sep 2026).
- *
- * Until then the simulation buttons also work in the tournament space, so the real
- * view has data to browse while the app is being shown around — Toni M gets the link
- * with something on the leaderboards. Once this is false, filling fake scores is
- * possible only in the test space (and the local demo).
- */
-const TEST_DATA_IN_TOURNAMENT = true;
 
 interface Props {
   event: EventDoc;
@@ -35,6 +26,8 @@ interface Props {
   patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
   /** Snapshot the tournament — called before anything here that destroys data. */
   backup: (reason: string) => Promise<unknown>;
+  /** Which tools to render — each Tools card mounts one of these with its own state. */
+  sections: { fix?: boolean; clear?: boolean; mirror?: boolean; testData?: boolean; reset?: boolean };
 }
 
 interface Subject {
@@ -103,6 +96,7 @@ export default function ScoreAdmin({
   saveRound,
   patchRound,
   backup,
+  sections,
 }: Props) {
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
   const round = rounds.find((r) => r.id === roundId) ?? rounds[0];
@@ -112,11 +106,10 @@ export default function ScoreAdmin({
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmSimulate, setConfirmSimulate] = useState<18 | 7 | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  // Simulation belongs in the sandbox. In the tournament space, filling rounds with
-  // fake scores is exactly the button nobody should be able to fat-finger — fixing a
-  // score and the confirmed resets stay available everywhere. The local demo backend
-  // is a sandbox by nature, so it keeps everything.
-  const sandbox = space === "test" || backend === "local" || TEST_DATA_IN_TOURNAMENT;
+  // Test data belongs in the sandbox, structurally: in the tournament space the
+  // simulate and fill tools do not render at all, so there is no flag to remember to
+  // flip. The local demo backend is a sandbox by nature.
+  const sandbox = space === "test" || backend === "local";
 
   async function mirror() {
     if (!mirrorFrom) return;
@@ -192,6 +185,8 @@ export default function ScoreAdmin({
 
   return (
     <div className="px-4 space-y-4">
+      {(sections.fix || sections.clear || sections.testData) && (
+      <>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {rounds.map((r) => (
           <button
@@ -218,10 +213,12 @@ export default function ScoreAdmin({
           {scored.length} of {subjects.length} cards started
         </span>
       </p>
+      </>
+      )}
 
       {/* ---------------- correcting a score ---------------- */}
+      {sections.fix && (
       <section>
-        <h2 className="label mb-2">Fix a score</h2>
         {!subject ? (
           <div className="grid grid-cols-2 gap-2">
             {subjects.map((s) => {
@@ -252,9 +249,10 @@ export default function ScoreAdmin({
           />
         )}
       </section>
+      )}
 
       {/* ---------------- mirroring the tournament into the sandbox ---------------- */}
-      {space === "test" && mirrorFrom && (
+      {sections.mirror && space === "test" && mirrorFrom && (
         <section className="border border-sky-900 bg-sky-950/20 rounded-2xl p-3.5">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-1">
             Mirror the tournament
@@ -289,17 +287,11 @@ export default function ScoreAdmin({
       )}
 
       {/* ---------------- test data (sandbox only) ---------------- */}
-      {sandbox && (
-      <section className="border border-amber-900/60 bg-amber-950/20 rounded-2xl p-3.5">
+      {sections.testData && sandbox && (
+      <section>
         <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
-          Test data · whole tournament
+          Whole tournament
         </h2>
-        {space === "live" && backend !== "local" && (
-          <p className="text-[12px] text-rose-300/90 leading-relaxed mb-2">
-            Temporarily enabled in the tournament space so there's data to browse — this
-            gets removed before the trip.
-          </p>
-        )}
         <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
           Plays all {rounds.length} rounds end to end, including the draft — round 1 is played
           first and its Stableford order decides who picks whom. No need to enter pairs by hand.
@@ -344,8 +336,7 @@ export default function ScoreAdmin({
         </h2>
         <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
           Fills round {round.seq} with plausible scores for everyone playing it, so the
-          leaderboards have something in them. Delete this section before the trip, or just
-          clear the rounds again.
+          leaderboards have something in them.
         </p>
 
         {busy && <p className="text-xs text-violet-300 mb-2 num">{busy}</p>}
@@ -374,7 +365,13 @@ export default function ScoreAdmin({
           </p>
         )}
 
-        <div className="mt-3">
+      </section>
+      )}
+
+      {/* ---------------- clearing a round ---------------- */}
+      {sections.clear && (
+      <section>
+        <div>
           {!confirmClear ? (
             <button
               disabled={scored.length === 0 || Boolean(busy)}
@@ -404,48 +401,9 @@ export default function ScoreAdmin({
       </section>
       )}
 
-      {/* Lasse's dinner-nagging list: who still hasn't entered a finished round
-          into eBirdie/GameBook. Data comes from each player's own checkbox on
-          their Play view. */}
-      {(() => {
-        const hcpRounds = rounds.filter(
-          (r) => r.status === "final" && !r.formats.some((f) => f.teamCard),
-        );
-        const lines = hcpRounds
-          .map((r) => ({
-            r,
-            waiting: roundParticipants(r, event.players).filter((p) => {
-              const card = cards[r.id]?.[p.id];
-              return card && Object.keys(card.holes ?? {}).length > 0 && !card.hcpSubmitted;
-            }),
-          }))
-          .filter((l) => l.waiting.length > 0);
-        if (hcpRounds.length === 0) return null;
-        return (
-          <section className="card p-3.5">
-            <h2 className="label mb-1">HCP submissions</h2>
-            {lines.length === 0 ? (
-              <p className="text-xs text-emerald-400">
-                Everyone has entered every finished round. Peaceful dinner.
-              </p>
-            ) : (
-              <ul className="space-y-1">
-                {lines.map(({ r, waiting }) => (
-                  <li key={r.id} className="text-xs leading-relaxed">
-                    <span className="num font-semibold text-slate-300">R{r.seq}</span>{" "}
-                    <span className="text-amber-400">waiting:</span>{" "}
-                    <span className="text-slate-400">
-                      {waiting.map((p) => p.name).join(", ")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        );
-      })()}
 
-      {/* ---------------- reset — available in both spaces, but never one tap ---------------- */}
+      {/* ---------------- reset — never one tap ---------------- */}
+      {sections.reset && (
       <section>
         {!confirmReset ? (
           <button
@@ -478,6 +436,7 @@ export default function ScoreAdmin({
         )}
         {busy && <p className="text-xs text-violet-300 mt-2 num">{busy}</p>}
       </section>
+      )}
     </div>
   );
 }

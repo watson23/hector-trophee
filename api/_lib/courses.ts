@@ -40,32 +40,6 @@ export const courses: Record<string, Course> = {
       red: { colour: "red", cr: 67.6, slope: 131, par: 72, metres: 5011 },
     },
   },
-  hirsala: {
-    id: "hirsala",
-    name: "Hirsala Golf",
-    shortName: "Hirsala",
-    /* Field-test course (Kirkkonummi). Par + SI from the user's own hector-scores
-       app (field-validated on the current par-73 card); yellow CR/slope from the
-       club's "Miehet slope 2026" PDF; metres from mscorecard's par-73 card. */
-    par: [4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 4, 5, 4, 3, 5, 3, 4, 5],
-    si: [2, 18, 12, 16, 10, 8, 6, 14, 4, 13, 5, 15, 3, 17, 9, 11, 1, 7],
-    tees: {
-      yellow: { colour: "yellow", cr: 70.8, slope: 127, par: 73, metres: 5596 },
-    },
-  },
-  tapiola: {
-    id: "tapiola",
-    name: "Tapiola Golf",
-    shortName: "Tapiola",
-    /* Field-test course (Espoo). Par + SI from the user's hector-scores app; yellow
-       ("57") CR/slope from the same source; total length from the club's site
-       (5629 m from yellow). No per-hole metres: the club publishes its card as an image. */
-    par: [5, 3, 4, 3, 5, 4, 4, 4, 4, 4, 5, 4, 3, 4, 4, 4, 4, 4],
-    si: [14, 18, 12, 8, 6, 10, 4, 16, 2, 3, 17, 11, 9, 15, 1, 7, 13, 5],
-    tees: {
-      yellow: { colour: "yellow", cr: 70.5, slope: 123, par: 72, metres: 5629 },
-    },
-  },
 };
 
 /** Hole lengths in metres per tee, for the scorecard view. */
@@ -82,9 +56,6 @@ export const holeMetres: Record<string, Record<string, number[]>> = {
     yellow: [321, 355, 453, 127, 319, 346, 436, 193, 306, 288, 154, 454, 384, 333, 340, 429, 140, 352],
     blue: [299, 333, 423, 120, 297, 332, 416, 172, 285, 264, 140, 428, 365, 313, 322, 409, 131, 323],
     red: [283, 305, 391, 113, 273, 320, 395, 149, 262, 252, 120, 395, 338, 290, 311, 390, 121, 303],
-  },
-  hirsala: {
-    yellow: [330, 109, 324, 438, 328, 312, 315, 142, 476, 274, 330, 415, 347, 135, 447, 124, 360, 390],
   },
 };
 
@@ -141,16 +112,12 @@ export function courseGuideUrl(courseId: string): string | null {
 const heroImage: Record<string, string> = {
   radecky: "/courses/radecky.webp",
   deste: "/courses/deste.webp",
-  hirsala: "/courses/hirsala.webp",
-  tapiola: "/courses/tapiola.webp",
 };
 
 /** The chyron caption under each hero — place · course, in the course's own terms. */
 const heroCaption: Record<string, string> = {
   radecky: "Konopiště · Radecký",
   deste: "Konopiště · d'Este",
-  hirsala: "Hirsala · Kirkkonummi",
-  tapiola: "Tapiola · Espoo",
 };
 
 export function courseHeroCaption(courseId: string): string | null {

@@ -3,11 +3,15 @@ import { DEFENDING_PAIR } from "../lib/store";
 import { HOLE_CAP_HELP, HOLE_CAP_LABEL } from "../lib/holeCap";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/flights";
-import type { Card, EventDoc, FieldPlayer, FormatSpec, Round, RoundStatus, Course, Pair, HoleCapRule, UsageDay } from "../types";
+import type { Card, EventDoc, FieldPlayer, FormatSpec, Round, Course, Pair, HoleCapRule, UsageDay } from "../types";
 import { DEFAULT_DRIVES, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds, FORMAT_PRESETS } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
+import TodayPanel from "../components/TodayPanel";
+import ToolCard from "../components/ToolCard";
+import HcpOwed from "../components/HcpOwed";
+import { todayTasks } from "../lib/today";
 import { SPACES, spaceLink, spaceMeta, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import BackupAdmin, { type BackupApi } from "./BackupAdmin";
@@ -57,94 +61,67 @@ export default function AdminScreen({
   // Rounds first: it and Flights are the daily workspace, while Pairs is essentially
   // never touched again after Thursday's draft. Session-persisted, like the rest of the
   // UI position, so a refresh lands back on the same section.
-  const [spacesOpen, setSpacesOpen] = useState(false);
-  const [tab, setTab] = usePersistentState<"pairs" | "groups" | "rounds" | "scores" | "backup">(
+  // Tabs grouped by when they are used: Today, Flights and Pairs run the week; Setup is
+  // touched before the trip; Tools are corrections and safety, on need. Session-persisted
+  // so a refresh lands back on the same section.
+  const [tab, setTab] = usePersistentState<"today" | "groups" | "pairs" | "setup" | "tools">(
     "hectro_ui.adminTab",
-    "rounds",
+    "today",
     "session",
   );
+  const tasks = todayTasks(event, rounds, cards);
+  const scoreAdminProps = {
+    event,
+    rounds,
+    space,
+    backend,
+    mirrorFrom,
+    cards,
+    setHole,
+    setCard,
+    deleteCard,
+    saveEvent,
+    saveRound,
+    patchRound,
+    backup: backups.take,
+  };
 
   return (
     <div className="pb-4">
       <Header
         title="Admin"
-        subtitle="Draft results, flights and round setup"
+        subtitle={`${spaceMeta(space).label} · today, setup and tools`}
         right={
           <button onClick={onClose} className="btn-ghost px-3 py-2 text-sm shrink-0">
             Done
           </button>
         }
       />
-      {/* Which copy of the event this device edits. Folded to one line by default — in
-          the thick of things the organiser is here for flights and scores, not for
-          switching spaces — with the current space always named (and coloured when it
-          is not the tournament). Tap to unfold the full list. */}
-      <div className="mx-4 mb-3 rounded-2xl border border-slate-800 bg-slate-900">
-        {(() => {
-          const cur = SPACES.find((s) => s.id === space) ?? SPACES[0];
-          const tone =
-            cur.tone === "test" ? "text-sky-300" : cur.tone === "field" ? "text-amber-300" : "text-slate-100";
-          return (
-            <button
-              onClick={() => setSpacesOpen((v) => !v)}
-              aria-expanded={spacesOpen}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left"
-            >
-              <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0 bg-violet-400" />
-              <span className={`text-xs font-semibold truncate ${tone}`}>{cur.label}</span>
-              <span className="text-[12px] text-slate-500 truncate">· this phone</span>
-              <span className="ml-auto text-[12px] text-slate-500 shrink-0">
-                {spacesOpen ? "Close" : "Change"}
-              </span>
-            </button>
-          );
-        })()}
-        {spacesOpen && (
-          <div className="border-t border-slate-800 p-2">
-            {SPACES.map((s) => {
-              const active = s.id === space;
-              const tone =
-                s.tone === "test" ? "text-sky-300" : s.tone === "field" ? "text-amber-300" : "text-slate-100";
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => !active && switchSpace(s.id)}
-                  className={`w-full text-left rounded-xl px-3 py-2 flex items-start gap-3 ${
-                    active ? "bg-slate-800" : "hover:bg-slate-800/50"
-                  }`}
-                >
-                  <span
-                    className={`mt-1.5 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
-                      active ? "bg-violet-400" : "border border-slate-600"
-                    }`}
-                  />
-                  <span className="min-w-0">
-                    <span className={`block text-xs font-semibold ${tone}`}>{s.label}</span>
-                    <span className="block text-[12px] text-slate-500 leading-relaxed">{s.description}</span>
-                  </span>
-                </button>
-              );
-            })}
-            {space !== "live" && (
-              <div className="px-3 pb-1">
-                <InviteLink space={space} />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
       <Segmented
         value={tab}
         onChange={setTab}
         options={[
-          { id: "rounds", label: "Rounds" },
+          { id: "today", label: "Today" },
           { id: "groups", label: "Flights" },
-          { id: "scores", label: "Scores" },
           { id: "pairs", label: "Pairs" },
-          { id: "backup", label: "Backup" },
+          { id: "setup", label: "Setup" },
+          { id: "tools", label: "Tools" },
         ]}
       />
       <div className="mt-4">
+        {tab === "today" && (
+          <div className="space-y-4">
+            <TodayPanel
+              tasks={tasks}
+              onOpenRound={(id) => void patchRound(id, { status: "open" })}
+              onCloseRound={(id) => void patchRound(id, { status: "final" })}
+              onReopenRound={(id) => void patchRound(id, { status: "open" })}
+              onConclude={() => void saveEvent({ draftConcluded: true })}
+              onGo={setTab}
+            />
+            <HcpOwed event={event} rounds={rounds} cards={cards} />
+          </div>
+        )}
         {tab === "pairs" && (
           <PairsEditor
             event={event}
@@ -155,33 +132,46 @@ export default function AdminScreen({
           />
         )}
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} patchRound={patchRound} />}
-        {tab === "rounds" && (
+        {tab === "setup" && (
           <>
             <HoleCapCard event={event} saveEvent={saveEvent} />
-            <RoundsEditor rounds={rounds} saveRound={saveRound} patchRound={patchRound} />
+            <RoundsEditor rounds={rounds} cards={cards} saveRound={saveRound} patchRound={patchRound} />
             <HandicapRefresh event={event} rounds={rounds} saveEvent={saveEvent} />
             <HandicapAdjust event={event} rounds={rounds} saveEvent={saveEvent} patchRound={patchRound} />
-            <UsageCard players={event.players} usage={usage} />
           </>
         )}
-        {tab === "scores" && (
-          <ScoreAdmin
-            event={event}
-            rounds={rounds}
-            space={space}
-            backend={backend}
-            mirrorFrom={mirrorFrom}
-            cards={cards}
-            setHole={setHole}
-            setCard={setCard}
-            deleteCard={deleteCard}
-            saveEvent={saveEvent}
-            saveRound={saveRound}
-            patchRound={patchRound}
-            backup={backups.take}
-          />
+        {tab === "tools" && (
+          <div className="space-y-3">
+            <ToolCard title="Fix a score" description="Correct any hole on any card in any round. Every change is written with your name on it.">
+              <ScoreAdmin {...scoreAdminProps} sections={{ fix: true }} />
+            </ToolCard>
+            <ToolCard title="Backups" description="Snapshots are taken when a round goes final and before anything destructive. Restore a round or the whole week from here.">
+              <BackupAdmin rounds={rounds} backups={backups} />
+            </ToolCard>
+            <ToolCard title="Spaces" description={`This phone edits ${spaceMeta(space).label}. Switch between the tournament and the sandbox, or share the sandbox link.`}>
+              <SpacesCard space={space} />
+            </ToolCard>
+            {space === "test" && mirrorFrom && (
+              <ToolCard tone="test" title="Mirror the tournament" description="Copy the tournament's live data into this sandbox, replacing what is here. The tournament is only read.">
+                <ScoreAdmin {...scoreAdminProps} sections={{ mirror: true }} />
+              </ToolCard>
+            )}
+            {(space === "test" || backend === "local") && (
+              <ToolCard tone="test" title="Test data" description="Play the whole week or fill one round with plausible scores. Sandbox only — this card does not exist in the tournament.">
+                <ScoreAdmin {...scoreAdminProps} sections={{ testData: true }} />
+              </ToolCard>
+            )}
+            <ToolCard tone="danger" title="Clear a round" description="Delete every card in one round and put it back to upcoming. A snapshot is taken first.">
+              <ScoreAdmin {...scoreAdminProps} sections={{ clear: true }} />
+            </ToolCard>
+            <ToolCard tone="danger" title="Reset everything" description="Scores, pairs and flights back to a clean event. Two taps, snapshot first, restorable from Backups.">
+              <ScoreAdmin {...scoreAdminProps} sections={{ reset: true }} />
+            </ToolCard>
+            <ToolCard title="App usage" description="Who has opened the app and how much it has been used. Nothing here affects scores.">
+              <UsageCard players={event.players} usage={usage} />
+            </ToolCard>
+          </div>
         )}
-        {tab === "backup" && <BackupAdmin rounds={rounds} backups={backups} />}
       </div>
 
       {/* A formal way out of the role, for someone who wants to play a round as a
@@ -210,6 +200,42 @@ export default function AdminScreen({
  * Inviting another phone into this space: a link that sets the space on arrival, so a
  * tester goes straight to the PIN and their name — no organiser access needed.
  */
+/** Which copy of the event this phone edits — the tournament or the sandbox. */
+function SpacesCard({ space }: { space: Space }) {
+  return (
+    <div className="px-2">
+      {SPACES.map((s) => {
+        const active = s.id === space;
+        const tone = s.tone === "test" ? "text-sky-300" : "text-slate-100";
+        return (
+          <button
+            key={s.id}
+            onClick={() => !active && switchSpace(s.id)}
+            className={`w-full text-left rounded-xl px-3 py-2 flex items-start gap-3 ${
+              active ? "bg-slate-800" : "hover:bg-slate-800/50"
+            }`}
+          >
+            <span
+              className={`mt-1.5 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
+                active ? "bg-violet-400" : "border border-slate-600"
+              }`}
+            />
+            <span className="min-w-0">
+              <span className={`block text-xs font-semibold ${tone}`}>{s.label}</span>
+              <span className="block text-[12px] text-slate-500 leading-relaxed">{s.description}</span>
+            </span>
+          </button>
+        );
+      })}
+      {space !== "live" && (
+        <div className="px-3 pb-1 pt-1">
+          <InviteLink space={space} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function InviteLink({ space }: { space: Space }) {
   const [copied, setCopied] = useState(false);
   const link = spaceLink(space);
@@ -1194,27 +1220,29 @@ function TeeTimeDraw({
 // Round setup — course, tee, status, rating overrides
 // ---------------------------------------------------------------------------
 
-const STATUSES: RoundStatus[] = ["upcoming", "open", "final"];
 
 function RoundsEditor({
   rounds,
+  cards,
   saveRound,
   patchRound,
 }: {
   rounds: Round[];
+  cards: Record<string, Record<string, Card>>;
   saveRound: (round: Round) => Promise<void>;
   patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
   return (
     <div className="px-4 space-y-3">
       <p className="text-xs text-slate-400 leading-relaxed">
-        Open a round when the first flight tees off — that's what puts it on everyone's Play tab.
-        Only one round should be open at a time.
+        Course, tee, ratings and formats per round — the programme as the committee set it.
+        Opening and closing rounds happens on Today. A round with scores on it is locked here.
       </p>
       {rounds.map((round) => (
         <RoundEditorCard
           key={round.id}
           round={round}
+          locked={Object.values(cards[round.id] ?? {}).some((c) => Object.keys(c.holes ?? {}).length > 0)}
           saveRound={saveRound}
           patchRound={patchRound}
         />
@@ -1225,13 +1253,19 @@ function RoundsEditor({
 
 function RoundEditorCard({
   round,
+  locked,
   saveRound,
   patchRound,
 }: {
   round: Round;
+  /** The round has scores: setup is read-only until deliberately unlocked. */
+  locked: boolean;
   saveRound: (round: Round) => Promise<void>;
   patchRound: (roundId: string, patch: Partial<Round>) => Promise<void>;
 }) {
+  // Two taps to edit a played round's setup; the lock comes back on the next visit.
+  const [unlock, setUnlock] = useState<"locked" | "asking" | "open">("locked");
+  const frozen = locked && unlock !== "open";
   const course = courses[round.courseId] as Course | undefined;
   const tee = course?.tees[round.tee];
   // One step of undo: the round as it was before the last edit made from this card.
@@ -1253,16 +1287,6 @@ function RoundEditorCard({
     programme &&
     programmeCourses.has(round.courseId) &&
     (programme.courseId !== round.courseId || programme.tee !== round.tee || formatsStrayed);
-
-  /**
-   * Opening a round freezes the handicaps it is played off. Handicaps are refreshed each
-   * morning, so without this a later update would rescore a round already in the books.
-   */
-  function setStatus(status: RoundStatus) {
-    setUndo(round);
-    // Handicaps are frozen by the store layer whenever a round leaves "upcoming".
-    void patchRound(round.id, { status });
-  }
 
   // A round pointing at a course this build doesn't know (renamed, removed) must not
   // blank Admin on every phone — say so and let the course be reselected.
@@ -1295,23 +1319,24 @@ function RoundEditorCard({
         )}
       </div>
 
-      <div className="flex gap-1">
-        {STATUSES.map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatus(s)}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors ${
-              round.status === s
-                ? s === "open"
-                  ? "bg-emerald-600 text-white"
-                  : "bg-violet-600 text-white"
-                : "bg-slate-800 text-slate-400"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      {locked && (
+        <div className="flex items-center justify-between gap-3 text-[12px] rounded-lg bg-slate-800/60 px-2.5 py-1.5">
+          <span className="text-slate-400">
+            {unlock === "open" ? "Unlocked for this visit — every change rescoring nothing already played." : "Locked: this round has scores."}
+          </span>
+          {unlock === "locked" && (
+            <button onClick={() => setUnlock("asking")} className="shrink-0 underline underline-offset-2 text-slate-300">
+              Unlock
+            </button>
+          )}
+          {unlock === "asking" && (
+            <button onClick={() => setUnlock("open")} className="shrink-0 rounded-md bg-rose-600 text-white px-2 py-0.5 font-semibold">
+              Yes, edit anyway
+            </button>
+          )}
+        </div>
+      )}
+      <div className={frozen ? "pointer-events-none opacity-50 space-y-3" : "space-y-3"}>
 
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
@@ -1482,6 +1507,7 @@ function RoundEditorCard({
             }
           />
         )}
+      </div>
       </div>
     </div>
   );

@@ -108,19 +108,12 @@ export const DEFENDING_PAIR: [string, string] = ["lasse-k", "jari-k"];
 export const EVENT_PIN = import.meta.env?.VITE_EVENT_PIN || "HEC26";
 export const ADMIN_PIN = import.meta.env?.VITE_ADMIN_PIN || "1874";
 
-/** What a field-test event says about itself on the PIN screen and Info masthead. */
-const FIELD_EVENTS: Record<string, Pick<EventDoc, "name" | "venue" | "dates">> = {
-  "HIRSALA-FIELD": { name: "Hector field test", venue: "Hirsala Golf, Kirkkonummi", dates: "September 2026" },
-  "TAPIOLA-FIELD": { name: "Hector field test", venue: "Tapiola Golf, Espoo", dates: "September 5, 2026" },
-};
-
 export async function buildDefaultEvent(eventId: string = EVENT_ID): Promise<EventDoc> {
-  const fieldEvent = FIELD_EVENTS[eventId] as (typeof FIELD_EVENTS)[string] | undefined;
   return {
     id: eventId,
-    name: fieldEvent?.name ?? "Hector Trophée 2026",
-    venue: fieldEvent?.venue ?? "Golf & Spa Resort Konopiště, Czechia",
-    dates: fieldEvent?.dates ?? "September 24–27, 2026",
+    name: "Hector Trophée 2026",
+    venue: "Golf & Spa Resort Konopiště, Czechia",
+    dates: "September 24–27, 2026",
     pinHash: await hashPin(EVENT_PIN),
     adminPinHash: await hashPin(ADMIN_PIN),
     players: field,
