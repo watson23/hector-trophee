@@ -29,7 +29,9 @@ export default defineConfig({
       registerType: "prompt",
       includeAssets: ["icons/*.png", "icons/*.svg"],
       manifest: {
-        name: "Hector Trophée 2026",
+        // "Hector" is what the group calls it; the tournament's name stays on the
+        // masthead and in the tab title. Desktop Chrome and the install dialog show `name`.
+        name: "Hector",
         short_name: "Hector",
         description: "Live scoring for Hector Trophée 2026, Konopiště",
         start_url: "/",
