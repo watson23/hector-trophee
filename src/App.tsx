@@ -159,8 +159,22 @@ export default function App() {
     setEditFollows(false);
   };
   if (session.spectator) {
+    // The same hello for a watcher, once per phone, over whatever the TV shows first.
+    const spectatorWelcome = welcomeDismissed !== "spectator" && needsWelcome("spectator") && (
+      <Welcome
+        name="friend"
+        playerId="spectator"
+        spectator
+        venue={t.event.venue}
+        dates={t.event.dates}
+        rounds={t.rounds.length}
+        onDone={() => setWelcomeDismissed("spectator")}
+      />
+    );
     if (editFollows) {
       return (
+        <>
+        {spectatorWelcome}
         <FollowPicker
           event={t.event}
           initial={following}
@@ -173,6 +187,7 @@ export default function App() {
           }}
           onExit={leaveTV}
         />
+        </>
       );
     }
     // The persisted tab may point at a tab the TV doesn't have (Play, from a
@@ -180,6 +195,7 @@ export default function App() {
     const tvTab: Tab = ["round", "tournament", "info"].includes(tab) ? tab : "round";
     return (
       <div className="min-h-dvh">
+        {spectatorWelcome}
         <SpaceBanner space={space} canSwitch={session.admin} />
         <UpdateBanner />
         <TVBar

@@ -51,13 +51,17 @@ export default function Welcome({
   venue,
   dates,
   rounds,
+  spectator = false,
   onDone,
 }: {
   name: string;
+  /** The player's id, or a fixed key such as "spectator" for a watcher. */
   playerId: string;
   venue: string;
   dates: string;
   rounds: number;
+  /** Hector TV's hello: the same screen, a paragraph about watching rather than playing. */
+  spectator?: boolean;
   onDone: () => void;
 }) {
   const first = name.split(" ")[0];
@@ -104,15 +108,17 @@ export default function Welcome({
         </p>
         <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-3 max-w-sm" style={{ animationDelay: "4600ms" }}>
           World's best amateur golfers clash once again. {words[rounds] ?? rounds} rounds on two courses, two
-          trophies, and four days to decide who carries the Hector home. Your card, your flight and the standings
-          are all in here. You just need to hit the shots. Good luck!
+          trophies, and four days to decide who carries the Hector home.{" "}
+          {spectator
+            ? "Follow your favourites and watch the standings move as the cards come in. Enjoy the show!"
+            : "Your card, your flight and the standings are all in here. You just need to hit the shots. Good luck!"}
         </p>
         <button
           onClick={done}
           className="welcome-step btn-primary w-full py-4 text-lg mt-7"
           style={{ animationDelay: "5300ms" }}
         >
-          Let's go →
+          {spectator ? "Let's watch →" : "Let's go →"}
         </button>
       </div>
     </div>
