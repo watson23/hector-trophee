@@ -435,7 +435,7 @@ function CourseCard({ courseId }: { courseId: string }) {
                   ))}
                 </tr>
                 <tr className="text-slate-500">
-                  <td className="text-left font-sans pr-1">SI</td>
+                  <td className="text-left font-sans pr-1">HCP</td>
                   {Array.from({ length: 9 }, (_, i) => (
                     <td key={i} className="text-center">
                       {course.si[from + i]}

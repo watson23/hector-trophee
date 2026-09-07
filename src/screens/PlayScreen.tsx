@@ -568,7 +568,7 @@ function OnCourse({
                 <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">Hole</div>
                 <div className="score text-[64px] leading-none mt-1.5">{hole}</div>
                 <div className="mt-2 text-sm text-slate-400 num leading-relaxed">
-                  Par {par} · SI {si}
+                  Par {par} · HCP {si}
                   {metres ? <br /> : null}
                   {metres ? `${metres}m` : ""}
                 </div>
@@ -593,7 +593,7 @@ function OnCourse({
               <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
             </div>
             <div className="mt-2 text-sm text-slate-400 num">
-              Par {par} · SI {si}
+              Par {par} · HCP {si}
               {metres ? ` · ${metres}m` : ""}
             </div>
             {/* The hole map is the feature for a course most of the field has played
@@ -770,7 +770,7 @@ function EntrySheet({
         <div className="text-center">
           <div className="score text-4xl leading-none">{hole}</div>
           <div className="text-[12px] text-slate-500 num mt-0.5">
-            Par {par} · SI {si}
+            Par {par} · HCP {si}
             {metres ? ` · ${metres}m` : ""}
           </div>
         </div>

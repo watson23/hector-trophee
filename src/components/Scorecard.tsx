@@ -99,7 +99,7 @@ const GRID =
 
 /**
  * The scorecard, one nine at a time, laid out the way the Claude Design handoff of
- * 6.9.2026 settled it (layouts 1c / 2a / 2b): one shared Hole · SI · Par header, then a
+ * 6.9.2026 settled it (layouts 1c / 2a / 2b): one shared Hole · HCP · Par header (HCP is what this group calls the hole's stroke index), then a
  * block per pair on a Better Ball day — the two players' gross marks with the counted
  * ball as a row beneath — or a block per card on any other day, where the name column
  * turns into the row labels "gross" and "net" (or "pts") so the two figures are never
@@ -217,7 +217,7 @@ export default function Scorecard({
         })}
         <div className="num text-[11px] font-semibold text-slate-500 text-center leading-none">{nineLabel}</div>
 
-        <div className="num text-[11px] font-semibold text-slate-600 tracking-[.06em] leading-none">SI</div>
+        <div className="num text-[11px] font-semibold text-slate-600 tracking-[.06em] leading-none">HCP</div>
         {holes.map((i) => (
           <div key={`si${i}`} className="num text-[11px] text-slate-600 text-center leading-none">
             {course.si[i]}

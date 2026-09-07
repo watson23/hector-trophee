@@ -84,7 +84,7 @@ Score tinting follows golf-TV convention, not web convention: red is *good*
   formats (main one first); the headline follows the tab — net to par, points, or gross
   to par. Caption rule everywhere: `61 (+9) gross` on a net tab, `61 (+9) · net +4` on
   Stableford, `65 strokes` on a gross tab — so net and gross are never confused. One
-  shared header: HOLE (tappable) · SI · PAR over a name column + nine cells + the nine's
+  shared header: HOLE (tappable) · HCP · PAR over a name column + nine cells + the nine's
   total. Every card is a name line (whole-round totals) over a `gross` row of marks and a
   `net` / `pts` row, the labels in the name column. On a Better Ball day the cards sit in
   a block per pair under a small mono pair label with the pair's figure, the counted ball
