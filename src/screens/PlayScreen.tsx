@@ -4,7 +4,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
-import { applyCap, holeCap } from "../lib/holeCap";
+import { applyCap, holeCap, HOLE_CAP_LABEL } from "../lib/holeCap";
 import { drivesRule, effectiveTee, hiFor, teamCardId, type RoundResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
@@ -787,6 +787,7 @@ function EntrySheet({
               card={cards[s.id]}
               tall={tall}
               cap={holeCap(capRule, par, s.strokes[hole - 1])}
+              capRule={capRule}
               onScore={(v) => {
                 // Pin before writing so completing the flight's last score can't
                 // advance the derived hole under a thumb — Next hole is the way on.
@@ -1555,6 +1556,7 @@ function SubjectRow({
   card,
   tall,
   cap,
+  capRule,
   onScore,
 }: {
   subject: Subject;
@@ -1565,6 +1567,7 @@ function SubjectRow({
   tall: boolean;
   /** The tournament's maximum on this hole for this player, or null without a cap rule. */
   cap: number | null;
+  capRule: EventDoc["holeCap"];
   onScore: (value: number | null) => void;
 }) {
   // A 1 is checked before it is written: it announces itself to everyone, and a thumb
@@ -1728,6 +1731,14 @@ function SubjectRow({
             Clear hole
           </button>
         </div>
+      )}
+      {showOther && cap !== null && capRule && (
+        /* The box is where someone about to type a 12 lands: the tournament's cap,
+           in the rule's own words and the number it comes to on this hole. */
+        <p className="mt-1.5 text-[12px] text-slate-500 leading-relaxed">
+          {HOLE_CAP_LABEL[capRule]} is the most any hole costs — <span className="num text-slate-300">{cap}</span> here.
+          Anything higher counts as {cap}{quick.includes(cap) ? ", so the hollow button in the row is enough" : ""}.
+        </p>
       )}
     </div>
   );
