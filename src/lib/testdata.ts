@@ -73,3 +73,26 @@ export function generateRoundCards(
     holes: playHoles(course.par, (courseHandicap(p.hi, tee) + 3) / 18, holes),
   }));
 }
+
+/**
+ * Whose tee shot on each played hole, for a simulated scramble card: mostly six-and-six
+ * with a deterministic wobble so a pair or two in the field come up a shot short and the
+ * penalty has something to show.
+ */
+export function fakeDrives(card: { subjectId: string; holes: Record<string, number> }, event: EventDoc): Record<string, string> {
+  const pairId = card.subjectId.replace(/^team__/, "");
+  const pair = event.pairs.find((p) => p.id === pairId);
+  if (!pair) return {};
+  const seed = [...pairId].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+  const lead = seed % 2 === 0 ? pair.aId : pair.bId;
+  const other = lead === pair.aId ? pair.bId : pair.aId;
+  const drives: Record<string, string> = {};
+  for (const h of Object.keys(card.holes)) {
+    const n = Number(h);
+    // Alternate; every fifth hole of the back nine goes to the leader again, so a few
+    // pairs land on 5/13 and one player comes up a tee shot short.
+    const wobble = n > 9 && (n + seed) % 5 === 0;
+    drives[h] = wobble ? lead : (n + seed) % 2 === 0 ? lead : other;
+  }
+  return drives;
+}

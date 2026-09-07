@@ -4,7 +4,7 @@ import { courses } from "../data/courses";
 import { effectiveTee, hiFor, roundParticipants, teamCardId } from "../lib/engine";
 import { allocationFor, netScore, stablefordPoints } from "../lib/formats";
 import { courseHandicap, scrambleTeamHandicap, strokeAllocation } from "../lib/handicap";
-import { generateRoundCards } from "../lib/testdata";
+import { fakeDrives, generateRoundCards } from "../lib/testdata";
 import { applyCap, holeCap } from "../lib/holeCap";
 import { resetTournament, simulateTournament } from "../lib/simulate";
 import { EVENT_ID } from "../data/field";
@@ -28,7 +28,7 @@ interface Props {
   mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   cards: Record<string, Record<string, Card>>;
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
-  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>, drives?: Record<string, string>) => Promise<void>;
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
@@ -162,7 +162,11 @@ export default function ScoreAdmin({
     setBusy(`Filling ${holes} holes…`);
     try {
       const generated = generateRoundCards(round, course, effectiveTee(round, course), event, holes);
-      await Promise.all(generated.map((c) => setCard(round.id, c.subjectId, c.holes)));
+      // Scramble cards get their tee shots too, so the drive rule has something to show.
+      const scramble = round.formats.some((f) => f.teamCard);
+      await Promise.all(
+        generated.map((c) => setCard(round.id, c.subjectId, c.holes, scramble ? fakeDrives(c, event) : undefined)),
+      );
     } finally {
       setBusy(null);
     }

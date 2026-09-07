@@ -4,7 +4,7 @@ import { courses } from "../data/courses";
 import { effectiveTee, evaluateRound } from "../lib/engine";
 import { defaultGroups } from "../data/rounds";
 import { flightsForPairs } from "./flights";
-import { generateRoundCards } from "./testdata";
+import { fakeDrives, generateRoundCards } from "./testdata";
 
 /**
  * Plays a whole tournament, so trying the app out doesn't mean twenty taps to enter a
@@ -42,29 +42,6 @@ async function writeCards(round: Round, event: EventDoc, deps: SimulateDeps, hol
     cards.map((c) => deps.setCard(round.id, c.subjectId, c.holes, scramble ? fakeDrives(c, event) : undefined)),
   );
   return cards;
-}
-
-/**
- * Whose tee shot on each played hole, for a simulated scramble card: mostly six-and-six
- * with a deterministic wobble so a pair or two in the field come up a shot short and the
- * penalty has something to show.
- */
-function fakeDrives(card: { subjectId: string; holes: Record<string, number> }, event: EventDoc): Record<string, string> {
-  const pairId = card.subjectId.replace(/^team__/, "");
-  const pair = event.pairs.find((p) => p.id === pairId);
-  if (!pair) return {};
-  const seed = [...pairId].reduce((a, ch) => a + ch.charCodeAt(0), 0);
-  const lead = seed % 2 === 0 ? pair.aId : pair.bId;
-  const other = lead === pair.aId ? pair.bId : pair.aId;
-  const drives: Record<string, string> = {};
-  for (const h of Object.keys(card.holes)) {
-    const n = Number(h);
-    // Alternate; every fifth hole of the back nine goes to the leader again, so a few
-    // pairs land on 5/13 and one player comes up a tee shot short.
-    const wobble = n > 9 && (n + seed) % 5 === 0;
-    drives[h] = wobble ? lead : (n + seed) % 2 === 0 ? lead : other;
-  }
-  return drives;
 }
 
 /** Rebuild the round-1 result from the cards just written, to get the draft order. */
