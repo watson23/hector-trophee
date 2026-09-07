@@ -302,6 +302,7 @@ export default function App() {
       <main className="max-w-lg mx-auto pb-32">
         {adminOpen ? (
           <AdminScreen
+            level={session.adminLevel ?? "full"}
             event={t.event}
             rounds={t.rounds}
             space={space}
@@ -398,8 +399,8 @@ export default function App() {
                 me={me}
                 admin={session.admin}
                 backend={t.backend}
-                onAdmin={() => {
-                  update({ admin: true });
+                onAdmin={(level) => {
+                  update({ admin: true, adminLevel: level });
                   setAdminOpen(true);
                 }}
                 onOpenAdmin={() => setAdminOpen(true)}

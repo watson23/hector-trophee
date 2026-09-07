@@ -12,6 +12,7 @@ import TodayPanel from "../components/TodayPanel";
 import ToolCard from "../components/ToolCard";
 import HcpOwed from "../components/HcpOwed";
 import { todayTasks } from "../lib/today";
+import type { AdminLevel } from "../hooks/useSession";
 import { shareOrDownload, summarizeUsage, usageCsv, usageText } from "../lib/usageExport";
 import { SPACES, spaceLink, spaceMeta, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
@@ -20,6 +21,8 @@ import HandicapRefresh from "../components/HandicapRefresh";
 import HandicapAdjust from "../components/HandicapAdjust";
 
 interface Props {
+  /** Full: everything. Helper: Today, Flights, Pairs, and two tools — the week, not its setup. */
+  level: AdminLevel;
   event: EventDoc;
   rounds: Round[];
   space: Space;
@@ -41,6 +44,7 @@ interface Props {
 }
 
 export default function AdminScreen({
+  level,
   event,
   rounds,
   space,
@@ -65,11 +69,14 @@ export default function AdminScreen({
   // Tabs grouped by when they are used: Today, Flights and Pairs run the week; Setup is
   // touched before the trip; Tools are corrections and safety, on need. Session-persisted
   // so a refresh lands back on the same section.
-  const [tab, setTab] = usePersistentState<"today" | "groups" | "pairs" | "setup" | "tools">(
+  const [storedTab, setTab] = usePersistentState<"today" | "groups" | "pairs" | "setup" | "tools">(
     "hectro_ui.adminTab",
     "today",
     "session",
   );
+  const helper = level === "helper";
+  // A helper has no Setup: a stored "setup" from a full session on the same phone opens Today.
+  const tab = helper && storedTab === "setup" ? "today" : storedTab;
   const tasks = todayTasks(event, rounds, cards);
   const scoreAdminProps = {
     event,
@@ -90,8 +97,8 @@ export default function AdminScreen({
   return (
     <div className="pb-4">
       <Header
-        title="Admin"
-        subtitle={`${spaceMeta(space).label} · today, setup and tools`}
+        title={helper ? "Admin · helper" : "Admin"}
+        subtitle={helper ? `${spaceMeta(space).label} · tee times, rounds and the draft` : `${spaceMeta(space).label} · today, setup and tools`}
         right={
           <button onClick={onClose} className="btn-ghost px-3 py-2 text-sm shrink-0">
             Done
@@ -101,13 +108,22 @@ export default function AdminScreen({
       <Segmented
         value={tab}
         onChange={setTab}
-        options={[
-          { id: "today", label: "Today" },
-          { id: "groups", label: "Flights" },
-          { id: "pairs", label: "Pairs" },
-          { id: "setup", label: "Setup" },
-          { id: "tools", label: "Tools" },
-        ]}
+        options={
+          helper
+            ? [
+                { id: "today", label: "Today" },
+                { id: "groups", label: "Flights" },
+                { id: "pairs", label: "Pairs" },
+                { id: "tools", label: "Tools" },
+              ]
+            : [
+                { id: "today", label: "Today" },
+                { id: "groups", label: "Flights" },
+                { id: "pairs", label: "Pairs" },
+                { id: "setup", label: "Setup" },
+                { id: "tools", label: "Tools" },
+              ]
+        }
       />
       <div className="mt-4">
         {tab === "today" && (
@@ -121,6 +137,7 @@ export default function AdminScreen({
               onGo={setTab}
             />
             <HcpOwed event={event} rounds={rounds} cards={cards} />
+            {helper && <Handbook rounds={rounds} />}
           </div>
         )}
         {tab === "pairs" && (
@@ -133,7 +150,7 @@ export default function AdminScreen({
           />
         )}
         {tab === "groups" && <GroupsEditor event={event} rounds={rounds} patchRound={patchRound} />}
-        {tab === "setup" && (
+        {tab === "setup" && !helper && (
           <>
             <HoleCapCard event={event} saveEvent={saveEvent} />
             <RoundsEditor rounds={rounds} cards={cards} saveRound={saveRound} patchRound={patchRound} />
@@ -157,6 +174,8 @@ export default function AdminScreen({
             <ToolCard title="Fix a score" description="Correct any hole on any card in any round. Every change is written with your name on it.">
               <ScoreAdmin {...scoreAdminProps} sections={{ fix: true }} />
             </ToolCard>
+            {!helper && (
+            <>
             <ToolCard title="Backups" description="Snapshots are taken when a round goes final and before anything destructive. Restore a round or the whole week from here.">
               <BackupAdmin rounds={rounds} backups={backups} />
             </ToolCard>
@@ -182,6 +201,8 @@ export default function AdminScreen({
             <ToolCard title="App usage" description="Who has opened the app and how much it has been used. Nothing here affects scores.">
               <UsageCard players={event.players} usage={usage} />
             </ToolCard>
+            </>
+            )}
           </div>
         )}
       </div>
@@ -194,10 +215,10 @@ export default function AdminScreen({
           onClick={onSignOut}
           className="text-[13px] font-medium text-slate-500 underline underline-offset-4 py-2"
         >
-          Sign out of organiser role
+          {helper ? "Sign out of helper role" : "Sign out of organiser role"}
         </button>
         <p className="mt-1 text-[12px] text-slate-600">
-          The Admin button disappears from your screen. The organiser PIN lets you back in.
+          The Admin button disappears from your screen. The {helper ? "helper" : "organiser"} PIN lets you back in.
         </p>
       </div>
     </div>
@@ -212,6 +233,35 @@ export default function AdminScreen({
  * Inviting another phone into this space: a link that sets the space on arrival, so a
  * tester goes straight to the PIN and their name — no organiser access needed.
  */
+/**
+ * How the week runs, for a helper standing in the bus: six numbered lines with the
+ * timing, in the place the question gets asked. Rounds come from the programme, so a
+ * reshuffle rewrites the list on its own.
+ */
+function Handbook({ rounds }: { rounds: Round[] }) {
+  const ordered = [...rounds].sort((a, b) => a.seq - b.seq);
+  const first = ordered[0];
+  const last = ordered[ordered.length - 1];
+  const steps = [
+    first ? `${first.day}, in the bus: Today › Draw the tee times. Draw a name, they pick a slot, tap the flight. Then Open round ${first.seq}.` : "",
+    "Each round: open it on Today when the first flight tees off (that puts it on everyone's Play tab); close it once every card is in.",
+    first ? `${first.day} evening: round ${first.seq} final → Today › Run the draft. Best round picks first, from the other bucket. Conclude the draft when ten pairs stand.` : "",
+    "A wrong score: Tools › Fix a score. A round closed too soon: Today › Reopen.",
+    "Announcements go on Info › News; the handicap-card list on Today says who still owes a round.",
+    last ? `${last.day}: close round ${last.seq} and the week is final.` : "",
+  ].filter(Boolean);
+  return (
+    <section className="mx-4 card p-3.5">
+      <h2 className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">How the week runs</h2>
+      <ol className="space-y-1.5 text-[12px] text-slate-400 leading-relaxed list-decimal pl-4">
+        {steps.map((t, i) => (
+          <li key={i}>{t}</li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 /** Which copy of the event this phone edits — the tournament or the sandbox. */
 function SpacesCard({ space }: { space: Space }) {
   return (

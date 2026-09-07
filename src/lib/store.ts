@@ -107,6 +107,8 @@ export const DEFENDING_PAIR: [string, string] = ["lasse-k", "jari-k"];
 
 export const EVENT_PIN = import.meta.env?.VITE_EVENT_PIN || "HEC26";
 export const ADMIN_PIN = import.meta.env?.VITE_ADMIN_PIN || "1874";
+/** The helper level (Toni, Marcus): runs the week, touches no setup. Change before the trip. */
+export const HELPER_PIN = import.meta.env?.VITE_HELPER_PIN || "2026";
 
 export async function buildDefaultEvent(eventId: string = EVENT_ID): Promise<EventDoc> {
   return {
@@ -116,6 +118,7 @@ export async function buildDefaultEvent(eventId: string = EVENT_ID): Promise<Eve
     dates: "September 24–27, 2026",
     pinHash: await hashPin(EVENT_PIN),
     adminPinHash: await hashPin(ADMIN_PIN),
+    helperPinHash: await hashPin(HELPER_PIN),
     players: field,
     pairs: [],
     // Lasse and Jari won in 2025.
@@ -134,10 +137,11 @@ export async function buildDefaultEvent(eventId: string = EVENT_ID): Promise<Eve
  * and the old one still works.
  */
 export async function reconcilePins(store: Store, event: EventDoc): Promise<void> {
-  const [pinHash, adminPinHash] = await Promise.all([hashPin(EVENT_PIN), hashPin(ADMIN_PIN)]);
+  const [pinHash, adminPinHash, helperPinHash] = await Promise.all([hashPin(EVENT_PIN), hashPin(ADMIN_PIN), hashPin(HELPER_PIN)]);
   const patch: Partial<EventDoc> = {};
   if (event.pinHash !== pinHash) patch.pinHash = pinHash;
   if (event.adminPinHash !== adminPinHash) patch.adminPinHash = adminPinHash;
+  if (event.helperPinHash !== helperPinHash) patch.helperPinHash = helperPinHash;
   if (Object.keys(patch).length > 0) await store.saveEvent(patch);
 }
 

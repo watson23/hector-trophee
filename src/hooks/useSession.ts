@@ -1,10 +1,14 @@
 import { useCallback, useState } from "react";
 
+export type AdminLevel = "full" | "helper";
+
 /** Who this device belongs to, and what it has unlocked. Survives reloads. */
 export interface Session {
   playerId: string | null;
   unlocked: boolean;
   admin: boolean;
+  /** Full Admin, or the helper's reduced one. Full when unset. */
+  adminLevel?: AdminLevel;
   /** Hector TV: watching only — no PIN, no writes, no Play tab. */
   spectator?: boolean;
   /** Player ids this spectator follows; highlighted everywhere and pinned up top. */

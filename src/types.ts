@@ -149,6 +149,8 @@ export interface EventDoc {
   dates: string;
   pinHash: string;
   adminPinHash: string;
+  /** The helper PIN: opens the reduced Admin — Today, Flights, Pairs, Space and Fix a score. */
+  helperPinHash?: string;
   players: FieldPlayer[];
   pairs: Pair[];
   announcements?: Announcement[];

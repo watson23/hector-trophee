@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
 import type { Announcement, EventDoc, FieldPlayer, Round } from "../types";
+import type { AdminLevel } from "../hooks/useSession";
 import { courseGuideUrl, courses, holeMetres, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
 import { drivesRule, effectiveTee, hiFor } from "../lib/engine";
@@ -24,7 +25,7 @@ interface Props {
   newsSeen: number;
   onSeenNews: (at: number) => void;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
-  onAdmin: () => void;
+  onAdmin: (level: AdminLevel) => void;
   onOpenAdmin: () => void;
   onSwitchPlayer: () => void;
   /** Player mode: peek at Hector TV on this device without losing the session. */
@@ -167,7 +168,7 @@ export default function InfoScreen({
                 Admin
               </button>
             ) : (
-              <AdminUnlock hash={event.adminPinHash} onUnlock={onAdmin} />
+              <AdminUnlock hash={event.adminPinHash} helperHash={event.helperPinHash} onUnlock={onAdmin} />
             )}
           </div>
         )}
@@ -742,7 +743,15 @@ function ShareTV() {
   );
 }
 
-function AdminUnlock({ hash, onUnlock }: { hash: string; onUnlock: () => void }) {
+function AdminUnlock({
+  hash,
+  helperHash,
+  onUnlock,
+}: {
+  hash: string;
+  helperHash?: string;
+  onUnlock: (level: AdminLevel) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
@@ -760,7 +769,8 @@ function AdminUnlock({ hash, onUnlock }: { hash: string; onUnlock: () => void })
       className="card p-3.5 flex gap-2 basis-full"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (await checkPin(pin, hash)) onUnlock();
+        if (await checkPin(pin, hash)) onUnlock("full");
+        else if (helperHash && (await checkPin(pin, helperHash))) onUnlock("helper");
         else setError(true);
       }}
     >
