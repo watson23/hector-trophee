@@ -118,7 +118,7 @@
   .welcome-photo {
     opacity: 0;
     transform: scale(1.04);
-    animation: welcome-photo 3200ms ease-out 200ms forwards;
+    animation: welcome-photo 2200ms cubic-bezier(0.2, 0.7, 0.2, 1) 100ms forwards;
   }
   @keyframes welcome-photo {
     to { opacity: 1; transform: scale(1); }
@@ -126,15 +126,15 @@
   .welcome-mark {
     opacity: 0;
     transform: translateY(14px) scale(0.85);
-    animation: welcome-mark 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) 1400ms forwards;
+    animation: welcome-mark 800ms cubic-bezier(0.2, 0.8, 0.2, 1) 900ms forwards;
   }
   @keyframes welcome-mark {
     to { opacity: 1; transform: none; }
   }
   .welcome-step {
     opacity: 0;
-    transform: translateY(10px);
-    animation: welcome-step 850ms ease-out forwards;
+    transform: translateY(8px);
+    animation: welcome-step 700ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   }
   @keyframes welcome-step {
     to { opacity: 1; transform: none; }
