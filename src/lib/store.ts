@@ -27,6 +27,8 @@ export interface Store {
     value: number | null,
     by: string,
   ): Promise<void>;
+  /** Scramble: mark whose tee shot was used on a hole; null clears the mark. */
+  setDrive(roundId: string, subjectId: string, hole: number, playerId: string | null, by: string): Promise<void>;
   /**
    * Write a whole card at once, replacing whatever was there.
    *
@@ -269,6 +271,16 @@ class LocalStore implements Store {
     if (value === null) delete holes[String(hole)];
     else holes[String(hole)] = value;
     cards[subjectId] = { ...card, holes, updatedAt: Date.now(), updatedBy: by };
+    this.write(`cards_${roundId}`, cards);
+  }
+
+  async setDrive(roundId: string, subjectId: string, hole: number, playerId: string | null, by: string): Promise<void> {
+    const cards = this.read<Record<string, Card>>(`cards_${roundId}`, {});
+    const card: Card = cards[subjectId] ?? { id: cardId(roundId, subjectId), roundId, subjectId, holes: {} };
+    const drives = { ...(card.drives ?? {}) };
+    if (playerId === null) delete drives[String(hole)];
+    else drives[String(hole)] = playerId;
+    cards[subjectId] = { ...card, drives, updatedAt: Date.now(), updatedBy: by };
     this.write(`cards_${roundId}`, cards);
   }
 

@@ -217,6 +217,11 @@ export default function TournamentScreen({
                       {d.bonus && d.bonus.points > 0 && (
                         <> · less {d.bonus.points} for {bonusLabel(d.bonus)}</>
                       )}
+                      {d.penalty && (
+                        <span className="text-amber-400/90">
+                          {" "}· includes +{d.penalty.strokes} for {d.penalty.missing} missing drive{d.penalty.missing === 1 ? "" : "s"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}

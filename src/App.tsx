@@ -306,6 +306,9 @@ export default function App() {
                 setHole={(subjectId, hole, value) =>
                   activeRound && t.setHole(activeRound.id, subjectId, hole, value)
                 }
+                setDrive={(subjectId, hole, playerId) =>
+                  activeRound && t.setDrive(activeRound.id, subjectId, hole, playerId)
+                }
                 onShowRound={(roundId) => {
                   setRoundSel(roundId);
                   setTab("round");

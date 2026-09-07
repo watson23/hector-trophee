@@ -4,7 +4,7 @@ import { usePersistentState } from "../hooks/usePersistentState";
 import type { Announcement, EventDoc, FieldPlayer, Round } from "../types";
 import { courseGuideUrl, courses, holeMetres, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { courseHandicap } from "../lib/handicap";
-import { effectiveTee, hiFor } from "../lib/engine";
+import { drivesRule, effectiveTee, hiFor } from "../lib/engine";
 import { levelParTotal, weightLabel } from "../lib/hector";
 import { checkPin } from "../lib/pin";
 import { Header, Segmented } from "../components/Chrome";
@@ -501,11 +501,15 @@ function Formats({ rounds }: { rounds: Round[] }) {
     bothIndividuals: "both players",
   };
 
+  const scrambleRule = drivesRule(rounds.flatMap((r) => r.formats).find((f) => f.kind === "scramble") ?? { kind: "none" });
   const formats = [
     { title: "Stableford NET", body: "Points per hole on your net score: par 2, birdie 3, bogey 1, worse 0." },
     { title: "Stroke Play", body: "Total strokes. SCR is gross; NET takes your handicap strokes off hole by hole." },
     { title: "Better Ball NET", body: "Own ball each; the pair counts the lower net score on every hole." },
-    { title: "Scramble NET", body: "One ball for the pair, played from the better shot. One card, team handicap at 20%." },
+    {
+      title: "Scramble NET",
+      body: `One ball for the pair, played from the better shot. One card, team handicap at 20%. Each player's drive must be used at least ${scrambleRule?.min ?? 6} times; every missing drive costs the pair ${scrambleRule?.penalty ?? 2} strokes.`,
+    },
   ];
 
   return (

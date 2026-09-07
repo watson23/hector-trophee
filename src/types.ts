@@ -72,6 +72,12 @@ export interface FormatSpec {
   victor?: { pct: number };
   /** Extra Hector points for birdies/eagles (day 4 scramble). */
   bonuses?: { birdie?: number; eagle?: number };
+  /**
+   * Scramble only: each player's tee shot must be used at least `min` times, and every
+   * missing one costs the pair `penalty` strokes. Unset means the default (6 and 2);
+   * `min: 0` switches the rule off for the round.
+   */
+  drives?: { min: number; penalty: number };
 }
 
 export type RoundStatus = "upcoming" | "open" | "final";
@@ -181,4 +187,6 @@ export interface Card {
   updatedBy?: string;
   /** Player has entered this round into eBirdie/GameBook for official handicap. */
   hcpSubmitted?: boolean;
+  /** Scramble cards: whose tee shot was used on each hole, by player id. */
+  drives?: Record<string, string>;
 }

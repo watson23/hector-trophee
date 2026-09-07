@@ -3,8 +3,8 @@ import { DEFENDING_PAIR } from "../lib/store";
 import { HOLE_CAP_HELP, HOLE_CAP_LABEL } from "../lib/holeCap";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/flights";
-import type { Card, EventDoc, FieldPlayer, Round, RoundStatus, Course, Pair, HoleCapRule, UsageDay } from "../types";
-import type { RoundResult } from "../lib/engine";
+import type { Card, EventDoc, FieldPlayer, FormatSpec, Round, RoundStatus, Course, Pair, HoleCapRule, UsageDay } from "../types";
+import { DEFAULT_DRIVES, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
 import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds, FORMAT_PRESETS } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
@@ -1460,7 +1460,61 @@ function RoundEditorCard({
             </li>
           ))}
         </ul>
+        {round.formats.some((f) => f.kind === "scramble") && (
+          <DrivesRuleEditor
+            spec={round.formats.find((f) => f.kind === "scramble")!}
+            onChange={(drives) =>
+              void patch({ formats: round.formats.map((f) => (f.kind === "scramble" ? { ...f, drives } : f)) })
+            }
+          />
+        )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The 2026 scramble rule, per round: each player's drive at least `min` times, `penalty`
+ * strokes for every missing one. The engine reads the marks the pairs make on the entry
+ * sheet and adds the penalty to the pair's total; 0 switches the rule off for the round.
+ */
+function DrivesRuleEditor({
+  spec,
+  onChange,
+}: {
+  spec: FormatSpec;
+  onChange: (drives: { min: number; penalty: number }) => void;
+}) {
+  const rule = spec.drives ?? DEFAULT_DRIVES;
+  const field = (label: string, value: number, set: (n: number) => void) => (
+    <label className="flex items-center gap-2 text-[12px] text-slate-400">
+      {label}
+      <input
+        type="number"
+        inputMode="numeric"
+        min={0}
+        max={18}
+        value={value}
+        onChange={(e) => set(Math.max(0, Math.min(18, Number(e.target.value) || 0)))}
+        className="input w-14 px-2 py-1 text-center num text-sm"
+      />
+    </label>
+  );
+  return (
+    <div className="mt-2 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2.5 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="label">Drives</span>
+        <span className="text-[11px] text-slate-600">
+          {rule.min > 0 ? `${rule.min} each · ${rule.penalty} per missing` : "rule off"}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+        {field("Min drives per player", rule.min, (min) => onChange({ ...rule, min }))}
+        {field("Strokes per missing", rule.penalty, (penalty) => onChange({ ...rule, penalty }))}
+      </div>
+      <p className="text-[11px] text-slate-500 leading-relaxed">
+        Pairs mark whose drive was used on each hole as they score. Unmarked holes never cost anything.
+      </p>
     </div>
   );
 }

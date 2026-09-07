@@ -12,6 +12,7 @@ import {
   betterBallResult,
   holesPlayed,
   scrambleResult,
+  drivesRule,
   stablefordResult,
   strokePlayResult,
   type PlayerRoundContext,
@@ -66,6 +67,9 @@ export interface TeamRow {
   subjectIds: string[];
   /** Handicap strokes per hole for each subject, in the same order as `subjectIds`. */
   subjectStrokes?: number[][];
+  /** Scramble: drive penalty strokes inside `value`, and each player's drive count. */
+  penalty?: number;
+  drives?: { playerId: string; used: number; missing: number }[];
 }
 
 export interface FormatResult {
@@ -89,6 +93,8 @@ export interface ContributionDetail {
   pct: number;
   /** Birdie/eagle bonus already taken off `points`, so the breakdown can show its working. */
   bonus?: { points: number; birdies: number; eagles: number };
+  /** Scramble drive penalty already inside `raw`, so the breakdown can show its working. */
+  penalty?: { strokes: number; missing: number };
   points: number;
   /**
    * The same contribution measured against par for the holes actually played — each
@@ -326,7 +332,13 @@ export function evaluateRound(input: RoundInput): RoundResult {
           input.scrambleMethod,
         );
         const card = cards[teamCardId(pair.id)];
-        const r = scrambleResult(card, course, teamHcp);
+        const rule = drivesRule(spec);
+        const r = scrambleResult(
+          card,
+          course,
+          teamHcp,
+          rule ? { players: [pair.aId, pair.bId], ...rule } : null,
+        );
         result.teams.push({
           pairId: pair.id,
           label: `${a.name} + ${b.name}`,
@@ -339,6 +351,7 @@ export function evaluateRound(input: RoundInput): RoundResult {
           perHole: r.perHole,
           subjectIds: [teamCardId(pair.id)],
           subjectStrokes: [strokeAllocation(teamHcp, course.si)],
+          ...(r.drives ? { penalty: r.penalty, drives: r.drives } : {}),
         });
         if (spec.hector) {
           const base = hectorContribution({
@@ -358,6 +371,9 @@ export function evaluateRound(input: RoundInput): RoundResult {
               pct: spec.hector.pct,
               ...(spec.bonuses
                 ? { bonus: { points: bonus, birdies: r.birdies, eagles: r.eagles } }
+                : {}),
+              ...(r.penalty > 0
+                ? { penalty: { strokes: r.penalty, missing: (r.drives ?? []).reduce((a, d) => a + d.missing, 0) } }
                 : {}),
               points: applyBonuses(base, bonus),
               toPar: applyBonuses(spec.hector.pct * r.toPar, bonus),
@@ -458,3 +474,6 @@ export function computeTournament(
 }
 
 export { holesPlayed };
+
+/** The scramble drive rule, for the screens that explain or edit it. */
+export { DEFAULT_DRIVES, drivePenalty, drivesRule } from "./formats.js";

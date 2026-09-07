@@ -32,6 +32,9 @@ interface Line {
   cells: Cell[];
   headline: string;
   caption: string;
+  /** Scramble: whose drive on each hole, as an initial; and the penalty the marks add up to. */
+  drives?: (string | null)[];
+  penalty?: number;
 }
 
 /** A section of the card: a pair with its two players, or a single card. */
@@ -263,7 +266,13 @@ export default function Scorecard({
                     >
                       {line.name}
                     </span>
-                    <Figure caption={line.caption} headline={line.headline} unit={unit} mine={line.mine} size={m.headline} />
+                    <Figure
+                      caption={line.penalty ? `${line.caption} · +${line.penalty} pen` : line.caption}
+                      headline={line.headline}
+                      unit={unit}
+                      mine={line.mine}
+                      size={m.headline}
+                    />
                   </div>
 
                   <div className={`${GRID} items-end`}>
@@ -286,6 +295,19 @@ export default function Scorecard({
                     >
                       {entered.length > 0 ? nineGross : "–"}
                     </div>
+
+                    {/* Scramble: whose drive, by initial, under the marks. */}
+                    {line.drives && (
+                      <>
+                        <div className="num text-[11px] leading-tight text-slate-600 pb-1">drive</div>
+                        {holes.map((i) => (
+                          <div key={`d${i}`} className="num text-center text-[12px] leading-tight text-slate-300 pb-1">
+                            {line.drives?.[i] ?? ""}
+                          </div>
+                        ))}
+                        <div />
+                      </>
+                    )}
 
                     {/* Row 2: what the selected format made of each hole. On a Better Ball
                         tab the counted ball is bright and bold, the other one quiet. */}
@@ -442,7 +464,29 @@ function buildBlocks(
           : figure === "pts"
             ? `${grossPart} · net ${formatToPar(netTotal - parPlayed)}`
             : `${grossPart} gross`;
-    return { id: s.id, name: s.name, first: s.name.split(" ")[0], mine: Boolean(s.mine), cells, headline, caption };
+    const team = s.id.startsWith("team__") ? result?.teams.find((t) => `team__${t.pairId}` === s.id) : undefined;
+    // Drive marks show only once the pair has made one: an empty row and "0 · 0" would
+    // nag every pair that has not started marking, on a rule that never penalises silence.
+    const initial = (pid: string) => event.players.find((p) => p.id === pid)?.name.charAt(0) ?? "?";
+    const marked = team?.drives && team.drives.some((d) => d.used > 0);
+    const drives = marked
+      ? course.par.map((_, i) => {
+          const pid = cards[s.id]?.drives?.[String(i + 1)];
+          return pid ? initial(pid) : null;
+        })
+      : undefined;
+    const driveCounts = marked ? team!.drives!.map((d) => `${initial(d.playerId)} ${d.used}`).join(" · ") : "";
+    return {
+      id: s.id,
+      name: s.name,
+      first: s.name.split(" ")[0],
+      mine: Boolean(s.mine),
+      cells,
+      headline,
+      caption: driveCounts ? `${caption}${caption ? " · " : ""}drives ${driveCounts}` : caption,
+      ...(drives ? { drives } : {}),
+      ...(team?.penalty ? { penalty: team.penalty } : {}),
+    };
   };
 
   const lines = new Map(subjects.map((s) => [s.id, lineFor(s)]));

@@ -27,6 +27,8 @@ interface Props {
   /** This round's computed result — the on-course view shows the flight's standings. */
   result: RoundResult | undefined;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
+  /** Scramble: whose tee shot was used on a hole; null clears the mark. */
+  setDrive: (subjectId: string, hole: number, playerId: string | null) => void;
   onShowRound: (roundId: string) => void;
   /** From the scorecard: the Round tab on this round, on the same board, with a way back. */
   onShowRoundBoard: (roundId: string, boardId: string) => void;
@@ -53,6 +55,7 @@ export default function PlayScreen({
   me,
   result,
   setHole,
+  setDrive,
   setHcpSubmitted,
   onShowRound,
   onShowRoundBoard,
@@ -245,6 +248,17 @@ export default function PlayScreen({
 
   const tee = effectiveTee(round, course);
   const scrambleRound = round.formats.some((f) => f.teamCard);
+  // Scramble cards belong to a pair: the two players whose drives the entry sheet marks.
+  const teamMembers: Record<string, { id: string; name: string }[]> = {};
+  if (scrambleRound) {
+    for (const pair of event.pairs) {
+      const members = [pair.aId, pair.bId]
+        .map((id) => event.players.find((p) => p.id === id))
+        .filter((p): p is FieldPlayer => Boolean(p))
+        .map((p) => ({ id: p.id, name: p.name }));
+      teamMembers[teamCardId(pair.id)] = members;
+    }
+  }
   const myGroup = round.groups.find((g) => g.playerIds.includes(me?.id ?? ""));
   const noFlight = !myGroup;
   const flightIds = myGroup?.playerIds ?? (me ? fallbackGroup(me, event) : []);
@@ -375,6 +389,8 @@ export default function PlayScreen({
           hole={hole}
           setHoleNo={(h) => setPin(h)}
           setHole={setHole}
+          setDrive={setDrive}
+          teamMembers={teamMembers}
           complete={complete}
           onFinish={() => {
             setEntryOpen(false);
@@ -673,6 +689,8 @@ function EntrySheet({
   hole,
   setHoleNo,
   setHole,
+  setDrive,
+  teamMembers,
   complete,
   onFinish,
   onClose,
@@ -685,6 +703,9 @@ function EntrySheet({
   hole: number;
   setHoleNo: (h: number) => void;
   setHole: (subjectId: string, hole: number, value: number | null) => void;
+  setDrive: (subjectId: string, hole: number, playerId: string | null) => void;
+  /** Scramble: the two players behind each team card, for the drive marks. */
+  teamMembers: Record<string, { id: string; name: string }[]>;
   complete: boolean;
   onFinish: () => void;
   onClose: () => void;
@@ -716,21 +737,32 @@ function EntrySheet({
 
       <div className="mt-2 divide-y divide-slate-800">
         {subjects.map((s) => (
-          <SubjectRow
-            key={s.id}
-            subject={s}
-            hole={hole}
-            par={par}
-            card={cards[s.id]}
-            tall={tall}
-            cap={holeCap(capRule, par, s.strokes[hole - 1])}
-            onScore={(v) => {
-              // Pin before writing so completing the flight's last score can't
-              // advance the derived hole under a thumb — Next hole is the way on.
-              setHoleNo(hole);
-              setHole(s.id, hole, v);
-            }}
-          />
+          <div key={s.id}>
+            <SubjectRow
+              subject={s}
+              hole={hole}
+              par={par}
+              card={cards[s.id]}
+              tall={tall}
+              cap={holeCap(capRule, par, s.strokes[hole - 1])}
+              onScore={(v) => {
+                // Pin before writing so completing the flight's last score can't
+                // advance the derived hole under a thumb — Next hole is the way on.
+                setHoleNo(hole);
+                setHole(s.id, hole, v);
+              }}
+            />
+            {teamMembers[s.id] && (
+              <DriveMark
+                members={teamMembers[s.id]}
+                value={cards[s.id]?.drives?.[String(hole)] ?? null}
+                onPick={(pid) => {
+                  setHoleNo(hole);
+                  setDrive(s.id, hole, pid);
+                }}
+              />
+            )}
+          </div>
         ))}
       </div>
 
@@ -770,6 +802,42 @@ function EntrySheet({
             .join(" · ")}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Scramble: whose tee shot the pair played from on this hole. Two chips under the score
+ * row, one per player; tap to mark, tap again to clear. The 2026 rule needs each
+ * player's drive at least six times, and the engine reads the penalty off these marks,
+ * so the chips are the whole bookkeeping — no separate tally to keep.
+ */
+function DriveMark({
+  members,
+  value,
+  onPick,
+}: {
+  members: { id: string; name: string }[];
+  value: string | null;
+  onPick: (playerId: string | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 pb-2.5 -mt-1">
+      <span className="num text-[11px] text-slate-500 w-10 shrink-0">drive</span>
+      {members.map((m) => {
+        const on = value === m.id;
+        return (
+          <button
+            key={m.id}
+            onClick={() => onPick(on ? null : m.id)}
+            className={`rounded-full px-3 py-1 text-[13px] font-semibold border ${
+              on ? "bg-violet-600 border-violet-600 text-white" : "bg-slate-900 border-slate-700 text-slate-400"
+            }`}
+          >
+            {m.name.split(" ")[0]}
+          </button>
+        );
+      })}
     </div>
   );
 }

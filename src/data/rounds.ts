@@ -67,6 +67,9 @@ const scramble = (pct: number, bonuses?: FormatSpec["bonuses"]): FormatSpec => (
   net: true,
   allowance: 0.2,
   teamCard: true,
+  // 2026 rule (Lasse, 7.9): each player's drive at least six times, two strokes per
+  // missing one. Per round in Admin; the engine assumes these when a round says nothing.
+  drives: { min: 6, penalty: 2 },
   hector: { source: "team", pct },
   ...(bonuses ? { bonuses } : {}),
 });

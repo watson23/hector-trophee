@@ -263,6 +263,22 @@ export class FirestoreStore implements Store {
     ).catch(this.reportWriteError);
   }
 
+  async setDrive(roundId: string, subjectId: string, hole: number, playerId: string | null, by: string): Promise<void> {
+    // Same merge as setHole: the `drives` map merges per hole, so a drive mark and a
+    // score from two phones on the same hole both land.
+    await setDoc(
+      doc(this.cardsRef(), cardId(roundId, subjectId)),
+      {
+        roundId,
+        subjectId,
+        drives: { [String(hole)]: playerId === null ? deleteField() : playerId },
+        updatedAt: Date.now(),
+        updatedBy: by,
+      },
+      { merge: true },
+    ).catch(this.reportWriteError);
+  }
+
   async setCard(
     roundId: string,
     subjectId: string,

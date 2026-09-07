@@ -231,7 +231,7 @@ export default function RoundScreen({
                 display: formatToPar(t.toPar),
                 extra:
                   t.playingHcp !== undefined
-                    ? [`team HCP ${t.playingHcp}`, ...underParCounts(t, "")].join(" · ")
+                    ? [`team HCP ${t.playingHcp}`, ...underParCounts(t, ""), ...drivesNote(t, (id) => event.players.find((p) => p.id === id)?.name ?? "?")].join(" · ")
                     : underParCounts(t, "net ").join(" · ") || undefined,
                 thru: t.thru,
                 played: t.thru > 0,
@@ -408,6 +408,17 @@ export default function RoundScreen({
 }
 
 /** "1 eagle · 5 birdies" — the full under-par story, not just the birdies. */
+/** Scramble: "drives O 4 · J 9" once a pair has marked any, and the penalty once any is certain. */
+function drivesNote(
+  t: { drives?: { playerId: string; used: number; missing: number }[]; penalty?: number },
+  nameOf: (playerId: string) => string,
+): string[] {
+  if (!t.drives || !t.drives.some((d) => d.used > 0)) return [];
+  const parts = [`drives ${t.drives.map((d) => `${nameOf(d.playerId).charAt(0)} ${d.used}`).join(" · ")}`];
+  if (t.penalty) parts.push(`+${t.penalty} pen`);
+  return parts;
+}
+
 function underParCounts(t: { birdies: number; eagles: number }, prefix: string): string[] {
   const parts: string[] = [];
   if (t.eagles) parts.push(`${t.eagles} ${prefix}eagle${t.eagles > 1 ? "s" : ""}`);

@@ -100,6 +100,7 @@ export function strokePlayResult(
 }
 
 export interface TeamRoundResult {
+  /** Net strokes over the holes played — on a scramble, drive penalties included. */
   strokes: number;
   toPar: number;
   thru: number;
@@ -108,6 +109,50 @@ export interface TeamRoundResult {
   contributor?: (string | null)[];
   birdies: number;
   eagles: number;
+  /** Scramble: strokes added for tee shots a player did not get to use often enough. */
+  penalty: number;
+  /** Scramble: how many of each player's drives were used, and how many are still owed. */
+  drives?: { playerId: string; used: number; missing: number }[];
+}
+
+/** The tournament's drive rule for scrambles, unless a round says otherwise. */
+export const DEFAULT_DRIVES = { min: 6, penalty: 2 };
+
+export interface DriveQuota {
+  players: [string, string];
+  min: number;
+  penalty: number;
+}
+
+/** A round's drive rule, or null when the format is not a scramble or the round turned it off. */
+export function drivesRule(spec: { kind: string; drives?: { min: number; penalty: number } }): { min: number; penalty: number } | null {
+  if (spec.kind !== "scramble") return null;
+  const rule = spec.drives ?? DEFAULT_DRIVES;
+  return rule.min > 0 && rule.penalty > 0 ? rule : null;
+}
+
+/**
+ * The drive penalty as it stands — live-correct, never premature. A player is short
+ * only by the drives they can no longer make up: quota minus used minus the holes not
+ * yet marked (unplayed, or played with nobody's drive recorded). At the end of a fully
+ * marked card that is simply quota minus used; mid-round it is zero until the shortfall
+ * is certain. Unmarked holes are never penalised — the app cannot know whose drive it
+ * was, so the pair is given the benefit of the doubt, and the marking is on them.
+ */
+export function drivePenalty(
+  drives: Record<string, string> | undefined,
+  quota: DriveQuota,
+  holeCount = 18,
+): { penalty: number; drives: { playerId: string; used: number; missing: number }[] } {
+  const marked = Object.values(drives ?? {});
+  const unknown = holeCount - marked.length;
+  const perPlayer = quota.players.map((playerId) => {
+    const used = marked.filter((id) => id === playerId).length;
+    const missing = Math.max(0, quota.min - used - unknown);
+    return { playerId, used, missing };
+  });
+  const penalty = perPlayer.reduce((a, p) => a + p.missing * quota.penalty, 0);
+  return { penalty, drives: perPlayer };
 }
 
 /**
@@ -146,7 +191,7 @@ export function betterBallResult(
     if (best <= par - 2) eagles += 1;
     return best;
   });
-  return { strokes: total, toPar: total - parPlayed, thru, perHole, contributor, birdies, eagles };
+  return { strokes: total, toPar: total - parPlayed, thru, perHole, contributor, birdies, eagles, penalty: 0 };
 }
 
 /**
@@ -162,6 +207,7 @@ export function scrambleResult(
   card: Card | undefined,
   course: Course,
   teamPlayingHcp: number,
+  quota?: DriveQuota | null,
 ): TeamRoundResult {
   const strokes = strokeAllocation(teamPlayingHcp, course.si);
   let total = 0;
@@ -180,5 +226,17 @@ export function scrambleResult(
     if (gross <= par - 2) eagles += 1;
     return net;
   });
-  return { strokes: total, toPar: total - parPlayed, thru, perHole, birdies, eagles };
+  // The drive rule lands on the total, not on any hole: it is a penalty on the round.
+  const drv = quota && thru > 0 ? drivePenalty(card?.drives, quota, course.par.length) : null;
+  const penalty = drv?.penalty ?? 0;
+  return {
+    strokes: total + penalty,
+    toPar: total + penalty - parPlayed,
+    thru,
+    perHole,
+    birdies,
+    eagles,
+    penalty,
+    ...(drv ? { drives: drv.drives } : {}),
+  };
 }
