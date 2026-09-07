@@ -8,6 +8,8 @@ import ScoreMark, { type ScoreSize } from "./ScoreMark";
 interface Subject {
   id: string;
   name: string;
+  /** 'HCP 17', or 'Team HCP 6' on a scramble card. */
+  detail?: string;
   strokes: number[];
   mine?: boolean;
 }
@@ -32,6 +34,8 @@ interface Line {
   cells: Cell[];
   headline: string;
   caption: string;
+  /** The playing handicap, shown after the name. */
+  detail?: string;
   /** A small companion after the headline — Stableford's points beside the to-par. */
   aside?: string;
   /** Stableford points over the holes played, for a pair block's combined figure. */
@@ -266,11 +270,14 @@ export default function Scorecard({
                       selected format's figure as the headline. */}
                   <div className={`flex items-baseline justify-between gap-2 ${m.head}`}>
                     <span
-                      className={`${variant === "team" ? "text-base" : "text-[15px]"} font-semibold leading-none truncate ${
+                      className={`${variant === "pair" ? "text-[15px]" : "text-[17px]"} font-semibold leading-none truncate ${
                         line.mine ? "text-violet-300" : "text-slate-100"
                       }`}
                     >
                       {line.name}
+                      {line.detail && (
+                        <span className="ml-1.5 num text-[12px] font-normal text-slate-500">{line.detail}</span>
+                      )}
                     </span>
                     <Figure
                       caption={line.penalty ? `${line.caption} · +${line.penalty} pen` : line.caption}
@@ -511,6 +518,7 @@ function buildBlocks(
       mine: Boolean(s.mine),
       cells,
       headline,
+      ...(s.detail ? { detail: s.detail } : {}),
       ...(aside ? { aside } : {}),
       ...(figure === "pts" ? { points: subTotal } : {}),
       caption: driveCounts ? `${caption}${caption ? " · " : ""}tee shots ${driveCounts}` : caption,

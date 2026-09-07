@@ -484,6 +484,8 @@ function OnCourse({
     gross: boolean;
     /** Strokes to show before the hole is played (per partner for a pair). */
     strokes: number[];
+    /** The playing handicap behind the strokes — 'HCP 17', 'Team HCP 6' — per name; empty to omit. */
+    details: string[];
     figure: string;
     /** Scramble: each player's tee shots used so far, and the quota — the fairway decision. */
     teeShots?: { line: string; penalty: number };
@@ -513,6 +515,9 @@ function OnCourse({
         strokes: teamSubject
           ? [teamSubject.strokes[hole - 1]]
           : partners.map((p) => p?.strokes[hole - 1] ?? 0),
+        // Two names, two balls and two handicaps would not fit a Better Ball row; the
+        // team card's single handicap does.
+        details: teamSubject ? [teamSubject.detail] : partners.map(() => ""),
         figure: t.thru > 0 ? formatToPar(t.toPar) : "—",
         // The running count sits where the choice is made: standing in the fairway,
         // deciding whose ball to play. "Olli 1 · Jarkko 7 · min 6" — the quota in the
@@ -542,6 +547,7 @@ function OnCourse({
         holeValue: cards[sub.id]?.holes?.[String(hole)] ?? null,
         gross: true,
         strokes: [sub.strokes[hole - 1]],
+        details: [sub.detail],
         // To par (or points) alone: the stroke total mid-round says little, and the
         // scorecard is one tap away for anyone who wants it.
         figure: !p || p.thru === 0 ? "—" : formatToPar(toPar),
@@ -646,6 +652,9 @@ function OnCourse({
                       <span className="ml-1.5 inline-flex align-middle">
                         <StrokeBall n={r.strokes[k] ?? 0} />
                       </span>
+                      {r.details[k] && (
+                        <span className="ml-1.5 num text-[12px] font-normal text-slate-500 align-middle">{r.details[k]}</span>
+                      )}
                     </Fragment>
                   ))}
                   {r.teeShots && (
