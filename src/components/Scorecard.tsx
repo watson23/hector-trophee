@@ -32,6 +32,10 @@ interface Line {
   cells: Cell[];
   headline: string;
   caption: string;
+  /** A small companion after the headline — Stableford's points beside the to-par. */
+  aside?: string;
+  /** Stableford points over the holes played, for a pair block's combined figure. */
+  points?: number;
   /** Scramble: whose drive on each hole, as an initial; and the penalty the marks add up to. */
   drives?: (string | null)[];
   penalty?: number;
@@ -271,6 +275,7 @@ export default function Scorecard({
                     <Figure
                       caption={line.penalty ? `${line.caption} · +${line.penalty} pen` : line.caption}
                       headline={line.headline}
+                      aside={line.aside}
                       unit={unit}
                       mine={line.mine}
                       size={m.headline}
@@ -278,8 +283,12 @@ export default function Scorecard({
                   </div>
 
                   <div className={`${GRID} items-end`}>
-                    {/* Row 1: "gross", the marks, the nine's strokes. */}
-                    <div className={`self-end num text-[11px] leading-none text-slate-600 ${m.grossPad}`}>gross</div>
+                    {/* Row 1: the marks and the nine's strokes. Labelled "gross" where a net
+                        or points row follows; "strokes" on a scratch tab, where it is the
+                        only row and everyone knows scratch is gross. */}
+                    <div className={`self-end num text-[11px] leading-none text-slate-600 ${m.grossPad}`}>
+                      {figure === "gross" ? "strokes" : "gross"}
+                    </div>
                     {holes.map((i) => (
                       <div key={i} className="flex justify-center">
                         <ScoreMark
@@ -376,12 +385,27 @@ export default function Scorecard({
 }
 
 /** Caption · headline · unit, the cluster at the right of every name line. */
-function Figure({ caption, headline, unit, mine, size }: { caption: string; headline: string; unit: string; mine: boolean; size: string }) {
+function Figure({
+  caption,
+  headline,
+  aside,
+  unit,
+  mine,
+  size,
+}: {
+  caption: string;
+  headline: string;
+  aside?: string;
+  unit: string;
+  mine: boolean;
+  size: string;
+}) {
   return (
     <span className="flex items-baseline gap-1.5 shrink-0">
       {caption && <span className="num text-[12px] leading-none text-slate-400">{caption}</span>}
       <span className={`score ${size} leading-none ${mine ? "text-violet-300" : "text-slate-100"}`}>{headline}</span>
-      <span className="num text-[11px] font-semibold leading-none tracking-[.08em] text-slate-500">{unit}</span>
+      {aside && <span className="num text-[12px] leading-none text-slate-400">{aside}</span>}
+      {unit && <span className="num text-[11px] font-semibold leading-none tracking-[.08em] text-slate-500">{unit}</span>}
     </span>
   );
 }
@@ -425,7 +449,9 @@ function buildBlocks(
   figure: Figure,
 ): { blocks: Block[]; grouped: boolean; unit: string } {
   const result = selected ? formats.find((f) => f.spec.id === selected.id) : undefined;
-  const unit = figure === "pts" ? "PTS" : figure === "net" ? "NET" : "GROSS";
+  // NET is the one unit worth saying: the other tabs lead with gross to par, which a
+  // golfer reads without a label, and "GROSS" beside a scratch score said it twice.
+  const unit = figure === "net" ? "NET" : "";
 
   const lineFor = (s: Subject): Line => {
     const gross = course.par.map((_, i) => cards[s.id]?.holes?.[String(i + 1)] ?? null);
@@ -451,12 +477,12 @@ function buildBlocks(
     const headline =
       played.length === 0
         ? "—"
-        : figure === "pts"
-          ? String(subTotal)
-          : figure === "net"
-            ? formatToPar(subTotal - parPlayed)
-            : formatToPar(grossTotal - parPlayed);
-    const netTotal = played.reduce((a, c) => a + (c.gross ?? 0) - c.strokes, 0);
+        : figure === "net"
+          ? formatToPar(subTotal - parPlayed)
+          : // Stableford and scratch alike lead with gross to par — the number a golfer
+            // reads first; Stableford's points follow it in parentheses.
+            formatToPar(grossTotal - parPlayed);
+    const aside = figure === "pts" && played.length > 0 ? `(${subTotal} pts)` : undefined;
     const grossPart = `${grossTotal} (${formatToPar(grossTotal - parPlayed)})`;
     const caption =
       played.length === 0
@@ -464,7 +490,7 @@ function buildBlocks(
         : figure === "gross"
           ? `${grossTotal} strokes`
           : figure === "pts"
-            ? `${grossPart} · net ${formatToPar(netTotal - parPlayed)}`
+            ? ""
             : `${grossPart} gross`;
     const team = s.id.startsWith("team__") ? result?.teams.find((t) => `team__${t.pairId}` === s.id) : undefined;
     // Drive marks show only once the pair has made one: an empty row and "0 · 0" would
@@ -485,6 +511,8 @@ function buildBlocks(
       mine: Boolean(s.mine),
       cells,
       headline,
+      ...(aside ? { aside } : {}),
+      ...(figure === "pts" ? { points: subTotal } : {}),
       caption: driveCounts ? `${caption}${caption ? " · " : ""}tee shots ${driveCounts}` : caption,
       ...(drives ? { drives } : {}),
       ...(team?.penalty ? { penalty: team.penalty } : {}),
@@ -534,7 +562,7 @@ function buildBlocks(
         const played = [a, b].some((l) => l.cells.some((c) => c.gross !== null));
         let headline = "—";
         if (played) {
-          const sum = [a, b].reduce((acc, l) => acc + toNumber(l.headline), 0);
+          const sum = [a, b].reduce((acc, l) => acc + (figure === "pts" ? (l.points ?? 0) : toNumber(l.headline)), 0);
           headline = figure === "pts" ? String(sum) : formatToPar(sum);
         }
         blocks.push({
@@ -543,7 +571,7 @@ function buildBlocks(
           mine: a.mine || b.mine,
           headline,
           caption: played ? "both cards" : "",
-          unit,
+          unit: figure === "pts" ? "PTS" : unit,
           lines: [a, b],
         });
       }
