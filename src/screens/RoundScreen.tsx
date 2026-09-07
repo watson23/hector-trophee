@@ -231,7 +231,10 @@ export default function RoundScreen({
                 display: formatToPar(t.toPar),
                 extra:
                   t.playingHcp !== undefined
-                    ? [`team HCP ${t.playingHcp}`, ...underParCounts(t, ""), ...drivesNote(t, (id) => event.players.find((p) => p.id === id)?.name ?? "?")].join(" · ")
+                    ? /* A scramble row: team handicap and the tee-shot count — the thing to
+                         watch. Birdies and eagles were here too and overflowed the line; the
+                         score says enough, the card has the detail, and an eagle posts to News. */
+                      [`team HCP ${t.playingHcp}`, ...drivesNote(t, (id) => event.players.find((p) => p.id === id)?.name ?? "?")].join(" · ")
                     : underParCounts(t, "net ").join(" · ") || undefined,
                 thru: t.thru,
                 played: t.thru > 0,
