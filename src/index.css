@@ -134,7 +134,7 @@
   .welcome-step {
     opacity: 0;
     transform: translateY(10px);
-    animation: welcome-step 700ms ease-out forwards;
+    animation: welcome-step 1000ms ease-out forwards;
   }
   @keyframes welcome-step {
     to { opacity: 1; transform: none; }
