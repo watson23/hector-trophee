@@ -104,7 +104,7 @@ export default function Welcome({
         </p>
         <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-3 max-w-sm" style={{ animationDelay: "4600ms" }}>
           World's best amateur golfers clash once again. {words[rounds] ?? rounds} rounds on two courses, two
-          trophies, and one week to decide who carries the Hector home. Your card, your flight and the standings
+          trophies, and four days to decide who carries the Hector home. Your card, your flight and the standings
           are all in here. You just need to hit the shots. Good luck!
         </p>
         <button
