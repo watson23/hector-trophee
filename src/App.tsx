@@ -5,8 +5,7 @@ import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, UpdateBanner, type Tab } from "./components/Chrome";
 import Welcome, { forgetWelcome, needsWelcome } from "./components/Welcome";
-import { clearJustSwitched } from "./lib/space";
-import { currentSpace, eventIdFor } from "./lib/space";
+import { clearJustSwitched, currentSpace, eventIdFor } from "./lib/space";
 import { draftRoundOf, isDraftNight } from "./lib/draftNight";
 
 /* Draft night's tab icon: two people, the pairing being made. */
