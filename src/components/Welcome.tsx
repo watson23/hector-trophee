@@ -110,7 +110,7 @@ export default function Welcome({
           World's best amateur golfers clash once again. {words[rounds] ?? rounds} rounds on two courses, two
           trophies, and four days to decide who carries the Hector home.{" "}
           {spectator
-            ? "Follow your favourites and watch the standings move as the cards come in. Enjoy the show!"
+            ? "All you need for watching the events unfold is right here. Good luck to your favourites!"
             : "Your card, your flight and the standings are all in here. You just need to hit the shots. Good luck!"}
         </p>
         <button
