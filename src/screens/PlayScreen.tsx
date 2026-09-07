@@ -1736,8 +1736,8 @@ function SubjectRow({
         /* The box is where someone about to type a 12 lands: the tournament's cap,
            in the rule's own words and the number it comes to on this hole. */
         <p className="mt-1.5 text-[12px] text-slate-500 leading-relaxed">
-          {HOLE_CAP_LABEL[capRule]} is the most any hole costs — <span className="num text-slate-300">{cap}</span> here.
-          Anything higher counts as {cap}{quick.includes(cap) ? ", so the hollow button in the row is enough" : ""}.
+          Max is {HOLE_CAP_LABEL[capRule].toLowerCase()} — <span className="num text-slate-300">{cap}</span> here. Anything
+          higher counts as {cap}.
         </p>
       )}
     </div>
