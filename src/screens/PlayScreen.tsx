@@ -1685,10 +1685,12 @@ function SubjectRow({
                   value === n
                     ? "text-white"
                     : n === cap
-                      ? /* The max digit is hollow — and brown. "Merkataanko ruskeaa?" is the
-                           conversation this group will have on the course, and the button
-                           may as well be in on it. The white outline keeps it legible. */
-                        "text-[#6b4423] [-webkit-text-stroke:1.25px_#efeef3]"
+                      ? /* The max digit is brown. "Merkataanko ruskeaa?" is the conversation
+                           this group will have on the course, and the button may as well be
+                           in on it. Solid, no outline — an outline hid the colour — and a
+                           step lighter than the first cut so it reads in sunlight; the worst
+                           score is still the darkest digit in the row. */
+                        "text-[#8a5a2b]"
                       : n === 1
                         ? "text-gold-300"
                         : quickTint(diff)
