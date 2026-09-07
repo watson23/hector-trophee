@@ -143,14 +143,22 @@ export default function AdminScreen({
         )}
         {tab === "tools" && (
           <div className="space-y-3">
+            {/* First and open: which copy of the event this phone edits is the one thing
+                here an organiser reaches for often, and the thing that must never be
+                mistaken. */}
+            <ToolCard
+              defaultOpen
+              tone={space === "test" ? "test" : "default"}
+              title={`Space · ${spaceMeta(space).label}`}
+              description="Which copy of the event this phone edits. Switch between the tournament and the sandbox, or share the sandbox link."
+            >
+              <SpacesCard space={space} />
+            </ToolCard>
             <ToolCard title="Fix a score" description="Correct any hole on any card in any round. Every change is written with your name on it.">
               <ScoreAdmin {...scoreAdminProps} sections={{ fix: true }} />
             </ToolCard>
             <ToolCard title="Backups" description="Snapshots are taken when a round goes final and before anything destructive. Restore a round or the whole week from here.">
               <BackupAdmin rounds={rounds} backups={backups} />
-            </ToolCard>
-            <ToolCard title="Spaces" description={`This phone edits ${spaceMeta(space).label}. Switch between the tournament and the sandbox, or share the sandbox link.`}>
-              <SpacesCard space={space} />
             </ToolCard>
             {space === "test" && mirrorFrom && (
               <ToolCard tone="test" title="Mirror the tournament" description="Copy the tournament's live data into this sandbox, replacing what is here. The tournament is only read.">
