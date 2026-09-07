@@ -1685,8 +1685,13 @@ function SubjectRow({
                   value === n
                     ? "text-white"
                     : n === cap
-                      ? "text-slate-950 [-webkit-text-stroke:1.25px_#efeef3]"
-                      : quickTint(diff)
+                      ? /* The max digit is hollow — and brown. "Merkataanko ruskeaa?" is the
+                           conversation this group will have on the course, and the button
+                           may as well be in on it. The white outline keeps it legible. */
+                        "text-[#6b4423] [-webkit-text-stroke:1.25px_#efeef3]"
+                      : n === 1
+                        ? "text-gold-300"
+                        : quickTint(diff)
                 }`}
               >
                 {n}
@@ -1698,7 +1703,7 @@ function SubjectRow({
                   value === n ? "text-violet-200" : n === cap ? "text-amber-400/90" : "text-slate-500"
                 }`}
               >
-                {n === cap ? "max" : quickTag(diff)}
+                {n === cap ? "max" : n === 1 ? "ace" : quickTag(diff)}
               </span>
             </button>
           );
