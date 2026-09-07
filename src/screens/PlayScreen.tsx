@@ -636,17 +636,16 @@ function OnCourse({
                     r.mine ? "font-semibold text-violet-300" : "text-slate-200"
                   }`}
                 >
-                  {/* Before the hole is played, each name carries its own stroke ball —
-                      a pair's two balls can never be mistaken for one another. */}
+                  {/* Each name carries its own stroke ball — a pair's two balls can never be
+                      mistaken for one another — and keeps it once the hole is scored: the
+                      strokes are what explain the number beside it. */}
                   {r.names.map((name, k) => (
                     <Fragment key={k}>
                       {k > 0 && <span className="text-slate-500"> + </span>}
                       {name}
-                      {r.holeValue === null && (
-                        <span className="ml-1.5 inline-flex align-middle">
-                          <StrokeBall n={r.strokes[k] ?? 0} />
-                        </span>
-                      )}
+                      <span className="ml-1.5 inline-flex align-middle">
+                        <StrokeBall n={r.strokes[k] ?? 0} />
+                      </span>
                     </Fragment>
                   ))}
                   {r.teeShots && (
@@ -665,8 +664,7 @@ function OnCourse({
                        ring/box marks; here legibility on the move wins.) */
                     <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
                   ) : (
-                    /* Not played yet: the strokes live on the names; this column waits
-                       for the result. */
+                    /* Not played yet: this column waits for the result. */
                     <span className="text-slate-600" aria-label={r.strokes.map(strokeText).join(", ")}>
                       –
                     </span>
