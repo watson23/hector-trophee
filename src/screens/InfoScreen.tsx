@@ -29,6 +29,8 @@ interface Props {
   onSwitchPlayer: () => void;
   /** Player mode: peek at Hector TV on this device without losing the session. */
   onWatchTV?: () => void;
+  /** Play the first-time welcome once more — it was too pretty to see only once. */
+  onReplayWelcome?: () => void;
 }
 
 export default function InfoScreen({
@@ -45,6 +47,7 @@ export default function InfoScreen({
   onOpenAdmin,
   onSwitchPlayer,
   onWatchTV,
+  onReplayWelcome,
 }: Props) {
   const [section, setSection] = usePersistentState<
     "news" | "schedule" | "field" | "courses" | "formats"
@@ -152,6 +155,11 @@ export default function InfoScreen({
             {onWatchTV && (
               <button onClick={onWatchTV} className="hover:text-slate-400 py-2">
                 Watch TV here
+              </button>
+            )}
+            {onReplayWelcome && (
+              <button onClick={onReplayWelcome} className="hover:text-slate-400 py-2">
+                Replay the welcome
               </button>
             )}
             {admin ? (

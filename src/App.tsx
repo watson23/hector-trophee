@@ -4,7 +4,7 @@ import { usePersistentState } from "./hooks/usePersistentState";
 import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, UpdateBanner, type Tab } from "./components/Chrome";
-import Welcome, { needsWelcome } from "./components/Welcome";
+import Welcome, { forgetWelcome, needsWelcome } from "./components/Welcome";
 import { currentSpace, eventIdFor } from "./lib/space";
 import { draftRoundOf, isDraftNight } from "./lib/draftNight";
 
@@ -399,6 +399,12 @@ export default function App() {
                 onOpenAdmin={() => setAdminOpen(true)}
                 onSwitchPlayer={reset}
                 onWatchTV={() => update({ spectator: true })}
+                onReplayWelcome={() => {
+                  if (!me) return;
+                  forgetWelcome(me.id);
+                  setWelcomeDismissed(null);
+                  setTab("play");
+                }}
               />
             )}
           </>

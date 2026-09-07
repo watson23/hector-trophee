@@ -19,6 +19,15 @@ export function needsWelcome(playerId: string): boolean {
   return !welcomed().includes(playerId);
 }
 
+/** Forget the greeting for one player on this phone, so it plays once more. */
+export function forgetWelcome(playerId: string) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(welcomed().filter((id) => id !== playerId)));
+  } catch {
+    /* no storage: nothing to forget */
+  }
+}
+
 function markWelcomed(playerId: string) {
   try {
     localStorage.setItem(KEY, JSON.stringify([...new Set([...welcomed(), playerId])]));
