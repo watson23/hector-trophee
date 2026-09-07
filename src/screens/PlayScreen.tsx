@@ -480,8 +480,13 @@ function OnCourse({
     /** One name per card holder, in the same order as `strokes` — a pair has two. */
     names: string[];
     mine: boolean;
-    /** What the format counted on the hole in view, or null if not played yet. */
-    holeValue: number | null;
+    /**
+     * The gross scores entered on the hole in view, one per card behind the row — a
+     * player's, a scramble team's, or a Better Ball pair's two. Null when nothing is in.
+     * Gross, not the format's net: the cell must echo what was punched in, or "I entered
+     * a 4 and it shows 3" starts on the first tee. The round figure beside it stays net.
+     */
+    holeValues: (number | null)[] | null;
     /** Gross card cell (individual formats) draws a real score mark. */
     gross: boolean;
     /** Strokes to show before the hole is played (per partner for a pair). */
@@ -512,7 +517,11 @@ function OnCourse({
           ? [t.label]
           : [pair!.aId, pair!.bId].map((id) => event.players.find((p) => p.id === id)?.name ?? id),
         mine: Boolean(teamSubject?.mine || partners.some((p) => p?.mine)),
-        holeValue: t.perHole[hole - 1] ?? null,
+        holeValues: (() => {
+          const ids = teamSubject ? [teamSubject.id] : [pair!.aId, pair!.bId];
+          const vals = ids.map((id) => cards[id]?.holes?.[String(hole)] ?? null);
+          return vals.some((v) => v !== null) ? vals : null;
+        })(),
         gross: false,
         strokes: teamSubject
           ? [teamSubject.strokes[hole - 1]]
@@ -546,7 +555,7 @@ function OnCourse({
         label: sub.name,
         names: [sub.name],
         mine: Boolean(sub.mine),
-        holeValue: cards[sub.id]?.holes?.[String(hole)] ?? null,
+        holeValues: cards[sub.id]?.holes?.[String(hole)] ? [cards[sub.id]!.holes[String(hole)]] : null,
         gross: true,
         strokes: [sub.strokes[hole - 1]],
         details: [sub.detail],
@@ -669,11 +678,18 @@ function OnCourse({
                   )}
                 </span>
                 <span className={`${cell} flex justify-center`}>
-                  {r.holeValue !== null ? (
-                    /* The hole's result, big and tinted against par — the same for a
-                       gross card and a pair's counted net. (The scorecard keeps the
+                  {r.holeValues !== null ? (
+                    /* The entered gross, big and tinted against par; a Better Ball pair
+                       shows both cards' scores side by side. (The scorecard keeps the
                        ring/box marks; here legibility on the move wins.) */
-                    <span className={`score text-2xl ${quickTint(r.holeValue - par)}`}>{r.holeValue}</span>
+                    <span className={`flex items-baseline gap-1 score ${r.holeValues.length > 1 ? "text-xl" : "text-2xl"}`}>
+                      {r.holeValues.map((v, k) => (
+                        <Fragment key={k}>
+                          {k > 0 && <span className="text-slate-600 text-base">·</span>}
+                          <span className={v === null ? "text-slate-600" : quickTint(v - par)}>{v ?? "–"}</span>
+                        </Fragment>
+                      ))}
+                    </span>
                   ) : (
                     /* Not played yet: this column waits for the result. */
                     <span className="text-slate-600" aria-label={r.strokes.map(strokeText).join(", ")}>
@@ -690,7 +706,7 @@ function OnCourse({
         </div>
       </div>
 
-      {rows.some((r) => r.holeValue === null) && (
+      {rows.some((r) => r.holeValues === null) && (
         <p className="-mt-1 text-[11px] text-slate-500 text-right pr-1 flex items-center justify-end gap-1">
           <StrokeBall n={1} /> indicates 1 stroke received on this hole
         </p>
