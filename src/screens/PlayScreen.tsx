@@ -1661,7 +1661,7 @@ function SubjectRow({
                   tag says "max": that is the score to mark for a pick-up or a blow-up. */}
               <span
                 className={`text-[11px] font-medium tracking-wide ${
-                  value === n ? "text-violet-200" : n === cap ? "text-slate-300" : "text-slate-500"
+                  value === n ? "text-violet-200" : n === cap ? "text-amber-400/90" : "text-slate-500"
                 }`}
               >
                 {n === cap ? "max" : quickTag(diff)}
