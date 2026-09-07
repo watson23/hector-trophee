@@ -5,6 +5,7 @@ import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, UpdateBanner, type Tab } from "./components/Chrome";
 import Welcome, { forgetWelcome, needsWelcome } from "./components/Welcome";
+import { clearJustSwitched } from "./lib/space";
 import { currentSpace, eventIdFor } from "./lib/space";
 import { draftRoundOf, isDraftNight } from "./lib/draftNight";
 
@@ -44,6 +45,12 @@ export default function App() {
   // have not just tapped through it: a name switch greets the new name, a refresh
   // mid-welcome greets again, and "Let's go" is remembered for good.
   const [welcomeDismissed, setWelcomeDismissed] = useState<string | null>(null);
+  // The "moved to <space>" note is for a code screen reached by a space word. A phone
+  // that switches space while signed in never shows that screen, so the flag would sit
+  // until the next sign-out and greet a plain logout with "Moved to Tournament".
+  useEffect(() => {
+    if (session.unlocked) clearJustSwitched();
+  }, [session.unlocked]);
   const showWelcome =
     Boolean(session.playerId) && !session.spectator && welcomeDismissed !== session.playerId && needsWelcome(session.playerId!);
   // Safety net while a round is live: an organiser's phone snapshots the tournament every
