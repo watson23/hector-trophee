@@ -299,7 +299,7 @@ export default function Scorecard({
                     {/* Scramble: whose drive, by initial, under the marks. */}
                     {line.drives && (
                       <>
-                        <div className="num text-[11px] leading-tight text-slate-600 pb-1">drive</div>
+                        <div className="num text-[11px] leading-tight text-slate-600 pb-1">tee</div>
                         {holes.map((i) => (
                           <div key={`d${i}`} className="num text-center text-[12px] leading-tight text-slate-300 pb-1">
                             {line.drives?.[i] ?? ""}
@@ -483,7 +483,7 @@ function buildBlocks(
       mine: Boolean(s.mine),
       cells,
       headline,
-      caption: driveCounts ? `${caption}${caption ? " · " : ""}drives ${driveCounts}` : caption,
+      caption: driveCounts ? `${caption}${caption ? " · " : ""}tee shots ${driveCounts}` : caption,
       ...(drives ? { drives } : {}),
       ...(team?.penalty ? { penalty: team.penalty } : {}),
     };

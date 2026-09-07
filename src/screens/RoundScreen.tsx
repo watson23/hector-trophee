@@ -408,13 +408,13 @@ export default function RoundScreen({
 }
 
 /** "1 eagle · 5 birdies" — the full under-par story, not just the birdies. */
-/** Scramble: "drives O 4 · J 9" once a pair has marked any, and the penalty once any is certain. */
+/** Scramble: "tee shots O 4 · J 9" once a pair has marked any, and the penalty once any is certain. */
 function drivesNote(
   t: { drives?: { playerId: string; used: number; missing: number }[]; penalty?: number },
   nameOf: (playerId: string) => string,
 ): string[] {
   if (!t.drives || !t.drives.some((d) => d.used > 0)) return [];
-  const parts = [`drives ${t.drives.map((d) => `${nameOf(d.playerId).charAt(0)} ${d.used}`).join(" · ")}`];
+  const parts = [`tee shots ${t.drives.map((d) => `${nameOf(d.playerId).charAt(0)} ${d.used}`).join(" · ")}`];
   if (t.penalty) parts.push(`+${t.penalty} pen`);
   return parts;
 }

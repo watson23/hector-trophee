@@ -1474,7 +1474,7 @@ function RoundEditorCard({
 }
 
 /**
- * The 2026 scramble rule, per round: each player's drive at least `min` times, `penalty`
+ * The 2026 scramble rule, per round: each player's tee shot at least `min` times, `penalty`
  * strokes for every missing one. The engine reads the marks the pairs make on the entry
  * sheet and adds the penalty to the pair's total; 0 switches the rule off for the round.
  */
@@ -1503,17 +1503,17 @@ function DrivesRuleEditor({
   return (
     <div className="mt-2 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2.5 space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="label">Drives</span>
+        <span className="label">Tee shots</span>
         <span className="text-[11px] text-slate-600">
           {rule.min > 0 ? `${rule.min} each · ${rule.penalty} per missing` : "rule off"}
         </span>
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        {field("Min drives per player", rule.min, (min) => onChange({ ...rule, min }))}
+        {field("Min tee shots per player", rule.min, (min) => onChange({ ...rule, min }))}
         {field("Strokes per missing", rule.penalty, (penalty) => onChange({ ...rule, penalty }))}
       </div>
       <p className="text-[11px] text-slate-500 leading-relaxed">
-        Pairs mark whose drive was used on each hole as they score. Unmarked holes never cost anything.
+        Pairs mark whose tee shot was used on each hole as they score. Unmarked holes never cost anything.
       </p>
     </div>
   );

@@ -508,7 +508,7 @@ function Formats({ rounds }: { rounds: Round[] }) {
     { title: "Better Ball NET", body: "Own ball each; the pair counts the lower net score on every hole." },
     {
       title: "Scramble NET",
-      body: `One ball for the pair, played from the better shot. One card, team handicap at 20%. Each player's drive must be used at least ${scrambleRule?.min ?? 6} times; every missing drive costs the pair ${scrambleRule?.penalty ?? 2} strokes.`,
+      body: `One ball for the pair, played from the better shot. One card, team handicap at 20%. Each player's tee shot must be used at least ${scrambleRule?.min ?? 6} times; every missing one costs the pair ${scrambleRule?.penalty ?? 2} strokes.`,
     },
   ];
 

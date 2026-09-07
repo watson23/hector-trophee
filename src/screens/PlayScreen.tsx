@@ -809,7 +809,7 @@ function EntrySheet({
 /**
  * Scramble: whose tee shot the pair played from on this hole. Two chips under the score
  * row, one per player; tap to mark, tap again to clear. The 2026 rule needs each
- * player's drive at least six times, and the engine reads the penalty off these marks,
+ * player's tee shot at least six times ("tee shot", not "drive": a par 3 has one too), and the engine reads the penalty off these marks,
  * so the chips are the whole bookkeeping — no separate tally to keep.
  */
 function DriveMark({
@@ -823,7 +823,7 @@ function DriveMark({
 }) {
   return (
     <div className="flex items-center gap-1.5 pb-2.5 -mt-1">
-      <span className="num text-[11px] text-slate-500 w-10 shrink-0">drive</span>
+      <span className="num text-[11px] text-slate-500 w-[3.4rem] shrink-0">tee shot</span>
       {members.map((m) => {
         const on = value === m.id;
         return (
