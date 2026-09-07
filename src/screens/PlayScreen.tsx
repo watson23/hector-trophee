@@ -582,8 +582,9 @@ function OnCourse({
           <div className="grid grid-cols-[1fr_auto] gap-2 items-stretch text-left">
             <div className="flex flex-col justify-between pl-1 pt-0.5">
               <div>
-                <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">Hole</div>
-                <div className="score text-[64px] leading-none mt-1.5">{hole}</div>
+                {/* No "HOLE" caption: a big number between two arrows on the course view
+                    needs no label. */}
+                <div className="score text-[64px] leading-none">{hole}</div>
                 <div className="mt-2 text-sm text-slate-400 num leading-relaxed">
                   Par {par} · HCP {si}
                   {metres ? <br /> : null}
@@ -602,10 +603,7 @@ function OnCourse({
             <div className="flex items-center justify-between gap-2">
               <NavButton dir="prev" disabled={false} onClick={() => setHoleNo(hole === 1 ? 18 : hole - 1)} />
               <div>
-                <div className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">
-                  Hole
-                </div>
-                <div className="score text-6xl leading-none mt-0.5">{hole}</div>
+                <div className="score text-6xl leading-none">{hole}</div>
               </div>
               <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
             </div>
@@ -1214,7 +1212,6 @@ function HoleMap({
         >
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
             <span className="flex items-baseline gap-2 text-slate-300">
-              <span className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">Hole</span>
               <span className="score text-3xl leading-none">{hole}</span>
               <span className="num text-[13px] text-slate-400">
                 par {par}
