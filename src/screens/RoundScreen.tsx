@@ -236,7 +236,8 @@ export default function RoundScreen({
                          watch. Birdies and eagles were here too and overflowed the line; the
                          score says enough, the card has the detail, and an eagle posts to News. */
                       [`HCP ${t.playingHcp}`, ...drivesNote(t, (id) => event.players.find((p) => p.id === id)?.name ?? "?")].join(" · ")
-                    : underParCounts(t, "net ").join(" · ") || undefined,
+                    : /* Real birdies and eagles, either player's, gross. */
+                      underParCounts(t, "").join(" · ") || undefined,
                 thru: t.thru,
                 played: t.thru > 0,
                 detail: course && (

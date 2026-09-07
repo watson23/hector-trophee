@@ -82,3 +82,19 @@ describe("scrambleResult with the drive rule", () => {
     expect(empty.strokes).toBe(0);
   });
 });
+
+describe("betterBallResult birdie count", () => {
+  it("counts each player's gross birdies and eagles, not the pair's net ones", async () => {
+    const { betterBallResult } = await import("./formats");
+    const radecky = courses.radecky;
+    const ctx = (playerId: string, hi: number) => ({ playerId, hi, course: radecky, tee: radecky.tees.yellow, allowance: 1 });
+    const par = (id: string): Card => ({ id, roundId: "r2", subjectId: id, holes: Object.fromEntries(radecky.par.map((p, i) => [String(i + 1), p])) });
+    // A: gross birdie on 1, eagle on 4. B: par everywhere, but 18 strokes of handicap → many net birdies.
+    const a = par("a");
+    a.holes["1"] = radecky.par[0] - 1;
+    a.holes["4"] = radecky.par[3] - 2;
+    const r = betterBallResult(a, par("b"), ctx("a", 2), ctx("b", 18));
+    expect(r.birdies).toBe(1);
+    expect(r.eagles).toBe(1);
+  });
+});

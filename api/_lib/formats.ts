@@ -187,8 +187,15 @@ export function betterBallResult(
     thru += 1;
     parPlayed += par;
     total += best;
-    if (best === par - 1) birdies += 1;
-    if (best <= par - 2) eagles += 1;
+    // Birdies and eagles are the REAL ones — each player's gross, on either card. Net
+    // birdies come with the handicap and every pair has a pile; a gross one is the thing
+    // worth a line on the leaderboard, and something for a low-handicap pair to cherish
+    // on a day the net race did not go their way.
+    for (const g of [ga, gb]) {
+      if (g === null) continue;
+      if (g === par - 1) birdies += 1;
+      if (g <= par - 2) eagles += 1;
+    }
     return best;
   });
   return { strokes: total, toPar: total - parPlayed, thru, perHole, contributor, birdies, eagles, penalty: 0 };
