@@ -12,6 +12,7 @@ import { Header, Segmented } from "../components/Chrome";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import FlightList from "../components/FlightList";
 import { PREVIOUS } from "../data/history";
+import LiveDot from "../components/LiveDot";
 
 interface Props {
   event: EventDoc;
@@ -214,7 +215,7 @@ function RoundCard({
             <span className="text-sm font-semibold truncate">{round.day}</span>
             {round.status === "open" && (
               <span className="pill bg-emerald-950 text-emerald-400">
-                <span className="live-dot" />
+                <LiveDot />
                 Live
               </span>
             )}

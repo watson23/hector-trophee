@@ -17,6 +17,7 @@ import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
 import DraftBoard from "../components/DraftBoard";
 import { draftRoundOf, isDraftNight } from "../lib/draftNight";
 import { Empty, Segmented } from "../components/Chrome";
+import LiveDot from "../components/LiveDot";
 
 interface Props {
   event: EventDoc;
@@ -154,7 +155,7 @@ export default function RoundScreen({
       )}
       <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-3 num text-[12px] tracking-[0.12em] uppercase">
         <span className="flex items-center gap-2 shrink-0 font-semibold">
-          {round.status === "open" && <span className="live-dot text-emerald-400" />}
+          {round.status === "open" && <LiveDot className="text-emerald-400" />}
           <span className={round.status === "open" ? "text-emerald-300" : "text-slate-300"}>
             {round.status === "open" ? "Live" : round.status === "final" ? "Final" : "Upcoming"}
             <span className="text-slate-600"> · </span>Round {round.seq}
@@ -194,7 +195,7 @@ export default function RoundScreen({
             {/* Draft night: the chip says where the board is, for anyone who arrives
                 here sitting on another round. */}
             {isDraftNight(event, rounds) && draftRoundOf(rounds)?.id === r.id && " · Draft"}
-            {r.status === "open" && <span className="live-dot ml-1 align-middle" />}
+            {r.status === "open" && <LiveDot className="ml-1 align-middle" />}
           </button>
         ))}
       </div>

@@ -10,6 +10,7 @@ import HectorMark from "../components/HectorMark";
 import PlaceBadge from "../components/PlaceBadge";
 import Champions, { isTournamentComplete } from "../components/Champions";
 import { PREVIOUS } from "../data/history";
+import LiveDot from "../components/LiveDot";
 
 interface Props {
   rounds: Round[];
@@ -299,7 +300,7 @@ export default function TournamentScreen({
                 return live ? (
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                     <span className="inline-flex items-center gap-1.5 text-emerald-300 font-semibold">
-                      <span className="live-dot" />R{live.seq} live
+                      <LiveDot />R{live.seq} live
                     </span>
                     <span className="text-slate-600">·</span>
                     {done} of {rounds.length} rounds in

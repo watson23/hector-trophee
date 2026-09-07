@@ -4,6 +4,7 @@ import type { RoundResult, TournamentTotals } from "../lib/engine";
 import { formatToPar, rank } from "../lib/leaderboard";
 import { hectorLowerIsBetter } from "../lib/hector";
 import HectorMark from "./HectorMark";
+import LiveDot from "./LiveDot";
 
 /**
  * Hector TV — the spectator experience, for the Hectorians at home and the families
@@ -36,7 +37,7 @@ export function TVBar({
       <span className="flex items-center gap-1.5 text-[12px] font-semibold tracking-[0.2em] text-gold-400 num">
         <HectorMark className="w-3.5 h-3.5" />
         HECTOR TV
-        <span className="live-dot text-violet-400" />
+        <LiveDot className="text-violet-400" />
       </span>
       {/* Dressed as the control it is — a status-looking label here meant nobody
           realised the follows can be changed mid-tournament. */}

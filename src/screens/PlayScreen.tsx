@@ -15,6 +15,7 @@ import FlightList from "../components/FlightList";
 import HectorMark from "../components/HectorMark";
 import CourseHero, { EstablishingShot } from "../components/CourseHero";
 import Scorecard from "../components/Scorecard";
+import LiveDot from "../components/LiveDot";
 
 interface Props {
   event: EventDoc;
@@ -1413,7 +1414,7 @@ function NextRound({
         right={
           onStart ? (
             <span className="pill bg-emerald-950 text-emerald-300 shrink-0 inline-flex items-center gap-1.5">
-              <span className="live-dot" />
+              <LiveDot />
               Open
             </span>
           ) : (
