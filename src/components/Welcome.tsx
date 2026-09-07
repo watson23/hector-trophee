@@ -110,7 +110,7 @@ export default function Welcome({
         <button
           onClick={done}
           className="welcome-step btn-primary w-full py-4 text-lg mt-7"
-          style={{ animationDelay: "4600ms" }}
+          style={{ animationDelay: "5300ms" }}
         >
           Let's go →
         </button>
