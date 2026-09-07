@@ -145,6 +145,13 @@ export default function App() {
   }
 
   // ------------------------------- Hector TV -------------------------------
+  // A signed-in player peeking at TV keeps their identity; only a pure spectator backing
+  // out goes through onboarding again.
+  const leaveTV = () => {
+    if (session.playerId) update({ spectator: false });
+    else reset();
+    setEditFollows(false);
+  };
   if (session.spectator) {
     if (editFollows) {
       return (
@@ -158,13 +165,7 @@ export default function App() {
             update({ following: f });
             setEditFollows(false);
           }}
-          onExit={() => {
-            // A signed-in player peeking at TV keeps their identity; only a pure
-            // spectator backing out goes through onboarding again.
-            if (session.playerId) update({ spectator: false });
-            else reset();
-            setEditFollows(false);
-          }}
+          onExit={leaveTV}
         />
       );
     }
@@ -175,7 +176,13 @@ export default function App() {
       <div className="min-h-dvh">
         <SpaceBanner space={space} canSwitch={session.admin} />
         <UpdateBanner />
-        <TVBar following={following} players={t.event.players} onEdit={() => setEditFollows(true)} />
+        <TVBar
+          following={following}
+          players={t.event.players}
+          onEdit={() => setEditFollows(true)}
+          onExit={leaveTV}
+          exitLabel={session.playerId ? "Back to Play" : "Exit TV"}
+        />
         <main className="max-w-lg mx-auto pb-32">
           {tvTab === "round" && (
             <>

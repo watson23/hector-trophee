@@ -12,15 +12,20 @@ import HectorMark from "./HectorMark";
  * to follow, and the follow strip that keeps a favourite pinned above the leaderboard.
  */
 
-/** The channel ident: brand on the left, "change who you follow" on the right. */
+/** The channel ident: brand on the left, "change who you follow" and the way out on the right. */
 export function TVBar({
   following,
   players,
   onEdit,
+  onExit,
+  exitLabel = "Exit TV",
 }: {
   following: string[];
   players: FieldPlayer[];
   onEdit: () => void;
+  /** Leave the TV: back to the player view, or to the event code for a pure spectator. */
+  onExit: () => void;
+  exitLabel?: string;
 }) {
   const names = following
     .map((id) => players.find((p) => p.id === id)?.name)
@@ -48,6 +53,14 @@ export function TVBar({
           <span>follow a player</span>
         )}
         <span className="shrink-0 text-violet-400 font-semibold">change</span>
+      </button>
+      {/* The exit used to live only at the bottom of the follow picker; a viewer who wanted
+          out could not find it and the URL kept sending them back to /tv. */}
+      <button
+        onClick={onExit}
+        className="shrink-0 rounded-full border border-slate-700 px-2.5 py-1 text-[12px] font-semibold text-slate-300 active:bg-slate-800"
+      >
+        {exitLabel}
       </button>
     </div>
   );
