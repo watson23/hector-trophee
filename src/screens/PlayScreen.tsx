@@ -1650,12 +1650,14 @@ function SubjectRow({
               >
                 {n}
               </span>
+              {/* When the tournament's cap lands on a quick button — par + 4 does — the
+                  tag says "max": that is the score to mark for a pick-up or a blow-up. */}
               <span
                 className={`text-[11px] font-medium tracking-wide ${
-                  value === n ? "text-violet-200" : "text-slate-500"
+                  value === n ? "text-violet-200" : n === cap ? "text-amber-400/90" : "text-slate-500"
                 }`}
               >
-                {quickTag(diff)}
+                {n === cap ? "max" : quickTag(diff)}
               </span>
             </button>
           );
@@ -1696,8 +1698,9 @@ function SubjectRow({
               if (e.key === "Enter") e.currentTarget.blur();
             }}
           />
-          {cap !== null && (
-            /* The tournament's max on this hole — also what a picked-up ball ("–") scores. */
+          {cap !== null && !quick.includes(cap) && (
+            /* The tournament's max on this hole — also what a picked-up ball ("–") scores.
+               Not shown when the cap already is one of the quick buttons. */
             <button
               onClick={() => {
                 score(cap);
