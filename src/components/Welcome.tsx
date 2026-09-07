@@ -3,6 +3,8 @@ import HectorMark from "./HectorMark";
 
 const KEY = "hectro_welcomed";
 
+const words: Record<number, string> = { 4: "Four", 5: "Five", 6: "Six", 7: "Seven" };
+
 /** Which players this phone has already welcomed — one greeting per person per device. */
 function welcomed(): string[] {
   try {
@@ -86,8 +88,9 @@ export default function Welcome({
           Welcome, {first}.
         </h1>
         <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-4 max-w-sm" style={{ animationDelay: "1000ms" }}>
-          {venue}, {dates.replace(/,?\s*\d{4}\s*$/, "")}. {rounds} rounds, two trophies. Your card, your flight and the
-          standings live here — and everyone else's phone sees what yours enters, as it happens.
+          {venue}, {dates.replace(/,?\s*\d{4}\s*$/, "")}. {words[rounds] ?? rounds} rounds on two courses, two trophies,
+          and one week to decide who carries the falcon home. Your card, your flight and the standings are all
+          in here. Play well.
         </p>
         <button
           onClick={done}
