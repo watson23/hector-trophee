@@ -113,8 +113,41 @@
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  /* The one-time welcome: the photo rises out of black, the falcon lands, then the
+     lines arrive one after another (each carries its own animation-delay). */
+  .welcome-photo {
+    opacity: 0;
+    transform: scale(1.04);
+    animation: welcome-photo 1400ms ease-out 150ms forwards;
+  }
+  @keyframes welcome-photo {
+    to { opacity: 1; transform: scale(1); }
+  }
+  .welcome-mark {
+    opacity: 0;
+    transform: translateY(14px) scale(0.85);
+    animation: welcome-mark 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 300ms forwards;
+  }
+  @keyframes welcome-mark {
+    to { opacity: 1; transform: none; }
+  }
+  .welcome-step {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: welcome-step 550ms ease-out forwards;
+  }
+  @keyframes welcome-step {
+    to { opacity: 1; transform: none; }
+  }
+  .welcome-out {
+    animation: welcome-out 350ms ease-in forwards;
+  }
+  @keyframes welcome-out {
+    to { opacity: 0; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .finish-flourish, .finish-rise { animation: none; opacity: 1; }
+    .welcome-photo, .welcome-mark, .welcome-step { animation: none; opacity: 1; transform: none; }
   }
 }
 

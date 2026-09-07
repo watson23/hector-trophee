@@ -4,6 +4,7 @@ import { usePersistentState } from "./hooks/usePersistentState";
 import { useTournament } from "./hooks/useTournament";
 import Onboarding from "./components/Onboarding";
 import { SpaceBanner, SyncBanner, TabBar, UpdateBanner, type Tab } from "./components/Chrome";
+import Welcome, { needsWelcome } from "./components/Welcome";
 import { currentSpace, eventIdFor } from "./lib/space";
 import { draftRoundOf, isDraftNight } from "./lib/draftNight";
 
@@ -39,6 +40,12 @@ export default function App() {
       ? "info"
       : "play";
   const [adminOpen, setAdminOpen] = usePersistentState("hectro_ui.admin", false, "session");
+  // The welcome shows while this phone has not welcomed the current player and they
+  // have not just tapped through it: a name switch greets the new name, a refresh
+  // mid-welcome greets again, and "Let's go" is remembered for good.
+  const [welcomeDismissed, setWelcomeDismissed] = useState<string | null>(null);
+  const showWelcome =
+    Boolean(session.playerId) && !session.spectator && welcomeDismissed !== session.playerId && needsWelcome(session.playerId!);
   // Safety net while a round is live: an organiser's phone snapshots the tournament every
   // twenty minutes, skipping when nothing has changed. Only admins run it — a lost twenty
   // minutes of a round is the worst case, whoever fat-fingers what.
@@ -263,6 +270,18 @@ export default function App() {
 
   return (
     <div className="min-h-dvh">
+      {/* Once per person per phone, right after the name is picked: a hello before the
+          Play tab's plain front page. */}
+      {me && showWelcome && (
+        <Welcome
+          name={me.name}
+          playerId={me.id}
+          venue={t.event.venue}
+          dates={t.event.dates}
+          rounds={t.rounds.length}
+          onDone={() => setWelcomeDismissed(me.id)}
+        />
+      )}
       <SpaceBanner space={space} canSwitch={session.admin} />
       <UpdateBanner />
       <SyncBanner online={t.online} pending={t.pending} backend={t.backend} error={t.error} onNudge={t.nudge} />
