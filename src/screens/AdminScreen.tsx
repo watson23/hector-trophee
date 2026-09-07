@@ -252,12 +252,14 @@ function HoleCapCard({ event, saveEvent }: { event: EventDoc; saveEvent: (patch:
     <section className="mx-4 mb-3 card p-3.5">
       <h2 className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">Max score per hole</h2>
       <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5 mb-2.5">{HOLE_CAP_HELP[rule]}</p>
+      {/* Every rule the app knows, from the one table — a hard-coded list here is how
+          Par + 4 went missing on the day it was introduced. */}
       <div className="flex gap-1.5">
-        {(["none", "par5", "ndb"] as const).map((r) => (
+        {(Object.keys(HOLE_CAP_LABEL) as HoleCapRule[]).map((r) => (
           <button
             key={r}
             onClick={() => void saveEvent({ holeCap: r })}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${
+            className={`flex-1 rounded-lg py-1.5 px-1 text-xs font-semibold leading-tight ${
               rule === r ? "bg-violet-600 text-white" : "bg-slate-800 text-slate-400"
             }`}
           >
