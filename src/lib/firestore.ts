@@ -284,12 +284,14 @@ export class FirestoreStore implements Store {
     subjectId: string,
     holes: Record<string, number>,
     by: string,
+    drives?: Record<string, string>,
   ): Promise<void> {
     // One document write for the whole card, not eighteen. No merge: this replaces.
     await setDoc(doc(this.cardsRef(), cardId(roundId, subjectId)), {
       roundId,
       subjectId,
       holes,
+      ...(drives ? { drives } : {}),
       updatedAt: Date.now(),
       updatedBy: by,
     }).catch(this.reportWriteError);

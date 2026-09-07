@@ -17,7 +17,7 @@ import { generateRoundCards } from "./testdata";
 export interface SimulateDeps {
   event: EventDoc;
   rounds: Round[];
-  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>, drives?: Record<string, string>) => Promise<void>;
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;
@@ -36,8 +36,35 @@ async function writeCards(round: Round, event: EventDoc, deps: SimulateDeps, hol
   const course = courses[round.courseId];
   const cards = generateRoundCards(round, course, effectiveTee(round, course), event, holes);
   // One write per card rather than one per hole: 100 writes for a tournament, not 1800.
-  await Promise.all(cards.map((c) => deps.setCard(round.id, c.subjectId, c.holes)));
+  // Scramble cards get their tee shots marked too, so the drive rule has data to work on.
+  const scramble = round.formats.some((f) => f.teamCard);
+  await Promise.all(
+    cards.map((c) => deps.setCard(round.id, c.subjectId, c.holes, scramble ? fakeDrives(c, event) : undefined)),
+  );
   return cards;
+}
+
+/**
+ * Whose tee shot on each played hole, for a simulated scramble card: mostly six-and-six
+ * with a deterministic wobble so a pair or two in the field come up a shot short and the
+ * penalty has something to show.
+ */
+function fakeDrives(card: { subjectId: string; holes: Record<string, number> }, event: EventDoc): Record<string, string> {
+  const pairId = card.subjectId.replace(/^team__/, "");
+  const pair = event.pairs.find((p) => p.id === pairId);
+  if (!pair) return {};
+  const seed = [...pairId].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+  const lead = seed % 2 === 0 ? pair.aId : pair.bId;
+  const other = lead === pair.aId ? pair.bId : pair.aId;
+  const drives: Record<string, string> = {};
+  for (const h of Object.keys(card.holes)) {
+    const n = Number(h);
+    // Alternate; every fifth hole of the back nine goes to the leader again, so a few
+    // pairs land on 5/13 and one player comes up a tee shot short.
+    const wobble = n > 9 && (n + seed) % 5 === 0;
+    drives[h] = wobble ? lead : (n + seed) % 2 === 0 ? lead : other;
+  }
+  return drives;
 }
 
 /** Rebuild the round-1 result from the cards just written, to get the draft order. */

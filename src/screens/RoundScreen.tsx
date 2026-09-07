@@ -10,6 +10,7 @@ import {
 } from "../lib/engine";
 import { strokePlayResult } from "../lib/formats";
 import { formatToPar, formatToParFine } from "../lib/leaderboard";
+import { initials } from "../lib/initials";
 import { weightLabel } from "../lib/hector";
 import LeaderTable, { type LeaderRow } from "../components/LeaderTable";
 import HoleByHole, { grossRow, type HoleRow } from "../components/HoleByHole";
@@ -234,7 +235,7 @@ export default function RoundScreen({
                     ? /* A scramble row: team handicap and the tee-shot count — the thing to
                          watch. Birdies and eagles were here too and overflowed the line; the
                          score says enough, the card has the detail, and an eagle posts to News. */
-                      [`team HCP ${t.playingHcp}`, ...drivesNote(t, (id) => event.players.find((p) => p.id === id)?.name ?? "?")].join(" · ")
+                      [`HCP ${t.playingHcp}`, ...drivesNote(t, (id) => event.players.find((p) => p.id === id)?.name ?? "?")].join(" · ")
                     : underParCounts(t, "net ").join(" · ") || undefined,
                 thru: t.thru,
                 played: t.thru > 0,
@@ -417,7 +418,8 @@ function drivesNote(
   nameOf: (playerId: string) => string,
 ): string[] {
   if (!t.drives || !t.drives.some((d) => d.used > 0)) return [];
-  const parts = [`tee shots ${t.drives.map((d) => `${nameOf(d.playerId).charAt(0)} ${d.used}`).join(" · ")}`];
+  const ini = initials(t.drives.map((d) => nameOf(d.playerId)));
+  const parts = [`tee shots ${t.drives.map((d, i) => `${ini[i]} ${d.used}`).join(" · ")}`];
   if (t.penalty) parts.push(`+${t.penalty} pen`);
   return parts;
 }

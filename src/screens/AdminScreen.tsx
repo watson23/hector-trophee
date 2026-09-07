@@ -22,7 +22,7 @@ interface Props {
   mirrorFrom: ((sourceEventId: string) => Promise<number>) | null;
   cards: Record<string, Record<string, Card>>;
   roundResults: Record<string, RoundResult>;
-  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>, drives?: Record<string, string>) => Promise<void>;
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
   saveRound: (round: Round) => Promise<void>;

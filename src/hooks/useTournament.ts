@@ -31,7 +31,7 @@ export interface TournamentState {
   setHole: (roundId: string, subjectId: string, hole: number, value: number | null) => void;
   /** Scramble: whose tee shot was used on a hole; null clears. */
   setDrive: (roundId: string, subjectId: string, hole: number, playerId: string | null) => void;
-  setCard: (roundId: string, subjectId: string, holes: Record<string, number>) => Promise<void>;
+  setCard: (roundId: string, subjectId: string, holes: Record<string, number>, drives?: Record<string, string>) => Promise<void>;
   deleteCard: (roundId: string, subjectId: string) => Promise<void>;
   setHcpSubmitted: (roundId: string, subjectId: string, submitted: boolean) => Promise<void>;
   saveEvent: (patch: Partial<EventDoc>) => Promise<void>;
@@ -276,8 +276,8 @@ export function useTournament(identity: string, eventId: string): TournamentStat
   );
 
   const setCard = useCallback(
-    async (roundId: string, subjectId: string, holes: Record<string, number>) => {
-      await store?.setCard(roundId, subjectId, holes, identity).catch(swallow);
+    async (roundId: string, subjectId: string, holes: Record<string, number>, drives?: Record<string, string>) => {
+      await store?.setCard(roundId, subjectId, holes, identity, drives).catch(swallow);
     },
     [store, identity],
   );

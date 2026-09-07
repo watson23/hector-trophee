@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { teeWindow } from "../lib/flights";
 import { usePersistentState } from "../hooks/usePersistentState";
+import { shortNames } from "../lib/initials";
 import type { Card, EventDoc, FieldPlayer, Round } from "../types";
 import { courses, holeMapUrl, holeMetres, teeDotClass, teeHex, teeText } from "../data/courses";
 import holeArcs from "../data/holeArcs.json";
@@ -132,7 +133,8 @@ export default function PlayScreen({
         out.push({
           id: teamCardId(pair.id),
           name: `${a.name} + ${b.name}`,
-          detail: `Team HCP ${teamHcp}`,
+          // "HCP", not "Team HCP": on a scramble card the team is the context.
+          detail: `HCP ${teamHcp}`,
           strokes: strokeAllocation(teamHcp, course.si),
           mine: pair.aId === me.id || pair.bId === me.id,
         });
@@ -525,8 +527,8 @@ function OnCourse({
         ...(t.drives && fr
           ? {
               teeShots: {
-                line: `${t.drives
-                  .map((d) => `${(event.players.find((p) => p.id === d.playerId)?.name ?? "?").split(" ")[0]} ${d.used}`)
+                line: `${shortNames(t.drives.map((d) => event.players.find((p) => p.id === d.playerId)?.name ?? "?"))
+                  .map((n, i) => `${n} ${t.drives![i].used}`)
                   .join(" · ")} · min ${drivesRule(fr.spec)?.min ?? 6}`,
                 penalty: t.penalty ?? 0,
               },
@@ -584,7 +586,7 @@ function OnCourse({
                 <NavButton dir="next" disabled={false} onClick={() => setHoleNo(hole === 18 ? 1 : hole + 1)} />
               </div>
             </div>
-            <HoleMap courseId={round.courseId} hole={hole} tee={round.tee} par={par} compact onHide={() => setShowMap(false)} />
+            <HoleMap courseId={round.courseId} hole={hole} tee={round.tee} par={par} metres={metres} compact onHide={() => setShowMap(false)} />
           </div>
         ) : (
           <>
@@ -766,6 +768,8 @@ function EntrySheet({
   const si = course.si[hole - 1];
   const metres = holeMetres[round.courseId]?.[round.tee]?.[hole - 1];
   const allScored = subjects.length > 0 && subjects.every((s) => cards[s.id]?.holes?.[String(hole)]);
+  // A scramble hole is done when the score AND whose tee shot it was are both in.
+  const allMarked = subjects.every((s) => !teamMembers[s.id] || cards[s.id]?.drives?.[String(hole)]);
 
   // Four cards must fit one screen with the buttons still big: 64px targets for a
   // two-ball, 56px for three or four.
@@ -825,7 +829,7 @@ function EntrySheet({
         {hole < 18 || !complete ? (
           <button
             className="btn-primary w-full py-3.5 text-lg"
-            disabled={!allScored}
+            disabled={!allScored || !allMarked}
             onClick={() => {
               // From the 18th with holes still open (a back-nine start), on to the 1st.
               setHoleNo(hole === 18 ? 1 : hole + 1);
@@ -1004,6 +1008,7 @@ function HoleMap({
   par,
   compact = false,
   onHide,
+  metres,
 }: {
   courseId: string;
   hole: number;
@@ -1012,6 +1017,8 @@ function HoleMap({
   /** Beside the hole block in the course view: 200px tall, distances kept, Hide/Enlarge chips. */
   compact?: boolean;
   onHide?: () => void;
+  /** The hole's length from the tee in play, for the enlarged view's header. */
+  metres?: number;
 }) {
   const [showArcs, setShowArcs] = usePersistentState("hectro_ui.holearcs", true);
   const [large, setLarge] = useState(false);
@@ -1190,8 +1197,13 @@ function HoleMap({
           className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
         >
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
-            <span className="text-[13px] font-semibold text-slate-300">
-              Hole {hole} <span className="text-slate-500 font-normal">· par {par}</span>
+            <span className="flex items-baseline gap-2 text-slate-300">
+              <span className="text-[12px] font-semibold uppercase tracking-widest text-slate-500">Hole</span>
+              <span className="score text-3xl leading-none">{hole}</span>
+              <span className="num text-[13px] text-slate-400">
+                par {par}
+                {metres ? ` · ${metres}m` : ""}
+              </span>
             </span>
             <span className="text-[12px] text-slate-500">Tap anywhere to close</span>
           </div>

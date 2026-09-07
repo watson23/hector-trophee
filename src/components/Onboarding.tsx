@@ -133,8 +133,10 @@ export default function Onboarding({ event, unlocked, onUnlock, onPickPlayer, on
             <section key={bucket}>
               <h2 className="label mb-2">Bucket {bucket}</h2>
               <div className="grid grid-cols-2 gap-2">
-                {event.players
+                {[...event.players]
                   .filter((p) => p.bucket === bucket)
+                  // Bucket order as the draft reads it: lowest handicap first, name on a tie.
+                  .sort((a, b) => a.hi - b.hi || a.name.localeCompare(b.name))
                   .map((p) => (
                     <button
                       key={p.id}

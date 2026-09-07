@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Card, Course, EventDoc, FormatSpec } from "../types";
 import type { FormatResult } from "../lib/engine";
 import { formatToPar } from "../lib/leaderboard";
+import { initials } from "../lib/initials";
 import ScoreMark, { type ScoreSize } from "./ScoreMark";
 
 /** A card being shown: one per player, or one per pair in a scramble. */
@@ -484,9 +485,11 @@ function buildBlocks(
         ? "—"
         : figure === "net"
           ? formatToPar(subTotal - parPlayed)
-          : // Stableford and scratch alike lead with gross to par — the number a golfer
-            // reads first; Stableford's points follow it in parentheses.
-            formatToPar(grossTotal - parPlayed);
+          : figure === "pts"
+            ? // Stableford's to-par is the engine's: two points a hole is level, so it is
+              // the same figure the course view and the Round tab show — not gross to par.
+              formatToPar(2 * played.length - subTotal)
+            : formatToPar(grossTotal - parPlayed);
     // The headline line carries the name and the to-par, and on Stableford the points
     // before it — nothing else. Every other total goes on the quiet line beneath the name.
     const caption = played.length > 0 && figure === "pts" ? `${subTotal} pts` : "";
@@ -495,7 +498,10 @@ function buildBlocks(
     const team = s.id.startsWith("team__") ? result?.teams.find((t) => `team__${t.pairId}` === s.id) : undefined;
     // Drive marks show only once the pair has made one: an empty row and "0 · 0" would
     // nag every pair that has not started marking, on a rule that never penalises silence.
-    const initial = (pid: string) => event.players.find((p) => p.id === pid)?.name.charAt(0) ?? "?";
+    // Initials are made unambiguous within the pair: two Ollis become OA and OV.
+    const pairIds = team?.drives?.map((d) => d.playerId) ?? [];
+    const pairInitials = initials(pairIds.map((pid) => event.players.find((p) => p.id === pid)?.name ?? "?"));
+    const initial = (pid: string) => pairInitials[pairIds.indexOf(pid)] ?? "?";
     const marked = team?.drives && team.drives.some((d) => d.used > 0);
     const drives = marked
       ? course.par.map((_, i) => {

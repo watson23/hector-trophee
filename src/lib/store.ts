@@ -37,7 +37,13 @@ export interface Store {
    * eighteen holes at a time: that is 18 document writes instead of 1, which is slow to
    * flush and eats the Firestore quota. Use this for bulk work only.
    */
-  setCard(roundId: string, subjectId: string, holes: Record<string, number>, by: string): Promise<void>;
+  setCard(
+    roundId: string,
+    subjectId: string,
+    holes: Record<string, number>,
+    by: string,
+    drives?: Record<string, string>,
+  ): Promise<void>;
   /** Remove a card entirely, rather than clearing eighteen fields one at a time. */
   deleteCard(roundId: string, subjectId: string): Promise<void>;
   /** Mark a card as entered into eBirdie/GameBook for official handicap. */
@@ -292,6 +298,7 @@ class LocalStore implements Store {
     subjectId: string,
     holes: Record<string, number>,
     by: string,
+    drives?: Record<string, string>,
   ): Promise<void> {
     const cards = this.read<Record<string, Card>>(`cards_${roundId}`, {});
     cards[subjectId] = {
@@ -299,6 +306,7 @@ class LocalStore implements Store {
       roundId,
       subjectId,
       holes,
+      ...(drives ? { drives } : {}),
       updatedAt: Date.now(),
       updatedBy: by,
     };
