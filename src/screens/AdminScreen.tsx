@@ -12,6 +12,7 @@ import TodayPanel from "../components/TodayPanel";
 import ToolCard from "../components/ToolCard";
 import HcpOwed from "../components/HcpOwed";
 import { todayTasks } from "../lib/today";
+import { shareOrDownload, summarizeUsage, usageCsv, usageText } from "../lib/usageExport";
 import { SPACES, spaceLink, spaceMeta, switchSpace, type Space } from "../lib/space";
 import ScoreAdmin from "./ScoreAdmin";
 import BackupAdmin, { type BackupApi } from "./BackupAdmin";
@@ -306,7 +307,6 @@ function HoleCapCard({ event, saveEvent }: { event: EventDoc; saveEvent: (patch:
  */
 function UsageCard({ players, usage }: { players: FieldPlayer[]; usage: { list: () => Promise<UsageDay[]> } }) {
   const [days, setDays] = useState<UsageDay[] | null>(null);
-  const [open, setOpen] = useState(false);
   useEffect(() => {
     let alive = true;
     usage
@@ -321,63 +321,66 @@ function UsageCard({ players, usage }: { players: FieldPlayer[]; usage: { list: 
       alive = false;
     };
   }, [usage]);
-  const byPlayer = new Map<string, { lastSeen: number; opens: number; views: Record<string, number>; days: number }>();
-  for (const day of days ?? []) {
-    for (const [id, u] of Object.entries(day.players)) {
-      const cur = byPlayer.get(id) ?? { lastSeen: 0, opens: 0, views: {}, days: 0 };
-      cur.lastSeen = Math.max(cur.lastSeen, u.lastSeen ?? 0);
-      cur.opens += u.opens ?? 0;
-      cur.days += 1;
-      for (const [k, n] of Object.entries(u.views ?? {})) cur.views[k] = (cur.views[k] ?? 0) + n;
-      byPlayer.set(id, cur);
-    }
-  }
-  const seen = players.filter((p) => byPlayer.has(p.id));
-  const missing = players.filter((p) => !byPlayer.has(p.id));
+  const rows = summarizeUsage(days ?? [], players);
+  const missing = players.filter((p) => !rows.some((r) => r.playerId === p.id));
   const when = (at: number) =>
     new Date(at).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  const stamp = new Date().toISOString().slice(0, 10);
+  // Inside a Tools card, so no frame or heading of its own: a summary line, a row per
+  // player on two lines (nothing truncates), and the two exports at the bottom.
   return (
-    <section className="mx-4 mt-3 card p-3.5">
-      <button onClick={() => setOpen((v) => !v)} className="w-full text-left">
-        <h2 className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">App usage</h2>
-        <p className="text-sm mt-0.5">
-          {days === null ? (
-            <span className="text-slate-500">Loading…</span>
-          ) : (
-            <>
-              <span className="font-semibold">{seen.length} of {players.length}</span> have opened the app
-              {missing.length > 0 && missing.length <= 8 && (
-                <span className="text-slate-500"> · not yet: {missing.map((p) => p.name).join(", ")}</span>
-              )}
-            </>
-          )}
-        </p>
-      </button>
-      {open && days && (
-        <ul className="mt-3 space-y-1.5 text-[12px]">
-          {[...seen]
-            .sort((a, b) => (byPlayer.get(b.id)?.lastSeen ?? 0) - (byPlayer.get(a.id)?.lastSeen ?? 0))
-            .map((p) => {
-              const u = byPlayer.get(p.id)!;
-              const top = Object.entries(u.views)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([k, n]) => `${k} ${n}`)
-                .join(" · ");
-              return (
-                <li key={p.id} className="flex items-baseline justify-between gap-3">
-                  <span className="min-w-0 truncate">
-                    <span className="text-slate-200">{p.name}</span>
-                    <span className="text-slate-500 num"> · {u.days} day{u.days > 1 ? "s" : ""} · {u.opens} open{u.opens > 1 ? "s" : ""}</span>
-                    {top && <span className="text-slate-600 num"> · {top}</span>}
-                  </span>
-                  <span className="num text-slate-500 shrink-0">{when(u.lastSeen)}</span>
-                </li>
-              );
-            })}
+    <div className="px-3.5 space-y-3">
+      <p className="text-sm">
+        {days === null ? (
+          <span className="text-slate-500">Loading…</span>
+        ) : (
+          <>
+            <span className="font-semibold">{rows.length} of {players.length}</span> have opened the app
+            {missing.length > 0 && missing.length <= 8 && (
+              <span className="text-slate-500"> · not yet: {missing.map((p) => p.name).join(", ")}</span>
+            )}
+          </>
+        )}
+      </p>
+      {days && rows.length > 0 && (
+        <ul className="divide-y divide-slate-800/70">
+          {rows.map((r) => {
+            const views = Object.entries(r.views)
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, n]) => `${k} ${n}`)
+              .join(" · ");
+            return (
+              <li key={r.playerId} className="py-1.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[13px] text-slate-200 truncate">{r.name}</span>
+                  <span className="num text-[12px] text-slate-500 shrink-0">{when(r.lastSeen)}</span>
+                </div>
+                <div className="num text-[12px] text-slate-500 leading-relaxed">
+                  {r.days} day{r.days === 1 ? "" : "s"} · {r.opens} open{r.opens === 1 ? "" : "s"}
+                  {views && <span className="text-slate-600"> · {views}</span>}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
-    </section>
+      {days && days.length > 0 && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => void shareOrDownload(new File([usageCsv(days, players)], `hector-usage-${stamp}.csv`, { type: "text/csv" }))}
+            className="btn-ghost px-3 py-2 text-xs"
+          >
+            Save CSV
+          </button>
+          <button
+            onClick={() => void shareOrDownload(new File([usageText(days, players)], `hector-usage-${stamp}.txt`, { type: "text/plain" }))}
+            className="btn-ghost px-3 py-2 text-xs"
+          >
+            Save text
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
