@@ -31,8 +31,9 @@ function markWelcomed(playerId: string) {
  * The first thing a player sees after picking their name, once per phone: a warm
  * hello before the Play tab's plain front page. The falcon lands, the name comes up,
  * the postcard of Konopiště fades in, one line says what the app is for, and a single
- * button lets them through. Staged with CSS delays over about five seconds — a moment
- * nobody expects, so it is given room; with reduced motion everything is simply there.
+ * button lets them through. Staged back to back: each line takes 0.85 s to land and the
+ * next starts as it finishes — no overlap for the eye to split, no pause to feel — so the
+ * button arrives at six seconds. With reduced motion everything is simply there.
  */
 export default function Welcome({
   name,
@@ -81,17 +82,17 @@ export default function Welcome({
       <div className="relative flex-1 flex flex-col justify-end px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))]">
         <div className="flex-1" />
         <HectorMark className="welcome-mark w-16 h-16 text-gold-400 mb-5" />
-        <p className="welcome-step text-[12px] font-semibold uppercase tracking-[0.28em] text-gold-400" style={{ animationDelay: "2200ms" }}>
+        <p className="welcome-step text-[12px] font-semibold uppercase tracking-[0.28em] text-gold-400" style={{ animationDelay: "2600ms" }}>
           Hector Trophée 2026
         </p>
-        <h1 className="welcome-step font-serif text-[44px] leading-[1.05] font-semibold mt-2" style={{ animationDelay: "2800ms" }}>
+        <h1 className="welcome-step font-serif text-[44px] leading-[1.05] font-semibold mt-2" style={{ animationDelay: "3500ms" }}>
           Welcome, {first}.
         </h1>
         {/* Where and when, on its own beat, in the postcard-caption voice. */}
-        <p className="welcome-step num text-[12px] tracking-[0.14em] uppercase text-slate-400 mt-4" style={{ animationDelay: "3600ms" }}>
+        <p className="welcome-step num text-[12px] tracking-[0.14em] uppercase text-slate-400 mt-4" style={{ animationDelay: "4400ms" }}>
           {venue} · {dates.replace(/,?\s*\d{4}\s*$/, "")}
         </p>
-        <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-3 max-w-sm" style={{ animationDelay: "4300ms" }}>
+        <p className="welcome-step text-slate-300 text-[15px] leading-relaxed mt-3 max-w-sm" style={{ animationDelay: "5300ms" }}>
           World's best amateur golfers clash once again. {words[rounds] ?? rounds} rounds on two courses, two
           trophies, and one week to decide who carries the Hector home. Your card, your flight and the standings
           are all in here. You just need to hit the shots. Good luck!
@@ -99,7 +100,7 @@ export default function Welcome({
         <button
           onClick={done}
           className="welcome-step btn-primary w-full py-4 text-lg mt-7"
-          style={{ animationDelay: "5200ms" }}
+          style={{ animationDelay: "6200ms" }}
         >
           Let's go →
         </button>
