@@ -36,8 +36,6 @@ interface Line {
   caption: string;
   /** The playing handicap, shown after the name. */
   detail?: string;
-  /** A small companion after the headline — Stableford's points beside the to-par. */
-  aside?: string;
   /** Stableford points over the holes played, for a pair block's combined figure. */
   points?: number;
   /** Scramble: whose drive on each hole, as an initial; and the penalty the marks add up to. */
@@ -282,7 +280,6 @@ export default function Scorecard({
                     <Figure
                       caption={line.penalty ? `${line.caption} · +${line.penalty} pen` : line.caption}
                       headline={line.headline}
-                      aside={line.aside}
                       unit={unit}
                       mine={line.mine}
                       size={m.headline}
@@ -395,14 +392,12 @@ export default function Scorecard({
 function Figure({
   caption,
   headline,
-  aside,
   unit,
   mine,
   size,
 }: {
   caption: string;
   headline: string;
-  aside?: string;
   unit: string;
   mine: boolean;
   size: string;
@@ -411,7 +406,6 @@ function Figure({
     <span className="flex items-baseline gap-1.5 shrink-0">
       {caption && <span className="num text-[12px] leading-none text-slate-400">{caption}</span>}
       <span className={`score ${size} leading-none ${mine ? "text-violet-300" : "text-slate-100"}`}>{headline}</span>
-      {aside && <span className="num text-[12px] leading-none text-slate-400">{aside}</span>}
       {unit && <span className="num text-[11px] font-semibold leading-none tracking-[.08em] text-slate-500">{unit}</span>}
     </span>
   );
@@ -489,7 +483,8 @@ function buildBlocks(
           : // Stableford and scratch alike lead with gross to par — the number a golfer
             // reads first; Stableford's points follow it in parentheses.
             formatToPar(grossTotal - parPlayed);
-    const aside = figure === "pts" && played.length > 0 ? `(${subTotal} pts)` : undefined;
+    // The headline is always the last number on the line, whichever tab: the caption
+    // before it is "65 strokes" on scratch, "22 pts" on Stableford, the gross on net.
     const grossPart = `${grossTotal} (${formatToPar(grossTotal - parPlayed)})`;
     const caption =
       played.length === 0
@@ -497,7 +492,7 @@ function buildBlocks(
         : figure === "gross"
           ? `${grossTotal} strokes`
           : figure === "pts"
-            ? ""
+            ? `${subTotal} pts`
             : `${grossPart} gross`;
     const team = s.id.startsWith("team__") ? result?.teams.find((t) => `team__${t.pairId}` === s.id) : undefined;
     // Drive marks show only once the pair has made one: an empty row and "0 · 0" would
@@ -519,7 +514,6 @@ function buildBlocks(
       cells,
       headline,
       ...(s.detail ? { detail: s.detail } : {}),
-      ...(aside ? { aside } : {}),
       ...(figure === "pts" ? { points: subTotal } : {}),
       caption: driveCounts ? `${caption}${caption ? " · " : ""}tee shots ${driveCounts}` : caption,
       ...(drives ? { drives } : {}),
