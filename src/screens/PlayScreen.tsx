@@ -1641,9 +1641,15 @@ function SubjectRow({
                 value === n ? "bg-violet-600" : "bg-slate-800/70 hover:bg-slate-700"
               }`}
             >
+              {/* The cap's digit is hollow — black with a white outline — so the score
+                  nobody wants looks the part, on the same dark button as the rest. */}
               <span
                 className={`score ${digit} ${
-                  value === n ? "text-white" : quickTint(diff)
+                  value === n
+                    ? "text-white"
+                    : n === cap
+                      ? "text-slate-950 [-webkit-text-stroke:1.25px_#efeef3]"
+                      : quickTint(diff)
                 }`}
               >
                 {n}
@@ -1652,7 +1658,7 @@ function SubjectRow({
                   tag says "max": that is the score to mark for a pick-up or a blow-up. */}
               <span
                 className={`text-[11px] font-medium tracking-wide ${
-                  value === n ? "text-violet-200" : n === cap ? "text-amber-400/90" : "text-slate-500"
+                  value === n ? "text-violet-200" : n === cap ? "text-slate-300" : "text-slate-500"
                 }`}
               >
                 {n === cap ? "max" : quickTag(diff)}
