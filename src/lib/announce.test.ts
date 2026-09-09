@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { featAnnouncement, featFor, featId, ordinal } from "./announce";
+import { featAnnouncement, featFor, featId, featsLive, ordinal } from "./announce";
 
 const base = { hole: 14, who: "Jarkko K", team: false, course: "Radecký", roundSeq: 3 };
 
@@ -55,5 +55,17 @@ describe("ids and ordinals", () => {
 
   it("spells ordinals the English way", () => {
     expect([1, 2, 3, 4, 11, 12, 13, 18].map(ordinal)).toEqual(["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "18th"]);
+  });
+});
+
+describe("featsLive", () => {
+  const rounds = [{ date: "2026-09-25" }, { date: "2026-09-24" }, { date: "2026-09-27" }];
+  it("keeps Hector quiet until the first round day, local time", () => {
+    expect(featsLive(rounds, new Date(2026, 8, 23, 23, 59))).toBe(false);
+    expect(featsLive(rounds, new Date(2026, 8, 24, 0, 1))).toBe(true);
+    expect(featsLive(rounds, new Date(2026, 8, 27, 18))).toBe(true);
+  });
+  it("speaks when there is no programme to wait for", () => {
+    expect(featsLive([])).toBe(true);
   });
 });

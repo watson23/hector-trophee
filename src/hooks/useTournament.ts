@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round, UsageDay } from "../types";
 import { courses } from "../data/courses";
-import { featAnnouncement, featFor, featId, type Feat } from "../lib/announce";
+import { featAnnouncement, featFor, featId, featsLive, type Feat } from "../lib/announce";
 import { computeTournament, effectiveTee, evaluateRound, snapshotHandicaps, type RoundResult } from "../lib/engine";
 import {
   getStore,
@@ -230,8 +230,9 @@ export function useTournament(identity: string, eventId: string): TournamentStat
       // eagle deserves more than a coloured digit on one phone. Keyed by round/card/hole
       // so a re-entry never posts twice; a team card (scramble) counts for the pair. An
       // eagle typed by mistake and corrected is withdrawn again; an ace stays — the beer
-      // clause in its text is there for exactly that.
-      if (store && round && event) {
+      // clause in its text is there for exactly that. Before the first round day Hector
+      // says nothing: practice eagles must not spoil the real ones.
+      if (store && round && event && featsLive(latest.current.rounds)) {
         const existing = event.announcements ?? [];
         const par = courses[round.courseId]?.par[hole - 1];
         const now = par ? featFor(value, par) : null;

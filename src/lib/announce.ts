@@ -29,6 +29,19 @@ export function featFor(value: number | null | undefined, par: number): Feat | n
   return null;
 }
 
+/**
+ * Whether Hector speaks at all: only from the tournament's first day. The app is open
+ * for practice in the weeks before, and an eagle shouted then would spoil the first real
+ * one. Local calendar date, so the morning of the first round counts wherever the phone is.
+ */
+export function featsLive(rounds: { date: string }[], now = new Date()): boolean {
+  const first = rounds.map((r) => r.date).filter(Boolean).sort()[0];
+  if (!first) return true;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return today >= first;
+}
+
 /** The News-feed id for a feat on a card's hole — one per hole, so a re-entry never posts twice. */
 export function featId(kind: Feat, roundId: string, subjectId: string, hole: number): string {
   return `${kind}-${roundId}-${subjectId}-${hole}`;
