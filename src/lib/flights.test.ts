@@ -1,3 +1,4 @@
+import { retimeGroups } from "../data/rounds";
 import { describe, expect, it } from "vitest";
 import { pairFlightAssignments, flightsForPairs } from "./flights";
 import type { Pair, Round } from "../types";
@@ -91,5 +92,20 @@ describe("flightsForPairs and the tee sheet", () => {
     const groups = flightsForPairs(round, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pair));
     expect(groups).toHaveLength(5);
     expect(groups.every((g) => g.playerIds.length === 4)).toBe(true);
+  });
+});
+
+describe("retimeGroups", () => {
+  it("moves every flight to the new sheet and keeps the players in place", () => {
+    const old = [
+      { id: "g1", teeTime: "12:03", playerIds: ["a", "b", "c", "d"] },
+      { id: "g2", teeTime: "12:14", playerIds: ["e", "f"] },
+      { id: "g3", teeTime: "12:25", playerIds: [] },
+      { id: "g4", teeTime: "12:37", playerIds: ["g"] },
+      { id: "g5", teeTime: "12:48", playerIds: [] },
+    ];
+    const next = retimeGroups(old, "12:03\u201312:39");
+    expect(next.map((g) => g.teeTime)).toEqual(["12:03", "12:12", "12:21", "12:30", "12:39"]);
+    expect(next.map((g) => g.playerIds)).toEqual(old.map((g) => g.playerIds));
   });
 });

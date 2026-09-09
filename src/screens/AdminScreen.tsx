@@ -6,7 +6,7 @@ import { flightsForPairs, MAX_PER_FLIGHT, teeWindow, placeUnit } from "../lib/fl
 import type { Card, EventDoc, FieldPlayer, FormatSpec, Round, Course, Pair, HoleCapRule, UsageDay } from "../types";
 import { DEFAULT_DRIVES, type RoundResult } from "../lib/engine";
 import { courses, teeDotClass, teeLabel, teeText } from "../data/courses";
-import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds, FORMAT_PRESETS } from "../data/rounds";
+import { DEFAULT_FLIGHT_COUNT, defaultGroups, defaultRounds, FORMAT_PRESETS, retimeGroups } from "../data/rounds";
 import { Header, Segmented } from "../components/Chrome";
 import TodayPanel from "../components/TodayPanel";
 import ToolCard from "../components/ToolCard";
@@ -1347,10 +1347,11 @@ function RoundEditorCard({
   const formatsStrayed =
     programme !== undefined &&
     programme.formats.map((f) => f.id).join(",") !== round.formats.map((f) => f.id).join(",");
+  const windowStrayed = programme !== undefined && programme.teeTimeWindow !== round.teeTimeWindow;
   const strayed =
     programme &&
     programmeCourses.has(round.courseId) &&
-    (programme.courseId !== round.courseId || programme.tee !== round.tee || formatsStrayed);
+    (programme.courseId !== round.courseId || programme.tee !== round.tee || formatsStrayed || windowStrayed);
 
   // A round pointing at a course this build doesn't know (renamed, removed) must not
   // blank Admin on every phone — say so and let the course be reselected.
@@ -1442,6 +1443,7 @@ function RoundEditorCard({
           <span>
             Programme: {courses[programme.courseId]?.shortName} · {teeText(programme.tee)}
             {formatsStrayed && ` · ${programme.formats.map((f) => f.label.replace(/ Stroke Play/, "")).join(" + ")}`}
+            {windowStrayed && ` · ${programme.teeTimeWindow}`}
           </span>
           <button
             onClick={() =>
@@ -1451,6 +1453,8 @@ function RoundEditorCard({
                 crOverride: undefined,
                 slopeOverride: undefined,
                 ...(formatsStrayed ? { formats: programme.formats } : {}),
+                // New tee times keep whoever is already in each flight.
+                ...(windowStrayed ? { teeTimeWindow: programme.teeTimeWindow, groups: retimeGroups(round.groups, programme.teeTimeWindow) } : {}),
               })
             }
             className="shrink-0 underline underline-offset-2"

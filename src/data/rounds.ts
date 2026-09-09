@@ -92,7 +92,8 @@ export const FORMAT_PRESETS: { id: string; label: string; spec: FormatSpec }[] =
 /** The resort books five tee times per round — the sheet's size is a fact, not a preference. */
 export const DEFAULT_FLIGHT_COUNT = 5;
 
-/** Five flights of four, times spread evenly across the published window. */
+/** Five flights of four, times spread evenly across the published window (9 minutes apart on
+ * Toni's sheet of 8.9.2026: five starts over 36 minutes). */
 export function defaultGroups(window: string, count = DEFAULT_FLIGHT_COUNT): PlayingGroup[] {
   const [start, end] = window.split("–");
   const toMin = (t: string) => {
@@ -110,6 +111,12 @@ export function defaultGroups(window: string, count = DEFAULT_FLIGHT_COUNT): Pla
   }));
 }
 
+/** The same flights on a new sheet: times from the window, players where they were. */
+export function retimeGroups(groups: PlayingGroup[], window: string): PlayingGroup[] {
+  const fresh = defaultGroups(window, Math.max(groups.length, DEFAULT_FLIGHT_COUNT));
+  return fresh.map((g, i) => ({ ...g, playerIds: [...(groups[i]?.playerIds ?? [])] }));
+}
+
 export const defaultRounds: Round[] = [
   {
     id: "r1",
@@ -119,8 +126,8 @@ export const defaultRounds: Round[] = [
     courseId: "radecky",
     tee: "yellow",
     status: "upcoming",
-    teeTimeWindow: "12:03–12:48",
-    groups: defaultGroups("12:03–12:48"),
+    teeTimeWindow: "12:03–12:39",
+    groups: defaultGroups("12:03–12:39"),
     formats: [stablefordVictor(DRAFT_ROUND_WEIGHT), strokePlayGross],
   },
   {
@@ -131,8 +138,8 @@ export const defaultRounds: Round[] = [
     courseId: "deste",
     tee: "blue",
     status: "upcoming",
-    teeTimeWindow: "08:36–09:21",
-    groups: defaultGroups("08:36–09:21"),
+    teeTimeWindow: "08:36–09:12",
+    groups: defaultGroups("08:36–09:12"),
     formats: [betterBall, stablefordVictor()],
   },
   {
@@ -143,8 +150,8 @@ export const defaultRounds: Round[] = [
     courseId: "radecky",
     tee: "white",
     status: "upcoming",
-    teeTimeWindow: "14:27–15:12",
-    groups: defaultGroups("14:27–15:12"),
+    teeTimeWindow: "14:27–15:03",
+    groups: defaultGroups("14:27–15:03"),
     formats: [scramble(0.5)],
   },
   {
@@ -155,8 +162,8 @@ export const defaultRounds: Round[] = [
     courseId: "deste",
     tee: "white",
     status: "upcoming",
-    teeTimeWindow: "08:36–09:21",
-    groups: defaultGroups("08:36–09:21"),
+    teeTimeWindow: "08:54–09:30",
+    groups: defaultGroups("08:54–09:30"),
     formats: [strokePlayNet, stablefordVictor()],
   },
   {
@@ -167,8 +174,8 @@ export const defaultRounds: Round[] = [
     courseId: "radecky",
     tee: "blue",
     status: "upcoming",
-    teeTimeWindow: "14:27–15:12",
-    groups: defaultGroups("14:27–15:12"),
+    teeTimeWindow: "14:27–15:03",
+    groups: defaultGroups("14:27–15:03"),
     formats: [betterBall, stablefordVictor()],
   },
   {
@@ -179,8 +186,8 @@ export const defaultRounds: Round[] = [
     courseId: "deste",
     tee: "yellow",
     status: "upcoming",
-    teeTimeWindow: "09:03–09:48",
-    groups: defaultGroups("09:03–09:48"),
+    teeTimeWindow: "09:03–09:39",
+    groups: defaultGroups("09:03–09:39"),
     formats: [scramble(1.0, { birdie: 0.5, eagle: 1 })],
   },
 ];
