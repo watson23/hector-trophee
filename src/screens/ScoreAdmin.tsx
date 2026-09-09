@@ -453,7 +453,7 @@ export default function ScoreAdmin({
           return (
             <div className="mt-3">
               <p className="text-[12px] text-slate-400 leading-relaxed">
-                Played off the handicaps frozen{when ? ` on ${when.getDate()}.${when.getMonth() + 1}.` : " earlier"}.{" "}
+                Played off the handicaps frozen{when ? ` on ${when.getDate()}.${when.getMonth() + 1}` : " earlier"}.{" "}
                 {drifted.length === 0
                   ? "Everyone's index is still the same."
                   : `${drifted.length} ${drifted.length === 1 ? "index has" : "indexes have"} changed since: ${drifted
