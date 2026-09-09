@@ -169,7 +169,7 @@ export default function PlayScreen({
     return (
       <Empty
         title="No round open"
-        body="Nothing is being scored right now. The organiser opens each round in Admin as the flights go out."
+        body="Nothing is being scored right now. Each round opens here as the flights go out."
       />
     );
   }
@@ -329,15 +329,15 @@ export default function PlayScreen({
 
       {round.provisional && (
         <p className="mx-4 mt-3 text-[12px] leading-relaxed text-amber-400/90 bg-amber-950/40 border border-amber-900/60 rounded-xl px-3 py-2">
-          Format and tee are provisional — seeded from 2025 until the official 2026 programme lands.
-          Confirm them in Admin.
+          Format and tee are provisional — seeded from 2025 until the official 2026 programme is
+          confirmed.
         </p>
       )}
 
       {noFlight && subjects.length > 0 && (
         <p className="mx-4 mt-3 text-[12px] leading-relaxed text-slate-400 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
-          You're not in a flight for this round yet, so this is just your own card. The organiser
-          can place you in Admin → Flights, where everyone not yet assigned is listed.
+          You're not in a flight for this round yet, so this is just your own card. Your flight
+          and its tee time show up here once the sheet is set.
         </p>
       )}
 
@@ -347,7 +347,7 @@ export default function PlayScreen({
             title="Nothing to score yet"
             body={
               scrambleRound
-                ? "This round is a scramble, which needs the pairs set. The organiser enters them in Admin after the draft."
+                ? "This round is a scramble, so it needs the pairs. They show up here once the draft is done."
                 : "Pick your name first, then your flight will show up here."
             }
           />

@@ -260,8 +260,8 @@ function RoundCard({
       </ul>
       {tee.suspect && (
         <p className="mt-2 text-[11px] text-amber-500/80 leading-relaxed">
-          The published rating for this tee looks like a ladies' rating. Check it against the club
-          scorecard and override it in Admin if needed.
+          The published rating for this tee looks like a ladies' rating. It will be checked against
+          the club scorecard before the round.
         </p>
       )}
       {/* The full tee sheet — what gets relayed across the course ("when do the others

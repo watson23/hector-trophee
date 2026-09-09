@@ -182,8 +182,7 @@ export default function DraftBoard({
 
       {!complete && (
         <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
-          Order is the round 1 Stableford result. The organiser enters each pick in Admin as
-          it's made.
+          Order is the round 1 Stableford result. Each pick appears here as it's made.
         </p>
       )}
     </section>
