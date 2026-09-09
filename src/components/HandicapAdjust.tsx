@@ -3,6 +3,7 @@ import type { EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
 import { effectiveTee } from "../lib/engine";
 import { courseHandicap } from "../lib/handicap";
+import { driftedSince, freezeNow } from "../lib/freeze";
 
 /**
  * Handicaps by hand, for the case the daily refresh cannot cover: a wrong index on
@@ -65,6 +66,15 @@ export default function HandicapAdjust({
 
   const frozenRounds = rounds.filter((r) => r.handicaps && player && player.id in r.handicaps);
 
+  // The second step, in the place the first one is taken: a round in play keeps scoring
+  // off its frozen indexes until they are applied to it. Shown whether the card is open
+  // or not, so a correction made here is never left half done.
+  const [confirmRefreeze, setConfirmRefreeze] = useState<string | null>(null);
+  const drifting = rounds
+    .filter((r) => r.status === "open")
+    .map((r) => ({ round: r, moved: driftedSince(r, event.players) }))
+    .filter((d) => d.moved.length > 0);
+
   return (
     <section className="mx-4 mt-3 card p-3.5">
       <button onClick={() => setOpen((v) => !v)} className="w-full text-left flex items-center justify-between gap-3">
@@ -76,6 +86,39 @@ export default function HandicapAdjust({
         </div>
         <span className="text-[12px] text-slate-500 shrink-0">{open ? "Close" : "Open"}</span>
       </button>
+
+      {drifting.map(({ round: r, moved }) => (
+        <div key={r.id} className="mt-3 rounded-xl border border-amber-900/60 bg-amber-950/20 p-3">
+          <p className="text-[12px] text-amber-300/90 leading-relaxed">
+            Round {r.seq} is played off older indexes:{" "}
+            <span className="num">{moved.map((p) => `${p.name} ${r.handicaps?.[p.id]} → ${p.hi}`).join(", ")}</span>.
+            It keeps scoring off the frozen ones until you apply the change.
+          </p>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => {
+                if (confirmRefreeze !== r.id) {
+                  setConfirmRefreeze(r.id);
+                  return;
+                }
+                setConfirmRefreeze(null);
+                void patchRound(r.id, freezeNow(event.players)).then(() => flash(`Round ${r.seq} now plays off the current indexes`));
+              }}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${
+                confirmRefreeze === r.id ? "bg-rose-600 text-white" : "bg-amber-400/15 text-amber-200"
+              }`}
+            >
+              {confirmRefreeze === r.id ? `Yes, refreeze — rescores round ${r.seq}` : `Apply to round ${r.seq}`}
+            </button>
+            {confirmRefreeze === r.id && (
+              <button onClick={() => setConfirmRefreeze(null)} className="btn-ghost px-4 py-2 text-xs">
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+      {saved && !open && <p className="mt-2 text-[12px] text-emerald-400">{saved}</p>}
 
       {open && (
         <div className="mt-3 space-y-3">
