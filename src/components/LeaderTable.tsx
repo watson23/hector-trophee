@@ -33,6 +33,7 @@ export default function LeaderTable({
   wideThru = false,
   highlightKeys,
   mineKeys,
+  figure = "lg",
 }: {
   rows: LeaderRow[];
   lowerIsBetter: boolean;
@@ -50,6 +51,8 @@ export default function LeaderTable({
   /** The signed-in player's own rows (their id, their pair's id): a soft violet wash and
       a violet name, so finding yourself in twenty rows is a glance. */
   mineKeys?: Set<string>;
+  /** The followed number's size: "lg" for the tournament tables, "xl" for the round in play. */
+  figure?: "lg" | "xl";
 }) {
   // Which row is expanded survives a reload (an app update lands mid-round) — session
   // scoped, and shared across tables by row key, so opening yourself on the Round tab
@@ -221,9 +224,9 @@ export default function LeaderTable({
                     )}
                   </td>
                   <td
-                    className={`text-right px-1.5 score text-[17px] whitespace-nowrap ${
-                      r.leader ? "text-gold-300" : ""
-                    }`}
+                    className={`text-right px-1.5 score whitespace-nowrap ${
+                      figure === "xl" ? "text-[22px]" : "text-[20px]"
+                    } ${r.leader ? "text-gold-300" : ""}`}
                   >
                     {r.item.played
                       ? (r.item.display ?? r.item.value.toFixed(decimals))

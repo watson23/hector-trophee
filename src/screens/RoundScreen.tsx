@@ -332,6 +332,7 @@ export default function RoundScreen({
               </div>
               <div className="px-4">
                 <LeaderTable
+                  figure="xl"
                   rows={rows}
                   lowerIsBetter
                   scoreHeader="To par"
@@ -397,6 +398,7 @@ export default function RoundScreen({
                 </div>
                 <div className="px-4">
                   <LeaderTable
+                    figure="xl"
                     rows={pairRows}
                     lowerIsBetter
                     scoreHeader="To par"
