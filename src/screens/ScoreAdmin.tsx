@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { driftedSince, freezeNow } from "../lib/freeze";
 import type { Card, EventDoc, Round } from "../types";
 import { courses } from "../data/courses";
 import { effectiveTee, hiFor, teamCardId } from "../lib/engine";
@@ -106,6 +107,7 @@ export default function ScoreAdmin({
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmSimulate, setConfirmSimulate] = useState<18 | 7 | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<Round["status"] | null>(null);
+  const [confirmRefreeze, setConfirmRefreeze] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   // Test data belongs in the sandbox, structurally: in the tournament space the
   // simulate and fill tools do not render at all, so there is no flag to remember to
@@ -179,7 +181,7 @@ export default function ScoreAdmin({
       // handicap snapshot dropped so the next open re-freezes. Without this, wiping the
       // last round left every status final and the app stuck on "That's a wrap".
       if (round.status !== "upcoming") {
-        await patchRound(round.id, { status: "upcoming", handicaps: undefined });
+        await patchRound(round.id, { status: "upcoming", handicaps: undefined, handicapsAt: undefined });
       }
     } finally {
       setConfirmClear(false);
@@ -445,6 +447,45 @@ export default function ScoreAdmin({
             );
           })}
         </div>
+        {round.handicaps && (() => {
+          const drifted = driftedSince(round, event.players);
+          const when = round.handicapsAt ? new Date(round.handicapsAt) : null;
+          return (
+            <div className="mt-3">
+              <p className="text-[12px] text-slate-400 leading-relaxed">
+                Played off the handicaps frozen{when ? ` on ${when.getDate()}.${when.getMonth() + 1}.` : " earlier"}.{" "}
+                {drifted.length === 0
+                  ? "Everyone's index is still the same."
+                  : `${drifted.length} ${drifted.length === 1 ? "index has" : "indexes have"} changed since: ${drifted
+                      .map((p) => `${p.name} ${round.handicaps?.[p.id]} → ${p.hi}`)
+                      .join(", ")}.`}
+              </p>
+              {drifted.length > 0 && (
+                <div className="flex gap-2 mt-2">
+                  <button
+                    disabled={Boolean(busy)}
+                    onClick={() => {
+                      if (!confirmRefreeze) {
+                        setConfirmRefreeze(true);
+                        return;
+                      }
+                      setConfirmRefreeze(false);
+                      void patchRound(round.id, freezeNow(event.players));
+                    }}
+                    className={`flex-1 rounded-lg py-2 text-xs font-semibold ${confirmRefreeze ? "bg-rose-600 text-white" : "bg-slate-800 text-slate-300"}`}
+                  >
+                    {confirmRefreeze ? "Yes, refreeze — rescores this round" : "Refreeze from current indexes"}
+                  </button>
+                  {confirmRefreeze && (
+                    <button onClick={() => setConfirmRefreeze(false)} className="btn-ghost px-4 py-2 text-xs">
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </section>
       )}
 

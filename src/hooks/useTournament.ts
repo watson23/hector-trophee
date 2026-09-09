@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Card, EventDoc, Round, UsageDay } from "../types";
 import { courses } from "../data/courses";
 import { featAnnouncement, featFor, featId, featsLive, type Feat } from "../lib/announce";
-import { computeTournament, effectiveTee, evaluateRound, snapshotHandicaps, type RoundResult } from "../lib/engine";
+import { computeTournament, effectiveTee, evaluateRound, type RoundResult } from "../lib/engine";
+import { freezeNow, shouldFreeze } from "../lib/freeze";
 import {
   getStore,
   migrateEvent,
@@ -219,7 +220,7 @@ export function useTournament(identity: string, eventId: string): TournamentStat
       if (store && round && event && !round.handicaps && !freezing.current.has(roundId)) {
         freezing.current.add(roundId);
         void store
-          .patchRound(roundId, { handicaps: snapshotHandicaps(round, event.players).handicaps })
+          .patchRound(roundId, freezeNow(event.players))
           .catch(() => {})
           .finally(() => freezing.current.delete(roundId));
       }
@@ -324,13 +325,13 @@ export function useTournament(identity: string, eventId: string): TournamentStat
    * and a round leaving "upcoming" without frozen handicaps gets them frozen now — the
    * freeze used to fire only on the exact upcoming→open tap, so upcoming→final, or
    * scoring before the round was opened, left a round that tomorrow's handicap update
-   * would silently rescore.
+   * would silently rescore. A snapshot from an earlier day is retaken too (see freeze.ts).
    */
   const withFreeze = (prev: Round | undefined, patch: Partial<Round>): Partial<Round> => {
     const event = latest.current.event;
     const status = patch.status ?? prev?.status;
-    if (!event || !prev || status === "upcoming" || prev.handicaps || patch.handicaps) return patch;
-    return { ...patch, handicaps: snapshotHandicaps(prev, event.players).handicaps };
+    if (!event || !prev || !status || patch.handicaps || !shouldFreeze(prev, status)) return patch;
+    return { ...patch, ...freezeNow(event.players) };
   };
   const beforeStatusChange = async (prev: Round | undefined, next: Partial<Round>) => {
     if (prev?.status === "final" && next.status && next.status !== "final") {

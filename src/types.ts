@@ -111,6 +111,9 @@ export interface Round {
    * round. Falls back to the player's current index for rounds not yet opened.
    */
   handicaps?: Record<string, number>;
+  /** When the snapshot was taken. A snapshot from an earlier day than the opening is
+   * stray (a pre-trip practice score froze it) and is retaken when the round opens. */
+  handicapsAt?: number;
   formats: FormatSpec[];
   groups: PlayingGroup[];
   teeTimeWindow: string;
