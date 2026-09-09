@@ -325,8 +325,7 @@ export default function TournamentScreen({
         {tab === "hector" ? (
           hectorRows.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8 leading-relaxed">
-              No pairs yet. The Hector table fills in once the draft is done and the pairs are
-              entered in Admin.
+              No pairs yet. The Hector table fills in once the draft is done.
             </p>
           ) : (
             <>
@@ -362,7 +361,7 @@ export default function TournamentScreen({
         )}
       </div>
 
-      {tab === "hector" && (
+      {tab === "hector" && hectorRows.length > 0 && (
         <p className="mx-4 mt-4 text-[12px] leading-relaxed text-slate-500">
           Tap a pair to see what each round contributed. For scale: the {PREVIOUS.year} title
           was won on <span className="num text-slate-400">{PREVIOUS.hector.points.toFixed(1)}</span>{" "}
